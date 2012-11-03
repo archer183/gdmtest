@@ -320,7 +320,11 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 int16_t applyCurve(int16_t x, int8_t idx)
 {
   /* already tried to have only one return at the end */
-	int8_t scp[4] = {-10,25,50,100};
+	int8_t scp[65] = {100,100,100,100,100,99,99,99,
+		98,98,97,96,96,95,94,93,92,91,90,89,88,87,86,
+		84,83,82,80,79,77,76,74,72,71,69,67,65,63,62,
+		60,58,56,53,51,49,47,45,43,41,38,36,34,31,29,
+		27,24,22,20,17,15,12,10,7,5,2,0};
    switch(idx) {
     case CURVE_NONE:
       return x;
@@ -337,14 +341,24 @@ int16_t applyCurve(int16_t x, int8_t idx)
     case CURVE_F_LT0: //f|f<0
       return x < 0 ? -RESX : 0;
     case CURVE_COS: //cos
-		if (x < 0 ) {
-			x = 10*scp[3];
+		x = x/8;   //convert to 8-ish bit range for table lookup
+		while (x > 128) {
+			x = x - 256;
 		}
-		else if (x <250) {
-			x = 10*scp[2];
+		while (x < -128) {
+			x = x + 256;
 		}
-		else {
-			x = 10*scp[0];
+		if ( x < -64) {
+			x=-10*scp[128-abs(x)];
+		}
+		else if (x < 0) {
+			x=-10*scp[abs(x)];
+		}
+		else if (x < 65) {
+			x = 10*scp[x];
+		}
+		else if (x < 129) {
+			x = -10*scp[128-x];
 		}
       return x; // will add actual after verification of function of this change
     case CURVE_ABS_F: //f|abs(f)
