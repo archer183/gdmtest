@@ -346,7 +346,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		else {
 			x = scp[1]
 		}
-      return x // will add actual after verification of function of this change
+      return x; // will add actual after verification of function of this change
     case CURVE_ABS_F: //f|abs(f)
       return x > 0 ? RESX : -RESX;
   }
