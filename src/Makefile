@@ -69,7 +69,7 @@ HELI = NO
 
 # Enable templates menu
 # Values = YES, NO
-TEMPLATES = YES
+TEMPLATES = NO
 
 # Enable navigation with Pots / Rotary encoders
 # Values = NO
@@ -104,7 +104,7 @@ SP22 = NO
 
 # SPLASH on START
 # Values = YES, NO, FIXED
-SPLASH = YES
+SPLASH = NO
 
 # GRAPHICS (sliders / checkboxes / bold)
 GRAPHICS = YES
@@ -115,7 +115,7 @@ THR_TRACE = YES
 
 # PPM center adjustable
 # Values = YES, NO
-PPM_CENTER_ADJUSTABLE = NO
+PPM_CENTER_ADJUSTABLE = YES
 
 # PPM symetrical limits
 # Values = YES, NO
@@ -200,7 +200,7 @@ XCURVES = YES
 
 # Global Vars
 # Values = YES, NO
-GVARS = NO
+GVARS = YES
 
 #------- END BUILD OPTIONS ---------------------------
 
