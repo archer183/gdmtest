@@ -352,7 +352,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 			x=-10*scp[128-abs(x)];
 		}
 		else if (x < 0) {
-			x=-10*scp[abs(x)];
+			x=10*scp[abs(x)];
 		}
 		else if (x < 65) {
 			x = 10*scp[x];
