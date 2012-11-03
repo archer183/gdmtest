@@ -320,7 +320,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 int16_t applyCurve(int16_t x, int8_t idx)
 {
   /* already tried to have only one return at the end */
-	int8_t scp[4] = {0,25,50,100}
+	int8_t scp[4] = {0,25,50,100};
    switch(idx) {
     case CURVE_NONE:
       return x;
@@ -338,13 +338,13 @@ int16_t applyCurve(int16_t x, int8_t idx)
       return x < 0 ? -RESX : 0;
     case CURVE_COS: //cos
 		if (x < 0 ) {
-			x = scp[3]
+			x = scp[3];
 		}
 		else if (x <25) {
-			x = scp[2]
+			x = scp[2];
 		}
 		else {
-			x = scp[1]
+			x = scp[1];
 		}
       return x; // will add actual after verification of function of this change
     case CURVE_ABS_F: //f|abs(f)
