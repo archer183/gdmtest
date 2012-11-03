@@ -335,6 +335,8 @@ int16_t applyCurve(int16_t x, int8_t idx)
       return x > 0 ? RESX : 0;
     case CURVE_F_LT0: //f|f<0
       return x < 0 ? -RESX : 0;
+    case CURVE_COS: //cos
+      return 2*x // will add actual after verification of function of this change
     case CURVE_ABS_F: //f|abs(f)
       return x > 0 ? RESX : -RESX;
   }
