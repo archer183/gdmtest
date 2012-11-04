@@ -366,9 +366,9 @@ int16_t applyCurve(int16_t x, int8_t idx)
   }
   if (idx < 0) {
     x = -x;
-    idx = -idx + 6;
+    idx = -idx + CURVE_BASE - 1;
   }
-  return intpol(x, idx - 7);
+  return intpol(x, idx - CURVE_BASE);  // curvebase to 7 to go back to original
 }
 #else
 #define applyCurve(x, idx) (x)
