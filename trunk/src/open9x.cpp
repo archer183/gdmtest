@@ -325,8 +325,21 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		84,83,82,80,79,77,76,74,72,71,69,67,65,63,62,
 		60,58,56,53,51,49,47,45,43,41,38,36,34,31,29,
 		27,24,22,20,17,15,12,10,7,5,2,0};
-	/* Preceeding defines one quarter of a cosine centered on zero, phase shift to create sine*/
-   switch(idx) {
+	/* Preceeding defines one quarter of a cosine centered on zero, phase shift to create sine.  
+	OUTPUT IS +/- 100 range for an input range of +/-128.  -1024 ->1023 is assumed in real life 
+	and is divided by 8 to get the correct range for this array.  Larger not used to save memory.
+	OUTPUT IS SCALED BACK UP tot +/-1000 by code. errors induced by this are small enough to ignore
+	in most cases.  well worth it for not having to use 16 bit.  Might consider going to unsigned 8 bit to allow array values from 0 to 200
+	for more resolution with no memory hit.*/
+	int8_t acosn[36]={106,104,102,101,99,97,
+		95,94,92,90,88,86,85,83,81,79,77,74,
+		72,70,68,65,63,60,58,55,52,49,46,43,
+		39,35,30,24,17,0};
+	/* for better resolution, acos which should run from 0 to 128 has been scaled for the lookup 
+	only.  the lookup normaly would run from 35 to 0 so we scale up for better resolution for free
+	by a factor of 3.   look for this to be divided out in the code.
+	*/
+	switch(idx) {
     case CURVE_NONE:
       return x;
     case CURVE_X_GT0:
@@ -383,7 +396,24 @@ int16_t applyCurve(int16_t x, int8_t idx)
 			x = 10*scp[x-64];
 		}
 		return x;
-	case CURVE_ACOS:
+	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
+		x=x/10;
+		while (x > 100) {
+			x=x-100;
+		}
+		while (x<100 ) {
+			x=x+100;
+		}
+		if (x<-64) {
+			x=128*8-(8*acosn[abs(x)-65])/3;
+		}
+		else if (x < 65) { //curve fit for middle section of arccos}
+			x=(((-10*x)/23)+64)*8;  //the 8x multiplier takes range from +/-128 to +/- 1024 effectively
+		}
+		else {
+			x=(8*acosn[x-65])/3;
+		}
+		//x=x*8;
 		return x;
     case CURVE_ABS_F: //f|abs(f)
       return x > 0 ? RESX : -RESX;
