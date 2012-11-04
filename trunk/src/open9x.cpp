@@ -325,6 +325,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		84,83,82,80,79,77,76,74,72,71,69,67,65,63,62,
 		60,58,56,53,51,49,47,45,43,41,38,36,34,31,29,
 		27,24,22,20,17,15,12,10,7,5,2,0};
+	/* Preceeding defines one quarter of a cosine centered on zero, phase shift to create sine*/
    switch(idx) {
     case CURVE_NONE:
       return x;
@@ -361,6 +362,29 @@ int16_t applyCurve(int16_t x, int8_t idx)
 			x = -10*scp[128-x];
 		}
       return x; // will add actual after verification of function of this change
+	case CURVE_SIN:
+		x = x/8;   //convert to 8-ish bit range for table lookup
+		while (x > 128) {
+			x = x - 256;
+		}
+		while (x < -128) {
+			x = x + 256;
+		}
+		if ( x < -64) {
+			x=-10*scp[128-abs(x+64)];
+		}
+		else if (x < 0) {
+			x=-10*scp[abs(x+64)];
+		}
+		else if (x < 65) {
+			x = 10*scp[128-(64+x)];
+		}
+		else if (x < 129) {
+			x = 10*scp[x-64];
+		}
+		return x;
+	case CURVE_ACOS:
+		return x;
     case CURVE_ABS_F: //f|abs(f)
       return x > 0 ? RESX : -RESX;
   }
