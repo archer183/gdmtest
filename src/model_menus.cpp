@@ -1283,7 +1283,7 @@ bool moveCurve(uint8_t index, int8_t shift, int8_t custom=0)
   }
 
   int8_t *nextCrv = curveaddress(index+1);
-  memmove(nextCrv+shift, nextCrv, 5*(MAX_CURVES-index-1)+g_model.curves[MAX_CURVES-1]);
+  memmove(nextCrv+shift, nextCrv, 5*(MAX_CURVES-index-1)+g_model.curves[MAX_CURVES-1]-g_model.curves[index]);
   if (shift < 0) memclear(&g_model.points[NUM_POINTS-1] + shift, -shift);
   while (index<MAX_CURVES)
     g_model.curves[index++] += shift;
@@ -2024,9 +2024,11 @@ void menuModelExpoMix(uint8_t expo, uint8_t _event)
 #if defined(PCBSKY9X)
             if (ed->name[0]) {
               putsSwitches(11*FW, y, ed->swtch, 0);
-              lcd_putsnAtt(15*FW+2, y, ed->name, sizeof(ed->name), ZCHAR | (isExpoActive(i) ? BOLD : 0));
+              lcd_putsnAtt(DISPLAY_W-sizeof(ed->name)*FW-MENUS_SCROLLBAR_WIDTH, y, ed->name, sizeof(ed->name), ZCHAR | (isExpoActive(i) ? BOLD : 0));
             }
+#if !defined(PCBX9D)
             else
+#endif
 #endif
             {
               putsSwitches(EXPO_LINE_SWITCH_POS, y, ed->swtch, 0); // normal switches
@@ -2043,9 +2045,11 @@ void menuModelExpoMix(uint8_t expo, uint8_t _event)
 
 #if defined(PCBSKY9X)
             if (md->name[0]) {
-              lcd_putsnAtt(15*FW+2, y, md->name, sizeof(md->name), ZCHAR | (isMixActive(i) ? BOLD : 0));
+              lcd_putsnAtt(DISPLAY_W-sizeof(md->name)*FW-MENUS_SCROLLBAR_WIDTH, y, md->name, sizeof(md->name), ZCHAR | (isMixActive(i) ? BOLD : 0));
             }
+#if !defined(PCBX9D)
             else
+#endif
 #endif
             {
               if (md->curveParam) {
@@ -3162,8 +3166,8 @@ void menuModelTelemetry(uint8_t event)
           uint8_t barSource = bar.source;
           lcd_putsiAtt(INDENT_WIDTH, y, STR_VTELEMCHNS, barSource, (attr && m_posHorz==0) ? blink : 0);
           if (barSource) {
-            putsTelemetryChannel(56-3*FW, y, barSource-1, convertBarValue(barSource, bar.barMin), (attr && m_posHorz==1 ? blink : 0) | LEFT);
-            putsTelemetryChannel(14*FW-3, y, barSource-1, convertBarValue(barSource, 31-bar.barMax), (attr && m_posHorz==2 ? blink : 0) | LEFT);
+            putsTelemetryChannel(56-3*FW, y, barSource-1, convertTelemValue(barSource, bar.barMin), (attr && m_posHorz==1 ? blink : 0) | LEFT);
+            putsTelemetryChannel(14*FW-3, y, barSource-1, convertTelemValue(barSource, 255-bar.barMax), (attr && m_posHorz==2 ? blink : 0) | LEFT);
           }
           else {
             if (attr) m_posHorz = 0;
@@ -3172,12 +3176,16 @@ void menuModelTelemetry(uint8_t event)
             switch (m_posHorz) {
               case 0:
                 bar.source = checkIncDecModel(event, barSource, 0, g_model.frsky.usrProto ? TELEM_DISPLAY_MAX : TELEM_NOUSR_MAX);
+                if (checkIncDec_Ret) {
+                  bar.barMin = 0;
+                  bar.barMax = 255-maxTelemValue(bar.source);
+                }
                 break;
               case 1:
-                CHECK_INCDEC_MODELVAR(event, bar.barMin, 0, 30-bar.barMax);
+                bar.barMin = checkIncDec(event, bar.barMin, 0, 254-bar.barMax, EE_MODEL|NO_INCDEC_MARKS);
                 break;
               case 2:
-                bar.barMax = 31 - checkIncDecModel(event, 31-bar.barMax, bar.barMin+1, 31);
+                bar.barMax = 255 - checkIncDec(event, 255-bar.barMax, bar.barMin+1, maxTelemValue(barSource), EE_MODEL|NO_INCDEC_MARKS);
                 break;
             }
           }

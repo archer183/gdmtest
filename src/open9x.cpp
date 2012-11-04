@@ -158,6 +158,18 @@ char idx2char(int8_t idx)
   return ' ';
 }
 
+#if defined(PCBX9D)
+uint8_t zlen(const char *str, uint8_t size)
+{
+  while (size > 0) {
+    if (str[size-1] != 0)
+      return size;
+    size--;
+  }
+  return size;
+}
+#endif
+
 PhaseData *phaseaddress(uint8_t idx)
 {
   return &g_model.phaseData[idx];
@@ -416,13 +428,13 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//x=x*8;
 		return x;
     case CURVE_ABS_F: //f|abs(f)
-      return x > 0 ? RESX : -RESX;
+		return x > 0 ? RESX : -RESX;
   }
   if (idx < 0) {
     x = -x;
     idx = -idx + CURVE_BASE - 1;
   }
-  return intpol(x, idx - CURVE_BASE);  // curvebase to 7 to go back to original
+  return intpol(x, idx - CURVE_BASE);
 }
 #else
 #define applyCurve(x, idx) (x)
@@ -1081,6 +1093,9 @@ void putsTelemetryValue(uint8_t x, uint8_t y, int16_t val, uint8_t unit, uint8_t
   }
   if (unit == UNIT_FEET) {
     unit = UNIT_METERS;
+  }
+  if (unit == UNIT_KTS) {
+    unit = UNIT_KMH;
   }
 #else
   if (unit == UNIT_KTS) {
