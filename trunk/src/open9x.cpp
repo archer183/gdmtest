@@ -331,7 +331,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 #if defined(CURVES)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
-//#if defined(TRIGCURVES)
+#if defined(TRIGCURVES)
 	/* already tried to have only one return at the end */
 	uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
 		247,246,244,242,240,238,236,233,231,	228,
@@ -367,7 +367,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 	only.  the lookup normaly would run from 35 to 0 so we scale up for better resolution for free
 	by a factor of 3.   look for this to be divided out in the code.
 	*/
-//#endif
+#endif
 
 	switch(idx) {
     case CURVE_NONE:
@@ -384,6 +384,99 @@ int16_t applyCurve(int16_t x, int8_t idx)
       return x > 0 ? RESX : 0;
     case CURVE_F_LT0: //f|f<0
       return x < 0 ? -RESX : 0;
+//#if defined
+	case CURVE_COS: //cos
+		x = x/8;   //convert to 8-ish bit range for table lookup
+		while (x > 128) {
+			x = x - 256;
+		}
+		while (x < -128) {
+			x = x + 256;
+		}
+		if ( x < -64) {
+			x=-4*scp[128-abs(x)];
+		}
+		else if (x < 0) {
+			x=4*scp[abs(x)];
+		}
+		else if (x < 65) {
+			x = 4*scp[x];
+		}
+		else if (x < 129) {
+			x = -4*scp[128-x];
+		}
+      return x; // will add actual after verification of function of this change
+	case CURVE_SIN:
+		x = x/8;   //convert to 8-ish bit range for table lookup
+		while (x > 128) {
+			x = x - 256;
+		}
+		while (x < -128) {
+			x = x + 256;
+		}
+		if /*( x < -64) {
+			x=-4*scp[abs(x+64)];
+		}
+		else if*/ (x < 0) {
+			x=-4*scp[abs(x+64)];
+		}
+		/*else if (x < 65) {
+			x = 4*scp[128-(64+x)];
+		}*/
+		else if (x < 129) {
+			x = 4*scp[abs(x-64)];
+		}
+		return x;
+	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
+		x=x/8;
+		//while (x > 128) {
+		//	x=x-256;
+		//}
+		//while (x<100 ) {
+		//	x=x+100;
+		if (x < -128) {
+			x = 128;
+		}
+		else if (x<-70) {
+			x=1020-(4*acosn[abs(x)-71])/3;
+		}
+		else if (x < 71) { //curve fit for middle section of arccos}
+			x=(((-10*x)/15)+128)*4;  //the 4x multiplier takes range from +/-255 to +/- 1024 effectively
+		}
+		else if (x < 129) {
+			x=(4*acosn[x-71])/3;
+		}
+		else {
+			x = 0;
+		}
+		//x=x*8;
+		return x;
+		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
+		x=x/8;
+		//while (x > 128) {
+		//	x=x-256;
+		//}
+		//while (x<100 ) {
+		//	x=x+100;
+		if (x < -128) {
+			x = 128;
+		}
+		else if (x<-70) {
+			x=1020-(4*acosn[abs(x)-71])/3;
+		}
+		else if (x < 71) { //curve fit for middle section of arccos}
+			x=(((-10*x)/15)+128)*4;  //the 4x multiplier takes range from +/-255 to +/- 1024 effectively
+		}
+		else if (x < 129) {
+			x=(4*acosn[x-71])/3;
+		}
+		else {
+			x = 0;
+		}
+		//x=x*8;
+		x=510-x;   //convert from ACOS TO ASIN ,  remember our angular range is +/-1020  = +/- Pi radians   so Pi/2 =510
+		return x;
+//#endif
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
   }
