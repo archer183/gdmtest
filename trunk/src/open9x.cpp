@@ -331,7 +331,8 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 #if defined(CURVES)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
-  /* already tried to have only one return at the end */
+#if defined(TRIGCURVES)
+	/* already tried to have only one return at the end */
 	uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
 		247,246,244,242,240,238,236,233,231,	228,
 		225,222,219,215,212,208,205,201,197,193,
@@ -366,6 +367,8 @@ int16_t applyCurve(int16_t x, int8_t idx)
 	only.  the lookup normaly would run from 35 to 0 so we scale up for better resolution for free
 	by a factor of 3.   look for this to be divided out in the code.
 	*/
+#endif
+
 	switch(idx) {
     case CURVE_NONE:
       return x;
@@ -381,7 +384,8 @@ int16_t applyCurve(int16_t x, int8_t idx)
       return x > 0 ? RESX : 0;
     case CURVE_F_LT0: //f|f<0
       return x < 0 ? -RESX : 0;
-    case CURVE_COS: //cos
+#if defined
+	case CURVE_COS: //cos
 		x = x/8;   //convert to 8-ish bit range for table lookup
 		while (x > 128) {
 			x = x - 256;
@@ -472,6 +476,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//x=x*8;
 		x=510-x;   //convert from ACOS TO ASIN ,  remember our angular range is +/-1020  = +/- Pi radians   so Pi/2 =510
 		return x;
+#endif
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
   }
