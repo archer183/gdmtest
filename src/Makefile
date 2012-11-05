@@ -198,6 +198,10 @@ CURVES = YES
 # Values = YES, NO
 XCURVES = YES
 
+#TRIG CURVES
+# VALUES = YES, NO
+TRIGCURVES = YES
+
 # Global Vars
 # Values = YES, NO
 GVARS = YES
