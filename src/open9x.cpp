@@ -331,7 +331,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 #if defined(CURVES)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
-#if defined(TRIGCURVES)
+
 	/* already tried to have only one return at the end */
 	uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
 		247,246,244,242,240,238,236,233,231,	228,
@@ -367,9 +367,9 @@ int16_t applyCurve(int16_t x, int8_t idx)
 	only.  the lookup normaly would run from 35 to 0 so we scale up for better resolution for free
 	by a factor of 3.   look for this to be divided out in the code.
 	*/
-#endif
 
-#if defined(TRIGCURVES)
+
+
 	switch(idx) {
     case CURVE_NONE:
       return x;
@@ -480,27 +480,6 @@ int16_t applyCurve(int16_t x, int8_t idx)
 //#endif
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
-#else
-switch(idx) {
-    case CURVE_NONE:
-      return x;
-    case CURVE_X_GT0:
-      if (x < 0) x = 0; //x|x>0
-      return x;
-    case CURVE_X_LT0:
-      if (x > 0) x = 0; //x|x<0
-      return x;
-    case CURVE_ABS_X: // x|abs(x)
-      return abs(x);
-    case CURVE_F_GT0: //f|f>0
-      return x > 0 ? RESX : 0;
-    case CURVE_F_LT0: //f|f<0
-      return x < 0 ? -RESX : 0;
-//#if defined
-	case CURVE_ABS_F: //f|abs(f)
-		return x > 0 ? RESX : -RESX;
-#endif
-
   }
   if (idx < 0) {
     x = -x;
