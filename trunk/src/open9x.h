@@ -492,6 +492,7 @@ enum BaseCurves {
   CURVE_SIN,
   CURVE_ACOS,
   CURVE_ASIN,
+  CURVE_TMP,
   CURVE_BASE
 };
 
