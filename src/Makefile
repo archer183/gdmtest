@@ -200,7 +200,7 @@ XCURVES = YES
 
 #TRIG CURVES
 # VALUES = YES, NO
-#TRIGCURVES = NO
+#TRIGCURVES = YES
 
 # Global Vars
 # Values = YES, NO

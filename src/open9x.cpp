@@ -478,6 +478,9 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=510-x;   //convert from ACOS TO ASIN ,  remember our angular range is +/-1020  = +/- Pi radians   so Pi/2 =510
 		return x;
 //#endif
+	case CURVE_TMP:
+		x=gvars[0]*x;
+		return x;
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
   }
