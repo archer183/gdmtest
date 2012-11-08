@@ -432,7 +432,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//}
 		return x;
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
-		x=INTACOS(x)
+		x=INTACOS(x);
 		//x=x/8;
 		////while (x > 128) {
 		////	x=x-256;
