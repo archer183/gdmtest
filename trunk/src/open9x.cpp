@@ -486,6 +486,12 @@ int16_t applyCurve(int16_t x, int8_t idx)
 	case CURVE_TMP:
 		x= GET_GVAR(0,-100,100,0);
 		return x;
+	case CURVE_TM2:
+		x=calibratedStick[4];
+		if ( abs(x) > 1023) {
+			x=1024;
+		}
+		return x;
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
   }
