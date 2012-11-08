@@ -484,11 +484,19 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		return x;
 //#endif
 	case CURVE_TMP:
-		x= GET_GVAR(0,-100,100,0);
+		//x= GET_GVAR(0,-100,100,0);  //this is not working for some reason
+		x=GVAR_VALUE(0,0);
+		if (x>1024) {
+			x=1024;
+		}
+		else if (x <-1024) {
+			x=-1024;
+		}
 		return x;
 	case CURVE_TM2:
+		int32_t v=1;
 		x=calibratedStick[4];
-		if ( abs(x) > 1023) {
+		if ( abs(x) > 1024) {
 			x=1024;
 		}
 		return x;
