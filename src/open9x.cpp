@@ -332,7 +332,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 #if defined(CURVES)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
-
+	int32_t v=1;
 	/* already tried to have only one return at the end */
 	//uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
 	//	247,246,244,242,240,238,236,233,231,	228,
@@ -494,7 +494,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		}
 		return x;
 	case CURVE_TM2:
-		int32_t v=1;
+		
 		x=calibratedStick[4];
 		if ( abs(x) > 1024) {
 			x=1024;
