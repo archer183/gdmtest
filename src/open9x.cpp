@@ -497,7 +497,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		
 		x=calibratedStick[4];
 		if ( abs(x) > 1024) {
-			x=1024;
+			x=1024*v;
 		}
 		return x;
     case CURVE_ABS_F: //f|abs(f)
