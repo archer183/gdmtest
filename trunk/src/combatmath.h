@@ -116,7 +116,7 @@ int16_t INTSIN(int16_t x){
 		}
 		return x;
 }
-int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
+int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1020 It is obvious if you don't do that.
 		x=x/8;
 		//while (x > 128) {
 		//	x=x-256;
@@ -142,7 +142,7 @@ int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 		return x;
 }
 
-int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
+int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1020 It is obvious if you don't do that.
 		x=x/8;
 		//while (x > 128) {
 		//	x=x-256;
