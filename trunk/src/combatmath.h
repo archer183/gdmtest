@@ -169,3 +169,54 @@ int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 		return x;
 }
 
+int16_t BETAfcn(int16_t x) { /*this function converts from alpha(angle off centerline, zero at straight forward, 
+							 positive WRT right hand rule), the azimuth angle for bow turrets to beta, the azimmuth
+							 angle for stern turrets with 0 pointed straight aft and positive WRT the LEFT hand rule, 
+							 e.g clockwise looking down on the ship vs alpha's angle positive counterclockwise looking down
+							 this means positive angles are to port, negative to starboard for a ship*/
+	if (x >1024 ){
+		x=1024;
+	}
+	else if (x < -1024){
+		x = -1024;
+	}
+	if (x >= 0) {
+		x = 1024-x;
+	}
+	else if (x < 0){
+	 x = -x-1024;
+	}
+	return x;
+}
+
+int8_t ChannelChoice(int16_t x){
+/* this function takes an input and selects channels 0 - 6 (0-3 for sticks, 4-7 for pots) and returns that array index*/
+x = x / 100;  //this takes the +/- 1024 input and converts it to +/- 10
+if (x < -8){
+	x = 0;
+}
+else if (x < -6){
+	x = 1;
+}
+else if (x < -4){ 
+	x = 2;
+}
+else if (x < -2){
+	x = 3;
+}
+else if (x < 0){ 
+	x = 4;
+}
+else if (x < 2){
+	x = 5;
+}
+else if (x < 4){ 
+	x = 6;
+}
+else { 
+	x = 7;
+}
+return x;
+}
+
+
