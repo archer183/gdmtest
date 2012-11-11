@@ -188,7 +188,7 @@ DEBUG = NO
 
 # Flight Phases
 # Values = YES, NO
-FLIGHT_PHASES = NO
+FLIGHT_PHASES = YES
 
 # Curves
 # Values = YES, NO
