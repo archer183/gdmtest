@@ -335,7 +335,9 @@ uint16_t INTSQRT(int32_t x){
 
 	//lets brute force it
 
-	n = 0;
+	n2 = x/2;
+
+	/*n = 0;
 	while ( n <= nmax) {
 		Testvar = n*n;
 		Testvar2 = (n+1)*(n+1);
@@ -349,7 +351,7 @@ uint16_t INTSQRT(int32_t x){
 		}
 		n = n+1;
 
-	}
+	}*/
 	return n2;
 
 
