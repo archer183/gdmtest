@@ -294,46 +294,63 @@ uint16_t INTSQRT(int32_t x){
 		x = 0;
 	}
 
-	uint16_t delta,nmax,n;
+	uint16_t delta,nmax,n,n2;
 	uint8_t tempvar = 0;
-	uint32_t Testvar = 0;
-	uint32_t Testvar2 = 0;
+	int32_t Testvar = 0;
+	int32_t Testvar2 = 0;
 	nmax = 4096;
-	Testvar2 = nmax*nmax;
+	//Testvar2 = nmax*nmax;
 	delta = nmax/2;
-	n=nmax/2;
-	if (x < 1) {
-		n=0;
-	}
-	else if (x < 2) {
-		n=1;
-	}
-	else if (Testvar2 < x) {
-		n=nmax;
-	}
-	else while ( tempvar < 1){
-		delta = delta / 2;
-		Testvar = n*n;  //set the test variable.
-		Testvar2 = (n+1)*(n+1); //set the upper bound test variable
-		if (Testvar < x){
-			if (Testvar2 > x){
-			tempvar = 2;
+	//n=nmax/2;
+	//if (x < 1) {
+	//	n=0;
+	//}
+	//else if (x < 2) {
+	//	n=1;
+	//}
+	//else if (Testvar2 < x) {
+	//	n=nmax;
+	//}
+	//else while ( tempvar < 1){
+	//	delta = delta / 2;
+	//	Testvar = n*n;  //set the test variable.
+	//	Testvar2 = (n+1)*(n+1); //set the upper bound test variable
+	//	if (Testvar < x){
+	//		if (Testvar2 > x){
+	//		tempvar = 2;
+	//		}
+	//	}
+	//	else if (Testvar < x) {
+	//		n = n + delta;
+	//	}
+	//	else if (Testvar > x) {
+	//		n = n - delta;
+	//	}
+	//	else {
+	//		tempvar = 2;
+	//	}
+	//}
+	//if (n < 0){
+	//	n = 0;
+
+	//lets brute force it
+
+	n = 0;
+	while ( n <= nmax) {
+		Testvar = n*n;
+		Testvar2 = (n+1)*(n+1);
+	    if (Testvar < x) {
+			if (Testvar2 > x) {
+				n2 = n;
 			}
 		}
-		else if (Testvar < x) {
-			n = n + delta;
+		if (n = nmax) {
+			n2 = nmax;
 		}
-		else if (Testvar > x) {
-			n = n - delta;
-		}
-		else {
-			tempvar = 2;
-		}
+		n = n+1;
+
 	}
-	if (n < 0){
-		n = 0;
-	}
-	return n;
+	return n2;
 
 
 
