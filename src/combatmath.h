@@ -309,7 +309,7 @@ uint16_t INTSQRT(int32_t x){
 		n=nmax;
 	}
 	else while ( tempvar < 1){
-		delta = delta *2;
+		delta = delta / 2;
 		if (n*n < x){
 			if ((n+1)*(n+1) > x){
 			tempvar = 2;
