@@ -296,7 +296,10 @@ uint16_t INTSQRT(int32_t x){
 
 	uint16_t delta,nmax,n;
 	uint8_t tempvar = 0;
+	uint32_t Testvar = 0;
+	uint32_t Testvar2 = 0;
 	nmax = 4096;
+	Testvar2 = nmax*nmax
 	delta = nmax/2;
 	n=nmax/2;
 	if (x < 1) {
@@ -305,21 +308,26 @@ uint16_t INTSQRT(int32_t x){
 	else if (x < 2) {
 		n=1;
 	}
-	else if (nmax*nmax < x) {
+	else if (Testvar2 < x) {
 		n=nmax;
 	}
 	else while ( tempvar < 1){
 		delta = delta / 2;
-		if (n*n < x){
-			if ((n+1)*(n+1) > x){
+		Testvar = n*n;  //set the test variable.
+		Testvar2 = (n+1)*(n+1); //set the upper bound test variable
+		if (Testvar < x){
+			if (Testvar2 > x){
 			tempvar = 2;
 			}
 		}
-		else if (n*n < x) {
+		else if (Testvar < x) {
 			n = n + delta;
 		}
-		else {
+		else if (Testvar > x) {
 			n = n - delta;
+		}
+		else {
+			tempvar = 2;
 		}
 	}
 	if (n < 0){
