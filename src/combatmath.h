@@ -75,7 +75,7 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 
 
-/* already tried to have only one return at the end */
+ already tried to have only one return at the end */
 	uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
 		247,246,244,242,240,238,236,233,231,	228,
 		225,222,219,215,212,208,205,201,197,193,
@@ -294,7 +294,7 @@ uint16_t INTSQRT(int32_t x){
 		x = 0;
 	}
 
-	uint16_t delta,nmax,n,;
+	uint16_t delta,nmax,n;
 	uint8_t tempvar = 0;
 	delta = nmax/2;
 	nmax = 4096;
