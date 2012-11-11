@@ -406,7 +406,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//else if (x <-1024) {
 		//	x=-1024;
 		//}
-		x = BETAVfcn(x);
+		x = calibratedStick[4];
 		return x;
 	case CURVE_TM2:
 		
