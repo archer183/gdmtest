@@ -344,7 +344,7 @@ uint16_t INTSQRT(int32_t x){
 				n2 = n;
 			}
 		}
-		if (n = nmax) {
+		if (n == nmax) {
 			n2 = nmax;
 		}
 		n = n+1;
