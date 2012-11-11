@@ -34,6 +34,45 @@
  *
  */
 
+/* INSTRUCTIONS FOR COMBAT WARSHIP USAGE:
+
+ALL GLOBAL VARIABLES ARE PULLED FROM FLIGHT PHASE ZERO. I SUGGEST NOT HAVING THE COMPILE OPTION FOR PHASES ENABLED
+
+Global variable #1: Determines Azimuth angle input stick or pot.  Stick count is 0-3, pot index is 4-6.  Choose as follows.  
+		Set GVAR 1 in TX at -90 for 0, -70 for 1, -50 for 2, -30 for 3, -10 for 4, 10 for 5, 30 for 6
+Global variable #2: Determines Range input stick or pot.  Stick count is 0-3, pot index is 4-6.  Choose as follows.  
+		Set GVAR 2 in TX at -90 for 0, -70 for 1, -50 for 2, -30 for 3, -10 for 4, 10 for 5, 30 for 6
+Global variable #3: Determines MAXIMUM dimensionless range (range/distance between turret clusters) set to 
+		Set GVAR 2 in TX at -90 for 1, -70 for 2, -50 for 4, -30 for 6, -10 for 8, 10 for 10, 30 for 612  
+			***************************** SUGGEST NO SETTING HIGHER THAN 4,***************************************
+
+Functions available in mixes:   RNG (as shown in TX menu) gives the aft turret actual range to target.  Bow turret set by input stick (-100%-100%) -100% = 0 range, 100% = Maximum Range
+								AZM (as shown in TX menu) gives the Azimuth angle BETA for stern turret.  ALPHA (bow turret angle) defined by input stick (+/-100%) 
+																BETA: -Pi to Pi  (-100% to 100%)
+																ALPHA:-Pi to Pi  (-100% to 100%)
+
+
+
+						AFT CLUSTER											BOW CLUSTER
+		--------------------+-----------------------------------------------------+-----------   Alpha Positive  Counterclockwise about bow cluster, zero to bow
+																								Beta positive CLOCKWISE with zero at the stern
+																								BetaV is an internal angle used in math. BetaV+Alpha = +/-Pi depending on port/stbd.  
+																										If alpha is the angle from bow turret to target, 
+																										betav is the same angle referenced clockwise with zero to the stern
+To use, select appropriate function in pulldown menu in TX.  for bow cluster, range is the input chosen (e.g. Pot 1 for range, Pot 2 for azimuth or vise versa)
+																for stern cluster, use one of the virtual channels such as 15 or 16.  
+																		For range, set the weight to 100%.  Set the curve to be RNG
+																		-Now on the actual output channel, select the previous channel as the input.  create a custom curve to map
+																			the range value to the appropriate servo value to achieve that range based on linkage geometry
+																			-Remember that RNG function is LINEAR.  e.g. -100% = 0, +100% = Maximum range
+																			-Adjust the curve until the range achieved by the turret is the range you are commanding.
+																			-This curve should be proven out before using the RNG function since the RNG function is a 
+																				function of both the range from bow cluster AND the angle off of bow cluster.
+																				-Prove it by applying any fixed input channel, e.g. P1, and make sure that P1=-100% range = 0 (not minimum range but zero, you can not do this mechanically)
+																																							P1 = 100% range = maximum range = N times teh distance between your turret clusters as set by GVAR3
+																																							P1 = 0% range = 50% of maximum range.  continue to refine as necessary
+																																							Once that is set, apply the angle corrected curve.
+
 
 
 /* already tried to have only one return at the end */
@@ -169,7 +208,7 @@ int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 		return x;
 }
 
-int16_t BETAfcn(int16_t x) { /*this function converts from alpha(angle off centerline, zero at straight forward, 
+int16_t BETAVfcn(int16_t x) { /*this function converts from alpha(angle off centerline, zero at straight forward, 
 							 positive WRT right hand rule), the azimuth angle for bow turrets to beta, the azimmuth
 							 angle for stern turrets with 0 pointed straight aft and positive WRT the LEFT hand rule, 
 							 e.g clockwise looking down on the ship vs alpha's angle positive counterclockwise looking down
@@ -189,8 +228,8 @@ int16_t BETAfcn(int16_t x) { /*this function converts from alpha(angle off cente
 	return x;
 }
 
-int8_t ChannelChoice(int16_t x){
-/* this function takes an input and selects channels 0 - 6 (0-3 for sticks, 4-7 for pots) and returns that array index*/
+uint8_t ChannelChoice(int16_t x){
+/* this function takes an input and selects channels 0 - 6 (0-3 for sticks, 4-6 for pots) and returns that array index*/
 x = x / 100;  //this takes the +/- 1024 input and converts it to +/- 10
 if (x < -8){
 	x = 0;
@@ -210,13 +249,125 @@ else if (x < 0){
 else if (x < 2){
 	x = 5;
 }
-else if (x < 4){ 
+else { 
 	x = 6;
 }
-else { 
-	x = 7;
-}
+
 return x;
 }
 
 
+uint8_t RangeMax(int16_t x){
+	// this function sets the maximum range
+	x=x/100;
+
+if (x < -8){
+	x = 1;
+}
+else if (x < -6){
+	x = 2;
+}
+else if (x < -4){ 
+	x = 4;
+}
+else if (x < -2){
+	x = 6;
+}
+else if (x < 0){ 
+	x = 8;
+}
+else if (x < 2){
+	x = 10;
+}
+else { 
+	x = 12;
+}
+
+return x;
+}
+
+
+uint16_t INTSQRT(int32_t x){
+	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
+
+	if (x < 0) {
+		x = 0;
+	}
+
+	uint16_t delta,nmax,n,;
+	uint8_t tempvar = 0;
+	delta = nmax/2;
+	nmax = 4096;
+	n=nmax/2;
+	if (x < 1) {
+		n=0;
+	}
+	else if (x < 2) {
+		n=1;
+	}
+	else if (nmax*nmax < x) {
+		n=nmax;
+	}
+	else while ( tempvar < 1){
+		delta = delta *2;
+		if (n*n < x && (n+1)*(n+1) > x){
+			tempvar = 2;
+		}
+		else if (n*n < x) {
+			n += delta;
+		}
+		else {
+			n -= delta;
+		}
+	}
+	if (n < 0){
+		n = 0;
+	}
+	return n;
+
+
+
+}
+int16_t TargetRange() {
+	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables to select sources
+	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
+
+	Range is dimensionless range.  Dimensionelss range is defined as range divided by the distance between bow and stern turret clusters on the ship.   E.G. math is the same
+			for dimensionless range whether the turret spacing is 1m or 0.25m.  the differences is the ship with the closer turret spacing has a closer real range
+			for an equivalent dimensionless range.  GRAVITY AND WIND not accounted for.  
+
+	**** Definitions ****
+	Global variable #1:  input number (0 to 6) for azimuth.  Azimuth angle is taken directly from calibratedstick[n], so full angle range = +/- 1024 = +/- Pi radians
+					referenced to bow of ship. Positive to Port, Negative to starboard.
+	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
+	*/
+
+	int32_t Range32;
+	int16_t Range16,Az16;
+	uint8_t m,n,Rmax;   // m = Az stick n = range stick, 
+
+	m = ChannelChoice(GVAR_VALUE(0,0));
+	n = ChannelChoice(GVAR_VALUE(1,0));
+	Rmax = RangeMax(GVAR_VALUE(2,0));
+
+	Az16=calibratedStick[m];
+	Range16=calibratedStick[n];
+	Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
+//	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
+	Range16 +=1024; // shift range to 0 to 2048 for math purposes
+	// now we implement range_stern = sqrt( 1^2 + Rbow^2 -2*1*Rbow*Cos(BetaVirtual))    remember that 2 is 2, but 1 is not 1.  1 is turret cluster spacing/turret cluster spacing 
+	//and must be scaled based on the range input we will see for Rbow, hence the math below
+
+	//Take heed, do not exceed the limitation of a 32bit signed variable!  the parentheses are structured to minimize rounding errors in divisors!
+
+	//intcos returns +/-1020 so we must divide by 1020 so that effectively its range is +/-1.  but we must do so after it is multiplied out large enough so the errors don't
+	//kill the accuracy
+	Range32 = (INTCOS(Az16)*2048*2)/1020;   //this is the first step.  part of the cosine term.  the output of this exists within the range of +/-4096  
+	Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
+	Range32 = Range32 + Range16*Range16 + 2048*2048/Rmax;  // next step is the square root.  still need to implement
+	Range32 = INTSQRT(Range32);
+
+	return Range32;
+
+
+}
