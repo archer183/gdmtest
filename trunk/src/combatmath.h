@@ -350,8 +350,22 @@ int16_t TargetRange() {
 	n = ChannelChoice(GVAR_VALUE(1,0));
 	Rmax = RangeMax(GVAR_VALUE(2,0));
 
+	//prevents divide by zero error...
+	if (Rmax < 1) {
+		Rmax = 1;
+	}
+
+
 	Az16=calibratedStick[m];
 	Range16=calibratedStick[n];
+	//Following conditional prevents values too large from being used
+	if (Range16 > 1024) {
+		Range16 = 1024;
+	}
+	else if (Range16 < -1024) {
+		Range16 = -1024;
+	}
+
 	Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
 //	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
 	Range16 +=1024; // shift range to 0 to 2048 for math purposes
@@ -364,24 +378,10 @@ int16_t TargetRange() {
 	//kill the accuracy
 
 	//adding conditionals to deal with possible integer overflow
-	Range32 = INTCOS(Az16)*2048;
-	if (abs(Range32) > 2100000) {
-		Range32 = 2100000;
-	}
-	Range32 = (Range32*2)/1020;   //this is the first step.  part of the cosine term.  the output of this exists within the range of +/-4096  
-
-	if (Range16*Range16 > 2100000) {
-		Range32a = 2100000;
-	} 
-	else {
-		Range32a = Range16*Range16;
-	}
-
+	Range32 = INTCOS(Az16)*4;  // the  4 is really 2048*2/1020
+	Range32a = Range16*Range16;
 	Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
 	
-	if ( Range32 > 5000000 ){
-		Range32 = 5000000;
-	}
 
 	Range32 = Range32 + Range32a + 2048*2048/Rmax;  // next step is the square root.  still need to implement
 	Range32 = INTSQRT(Range32);
