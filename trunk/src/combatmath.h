@@ -342,7 +342,7 @@ int16_t TargetRange() {
 	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
 	*/
 
-	int64_t Range32;
+	int32_t Range32,Range32a;
 	int16_t Range16,Az16;
 	uint8_t m,n,Rmax;   // m = Az stick n = range stick, 
 
@@ -362,9 +362,23 @@ int16_t TargetRange() {
 
 	//intcos returns +/-1020 so we must divide by 1020 so that effectively its range is +/-1.  but we must do so after it is multiplied out large enough so the errors don't
 	//kill the accuracy
-	Range32 = (INTCOS(Az16)*2048*2)/1020;   //this is the first step.  part of the cosine term.  the output of this exists within the range of +/-4096  
+
+	//adding conditionals to deal with possible integer overflow
+	Range32 = INTCOS(Az16)*2048;
+	if (Range32 > 2100000) {
+		Range32 = 2100000;
+	}
+	Range32 = (Range32*2)/1020;   //this is the first step.  part of the cosine term.  the output of this exists within the range of +/-4096  
+
+	if (Range16*Range16 > 2100000) {
+		Range32a = 2100000;
+	} 
+	else {
+		Range32a = Range16*Range16;
+	}
+
 	Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
-	Range32 = Range32 + Range16*Range16 + 2048*2048/Rmax;  // next step is the square root.  still need to implement
+	Range32 = Range32 + Range32a + 2048*2048/Rmax;  // next step is the square root.  still need to implement
 	Range32 = INTSQRT(Range32);
 
 	return Range32;
