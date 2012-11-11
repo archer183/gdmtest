@@ -299,7 +299,7 @@ uint16_t INTSQRT(int32_t x){
 	uint32_t Testvar = 0;
 	uint32_t Testvar2 = 0;
 	nmax = 4096;
-	Testvar2 = nmax*nmax
+	Testvar2 = nmax*nmax;
 	delta = nmax/2;
 	n=nmax/2;
 	if (x < 1) {
