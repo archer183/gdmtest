@@ -296,8 +296,8 @@ uint16_t INTSQRT(int32_t x){
 
 	uint16_t delta,nmax,n;
 	uint8_t tempvar = 0;
-	delta = nmax/2;
 	nmax = 4096;
+	delta = nmax/2;
 	n=nmax/2;
 	if (x < 1) {
 		n=0;
@@ -342,7 +342,7 @@ int16_t TargetRange() {
 	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
 	*/
 
-	int32_t Range32;
+	int64_t Range32;
 	int16_t Range16,Az16;
 	uint8_t m,n,Rmax;   // m = Az stick n = range stick, 
 
