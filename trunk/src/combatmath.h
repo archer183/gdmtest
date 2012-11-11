@@ -346,10 +346,12 @@ int16_t TargetRange() {
 	int16_t Range16,Az16;
 	uint8_t m,n,Rmax;   // m = Az stick n = range stick, 
 
-	m = ChannelChoice(GVAR_VALUE(0,0));
-	n = ChannelChoice(GVAR_VALUE(1,0));
-	Rmax = RangeMax(GVAR_VALUE(2,0));
-
+	//m = ChannelChoice(GVAR_VALUE(0,0));
+	//n = ChannelChoice(GVAR_VALUE(1,0));
+	m = 4; //for debug set P1 for Azimuth, P2 for range
+		n = 5;
+	//Rmax = RangeMax(GVAR_VALUE(2,0));
+	Rmax = 1;  //for debug set rmax = 1
 	//prevents divide by zero error...
 	if (Rmax < 1) {
 		Rmax = 1;
