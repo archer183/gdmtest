@@ -365,7 +365,7 @@ int16_t TargetRange() {
 
 	//adding conditionals to deal with possible integer overflow
 	Range32 = INTCOS(Az16)*2048;
-	if (Range32 > 2100000) {
+	if (abs(Range32) > 2100000) {
 		Range32 = 2100000;
 	}
 	Range32 = (Range32*2)/1020;   //this is the first step.  part of the cosine term.  the output of this exists within the range of +/-4096  
@@ -378,6 +378,11 @@ int16_t TargetRange() {
 	}
 
 	Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
+	
+	if ( Range32 > 5000000 ){
+		Range32 = 5000000;
+	}
+
 	Range32 = Range32 + Range32a + 2048*2048/Rmax;  // next step is the square root.  still need to implement
 	Range32 = INTSQRT(Range32);
 
