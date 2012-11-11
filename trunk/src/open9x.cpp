@@ -399,18 +399,19 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=INTASIN(x);
 		return x;
 	case CURVE_TMP:
-		x=GVAR_VALUE(0,0);
-		if (x>1024) {
-			x=1024;
-		}
-		else if (x <-1024) {
-			x=-1024;
-		}
+		//x=GVAR_VALUE(0,0);
+		//if (x>1024) {
+		//	x=1024;
+		//}
+		//else if (x <-1024) {
+		//	x=-1024;
+		//}
+		x = BETAVfcn(x);
 		return x;
 	case CURVE_TM2:
 		
 		x=calibratedStick[4];
-		x = TargetRange();
+//		x = TargetRange();
 		
 		return x;
     case CURVE_ABS_F: //f|abs(f)
