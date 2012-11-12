@@ -294,7 +294,7 @@ uint16_t INTSQRT(int32_t x){
 		x = 0;
 	}
 
-	uint16_t delta,nmax,n,n2;
+	uint16_t delta,nmax,n2;
 	uint8_t tempvar = 0;
 	int32_t n = 0;
 	int32_t Testvar2 = 0;
