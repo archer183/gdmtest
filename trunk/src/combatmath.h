@@ -289,7 +289,7 @@ return x;
 
 uint16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
-
+	
 	if (x < 0) {
 		x = 0;
 	}
@@ -344,7 +344,7 @@ uint16_t INTSQRT(int32_t x){
 		//Testvar2 = (n+1);//*(n+1);
 	    if (n*n <= x) {
 			if ((n+1)*(n+1) > x) {
-				n2 = n/2;
+				n2 = n;
 				n = nmax;
 				}
 		}
