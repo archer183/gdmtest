@@ -296,7 +296,7 @@ uint16_t INTSQRT(int32_t x){
 
 	uint16_t delta,nmax,n,n2;
 	uint8_t tempvar = 0;
-	int32_t Testvar = 0;
+	int32_t n = 0;
 	int32_t Testvar2 = 0;
 	nmax = 4096;
 	//Testvar2 = nmax*nmax;
@@ -342,8 +342,8 @@ uint16_t INTSQRT(int32_t x){
 	while ( n <= nmax ) {
 		//Testvar = n;//*n;
 		//Testvar2 = (n+1);//*(n+1);
-	    if (n <= x) {
-			if ((n+1) > x) {
+	    if (n*n <= x) {
+			if ((n+1)*(n+1) > x) {
 				n2 = n/2;
 				n = nmax;
 				}
