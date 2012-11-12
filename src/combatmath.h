@@ -336,22 +336,27 @@ uint16_t INTSQRT(int32_t x){
 	//lets brute force it
 
 	//n2 = x/2;
-
+	tempvar = 0;
+	n2 = 0;
 	n = 0;
-	while ( n <= nmax) {
+	while ( n <= nmax ) {
 		//Testvar = n;//*n;
 		//Testvar2 = (n+1);//*(n+1);
 	    if (n <= x) {
 			if ((n+1) > x) {
 				n2 = n/2;
-			}
+				n = nmax;
+				}
 		}
-		if (n == nmax) {
+		else if (n > nmax){
 			n2 = nmax;
+			
 		}
+		
 		n = n+1;
-
 	}
+
+	
 	return n2;
 
 
