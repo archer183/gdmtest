@@ -42,9 +42,12 @@ Global variable #1: Determines Azimuth angle input stick or pot.  Stick count is
 		Set GVAR 1 in TX at -90 for 0, -70 for 1, -50 for 2, -30 for 3, -10 for 4, 10 for 5, 30 for 6
 Global variable #2: Determines Range input stick or pot.  Stick count is 0-3, pot index is 4-6.  Choose as follows.  
 		Set GVAR 2 in TX at -90 for 0, -70 for 1, -50 for 2, -30 for 3, -10 for 4, 10 for 5, 30 for 6
-Global variable #3: Determines MAXIMUM dimensionless range (range/distance between turret clusters) set to 
-		Set GVAR 2 in TX at -90 for 1, -70 for 2, -50 for 4, -30 for 6, -10 for 8, 10 for 10, 30 for 612  
+Global variable #3: Determines MAXIMUM dimensionless range for the primary turret cluster (range/distance between turret clusters) set to 
+		Set GVAR 2 in TX at -90 for 1, -70 for 2, -50 for 4, -30 for 6, -10 for 8, 10 for 10, 30 for 12  
 			***************************** SUGGEST NO SETTING HIGHER THAN 4,***************************************
+
+			Range in stern turret = 1*(Rmax+1)/Rmax....  e.g. Rmax = 1, Rmax stern = 2
+		
 
 Functions available in mixes:   RNG (as shown in TX menu) gives the aft turret actual range to target.  Bow turret set by input stick (-100%-100%) -100% = 0 range, 100% = Maximum Range
 								AZM (as shown in TX menu) gives the Azimuth angle BETA for stern turret.  ALPHA (bow turret angle) defined by input stick (+/-100%) 
@@ -294,13 +297,13 @@ uint16_t INTSQRT(int32_t x){
 		x = 0;
 	}
 
-	uint16_t delta,nmax,n2;
+	//uint16_t delta,nmax,n2;
 	uint8_t tempvar = 0;
 	int32_t n = 0;
-	int32_t Testvar2 = 0;
+	//int32_t Testvar2 = 0;
 	nmax = 4096;
 	//Testvar2 = nmax*nmax;
-	delta = nmax/2;
+	//delta = nmax/2;
 	//n=nmax/2;
 	//if (x < 1) {
 	//	n=0;
@@ -377,8 +380,8 @@ int16_t TargetRange() {
 	*/
 
 	int32_t Range32,Range32a;
-	int16_t Range16,Az16;
-	uint8_t m,n,Rmax;   // m = Az stick n = range stick, 
+	int16_t Range16,Az16,RmaxStern;
+	uint8_t m,n,Rmax,Rmult;   // m = Az stick n = range stick, 
 
 	//m = ChannelChoice(GVAR_VALUE(0,0));
 	//n = ChannelChoice(GVAR_VALUE(1,0));
@@ -391,6 +394,8 @@ int16_t TargetRange() {
 		Rmax = 1;
 	}
 
+	
+	RmaxStern = (2048*(Rmax + 1))/Rmax;
 
 	Az16=calibratedStick[m];
 	Range16=calibratedStick[n];
@@ -415,12 +420,27 @@ int16_t TargetRange() {
 
 	//adding conditionals to deal with possible integer overflow
 	Range32 = INTCOS(Az16)*4;  // the  4 is really 2048*2/1020
-	Range32a = Range16*Range16;
+	
 	Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
 	
+	Range32a = Range16*Range16;
 
 	Range32 = Range32 + Range32a + 2048*2048/Rmax;  // next step is the square root.  still need to implement
 	Range32 = INTSQRT(Range32);
+
+	//now we scale that range back to the +/-1024 we are expecting
+
+
+
+	if (Range32 > RmaxStern){
+		Range32 = RmaxStern;  //this should be the largest possible value given that the inputs are shifted to 0-2048, so max of sqrt(2048^2+2048^2-2*2048*2048*cos(beta)) = 4096
+	}
+
+	//remember, everything is referenced currently to 0 to 2048 being full range on the primary turret.   we must now divide by Rmult to get 
+	//the range variable for the calculated back in range.  E.G. for 
+	Range32 = (Range32*Rmax)/(Rmax+1); //this should result in a proper scaling....
+	Range32 = Range32 - 1024; //now in +/-1024 land
+
 
 	return Range32;
 
