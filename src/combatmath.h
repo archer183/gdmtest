@@ -298,6 +298,7 @@ uint16_t INTSQRT(int32_t x){
 	}
 
 	//uint16_t delta,nmax,n2;
+	uint16_t nmax,n2;
 	uint8_t tempvar = 0;
 	int32_t n = 0;
 	//int32_t Testvar2 = 0;
@@ -361,9 +362,6 @@ uint16_t INTSQRT(int32_t x){
 
 	
 	return n2;
-
-
-
 }
 int16_t TargetRange() {
 	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables to select sources
@@ -381,7 +379,7 @@ int16_t TargetRange() {
 
 	int32_t Range32,Range32a;
 	int16_t Range16,Az16,RmaxStern;
-	uint8_t m,n,Rmax,Rmult;   // m = Az stick n = range stick, 
+	uint8_t m,n,Rmax;//,Rmult;   // m = Az stick n = range stick, 
 
 	//m = ChannelChoice(GVAR_VALUE(0,0));
 	//n = ChannelChoice(GVAR_VALUE(1,0));
