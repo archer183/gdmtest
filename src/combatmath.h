@@ -395,7 +395,7 @@ int16_t TargetRange() {
 	
 	RmaxStern = (2048*(Rmax + 1))/Rmax;
 
-	Az16=calibratedStick[m];
+	Az16=-1*calibratedStick[m];  //-1 reverses pot to match physical turret
 	Range16=calibratedStick[n];
 	//Following conditional prevents values too large from being used
 	if (Range16 > 1024) {
