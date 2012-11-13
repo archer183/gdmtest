@@ -412,7 +412,8 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		
 //		x=calibratedStick[4];
 //		x = TargetRange();
-		x = INTSQRT(abs(x));		
+		//x = INTSQRT(abs(x));
+		x=TargetRange()
 		return x;
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
