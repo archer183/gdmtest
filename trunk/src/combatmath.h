@@ -395,7 +395,7 @@ int16_t TargetRange() {
 	
 	RmaxStern = (2048*(Rmax + 1))/Rmax;
 
-	Az16=-1*calibratedStick[m];  //-1 reverses pot to match physical turret
+	Az16=calibratedStick[m];  //-1 reverses pot to match physical turret
 	Range16=calibratedStick[n];
 	//Following conditional prevents values too large from being used
 	if (Range16 > 1024) {
@@ -423,7 +423,7 @@ int16_t TargetRange() {
 	
 	Range32a = Range16*Range16;
 
-	Range32 = Range32 + Range32a + 2048*2048/Rmax;  // next step is the square root.  still need to implement
+	Range32 = Range32 + Range32a + 2048*2048/Rmax/Rmax;  // next step is the square root.  still need to implement
 	Range32 = INTSQRT(Range32);
 
 	//now we scale that range back to the +/-1024 we are expecting
@@ -438,7 +438,12 @@ int16_t TargetRange() {
 	//the range variable for the calculated back in range.  E.G. for 
 	Range32 = (Range32*Rmax)/(Rmax+1); //this should result in a proper scaling....
 	Range32 = Range32 - 1024; //now in +/-1024 land
-
+	if (Range32 > 1023){
+		Range32 = 1024;
+	}
+	else if(Range32 <-1023){
+		Range32 = -1024;
+	}
 
 	return Range32;
 
