@@ -407,6 +407,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//	x=-1024;
 		//}
 		x = calibratedStick[4];
+		x = BETAVfcn(x);
 		return x;
 	case CURVE_TM2:
 		
@@ -414,6 +415,12 @@ int16_t applyCurve(int16_t x, int8_t idx)
 //		x = TargetRange();
 		//x = INTSQRT(abs(x));
 		x=TargetRange();
+		if (x > 1023){
+			x = 1024;
+		}
+		else if(x <-1023){
+			x = -1024;
+		}
 		return x;
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
