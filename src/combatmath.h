@@ -293,7 +293,7 @@ return x;
 int16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
 	x = x*x;
-	if (x < 0) {
+	if (x < 1) {
 		x = 0;
 	}
 
@@ -344,6 +344,11 @@ int16_t INTSQRT(int32_t x){
 	n2 = -1;
 	n = 2048;
 	n3 = 0;
+	if (x = 0) {
+		N2 = 0;
+	} 
+	else {
+		
 	while ( n2 < 0 ) {
 		//Testvar = n;//*n;
 		//Testvar2 = (n+1);//*(n+1);
@@ -372,7 +377,7 @@ int16_t INTSQRT(int32_t x){
 		//n = n+1;
 	}
 	//n2 = x/2;
-	
+	}
 	return n2;
 }
 int16_t TargetRange() {
@@ -417,7 +422,7 @@ int16_t TargetRange() {
 		Range16 = -1024;
 	}
 
-	//Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
+	Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
 //	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
 	Range16 +=1024; // shift range to 0 to 2048 for math purposes
 	// now we implement range_stern = sqrt( 1^2 + Rbow^2 -2*1*Rbow*Cos(BetaVirtual))    remember that 2 is 2, but 1 is not 1.  1 is turret cluster spacing/turret cluster spacing 
