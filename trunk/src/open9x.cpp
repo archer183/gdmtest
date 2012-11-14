@@ -358,6 +358,15 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//x=INTACOS(x);
 		temp32=x;
 		x=INTSQRT(abs(temp32));
+		if (x > 1022) {
+			x = 1024;
+		}
+		else if (x < -1022){
+			x = -1022;
+		}
+		else {
+			x = x;
+		}
 		return x;
 		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
 		//x=INTASIN(x);
