@@ -345,7 +345,7 @@ int16_t INTSQRT(int32_t x){
 	n = 2048;
 	n3 = 0;
 	if (x = 0) {
-		N2 = 0;
+		n2 = 0;
 	} 
 	else {
 		
