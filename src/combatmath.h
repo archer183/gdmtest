@@ -298,7 +298,7 @@ int16_t INTSQRT(int32_t x){
 	}
 
 	//uint16_t delta,nmax,n2;
-	uint16_t nmax,n2;
+	int16_t nmax,n2;
 	//uint8_t tempvar = 0;
 	int32_t n = 0;
 	//int32_t Testvar2 = 0;
@@ -343,23 +343,23 @@ int16_t INTSQRT(int32_t x){
 	//tempvar = 0;
 	n2 = 0;
 	n = 0;
-	while ( n <= nmax ) {
-		//Testvar = n;//*n;
-		//Testvar2 = (n+1);//*(n+1);
-	    if (n*n <= x) {
-			if ((n+1)*(n+1) > x) {
-				n2 = n;
-				n = nmax;
-				}
-		}
-		else if (n > nmax){
-			n2 = nmax;
-			
-		}
-		
-		n = n+1;
-	}
-
+	//while ( n <= nmax ) {
+	//	//Testvar = n;//*n;
+	//	//Testvar2 = (n+1);//*(n+1);
+	//    if (n*n <= x) {
+	//		if ((n+1)*(n+1) > x) {
+	//			n2 = n;
+	//			n = nmax;
+	//			}
+	//	}
+	//	else if (n > nmax){
+	//		n2 = nmax;
+	//		
+	//	}
+	//	
+	//	n = n+1;
+	//}
+	n2 = x/2;
 	
 	return n2;
 }
