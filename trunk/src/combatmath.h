@@ -290,7 +290,7 @@ return x;
 }
 
 
-uint16_t INTSQRT(int32_t x){
+int16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
 	
 	if (x < 0) {
@@ -299,7 +299,7 @@ uint16_t INTSQRT(int32_t x){
 
 	//uint16_t delta,nmax,n2;
 	uint16_t nmax,n2;
-	uint8_t tempvar = 0;
+	//uint8_t tempvar = 0;
 	int32_t n = 0;
 	//int32_t Testvar2 = 0;
 	nmax = 4096;
@@ -340,7 +340,7 @@ uint16_t INTSQRT(int32_t x){
 	//lets brute force it
 
 	//n2 = x/2;
-	tempvar = 0;
+	//tempvar = 0;
 	n2 = 0;
 	n = 0;
 	while ( n <= nmax ) {
