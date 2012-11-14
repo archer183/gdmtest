@@ -405,7 +405,7 @@ int16_t TargetRange() {
 		Range16 = -1024;
 	}
 
-	Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
+	//Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
 //	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
 	Range16 +=1024; // shift range to 0 to 2048 for math purposes
 	// now we implement range_stern = sqrt( 1^2 + Rbow^2 -2*1*Rbow*Cos(BetaVirtual))    remember that 2 is 2, but 1 is not 1.  1 is turret cluster spacing/turret cluster spacing 

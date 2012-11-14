@@ -332,45 +332,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 #if defined(CURVES)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
-	
-	/* already tried to have only one return at the end */
-	//uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
-	//	247,246,244,242,240,238,236,233,231,	228,
-	//	225,222,219,215,212,208,205,201,197,193,
-	//	189,	185,180,176,171,167,162,157,152,147,
-	//	142,136,131,	126,120,115,109,103,98,92,
-	//	86,80,74,68,62,56,50,44,37,31,
-	//	25,19,13,6,0};/*100,100,100,100,100,99,99,99,
-		//98,98,97,96,96,95,94,93,92,91,90,89,88,87,86,
-		//84,83,82,80,79,77,76,74,72,71,69,67,65,63,62,
-		//60,58,56,53,51,49,47,45,43,41,38,36,34,31,29,
-		//27,24,22,20,17,15,12,10,7,5,2,0};*/
-	/* Preceeding defines one quarter of a cosine centered on zero, phase shift to create sine.  
-	OUTPUT IS +/- 255 range for an input range of +/-128.  -1020 ->1023 is assumed in real life 
-	and is divided by 8 to get the correct range for this array.  Larger not used to save memory.
-	OUTPUT IS SCALED BACK UP tot +/-1020 by code. errors induced by this are small enough to ignore
-	in most cases.  well worth it for not having to use 16 bit.  
-	
-	**Obsolete note follows**
-	Might consider going to unsigned 8 bit to allow array values from 0 to 200
-	for more resolution with no memory hit.  65 parts makes the symmetric math easier.  with int16 variables on the output,
-	this should not be a problem*/
-	//uint8_t acosn[58]={239,237,235,232,230,228,
-	//	225,223,221,218,216,213,211,208,206,203,
-	//	201,198,195,193,190,187,184,182,179,176,
-	//	173,170,167,164,161,158,155,152,148,145,
-	//	141,138,134,131,127,123,119,115,111,106,
-	//	102,97,92,87,81,75,68,61,53,43,30,0};/*{106,104,102,101,99,97,
-	//	95,94,92,90,88,86,85,83,81,79,77,74,
-	//	72,70,68,65,63,60,58,55,52,49,46,43,
-	//	39,35,30,24,17,0};*/
-	/* for better resolution, acos which should run from 0 to 128 has been scaled for the lookup 
-	only.  the lookup normaly would run from 35 to 0 so we scale up for better resolution for free
-	by a factor of 3.   look for this to be divided out in the code.
-	*/
-
-
-
+	int32_t temp32;
 	switch(idx) {
     case CURVE_NONE:
       return x;
@@ -393,10 +355,13 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=INTSIN(x);
 		return x;
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
-		x=INTACOS(x);
+		//x=INTACOS(x);
+		temp32=x*x;
+		x=INTSQRT(temp32);
 		return x;
 		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
-		x=INTASIN(x);
+		//x=INTASIN(x);
+			x=calibratedStick[5];
 		return x;
 	case CURVE_TMP:
 		//x=GVAR_VALUE(0,0);
@@ -407,7 +372,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//	x=-1024;
 		//}
 		x = calibratedStick[4];
-		x = BETAVfcn(x);
+		//x = BETAVfcn(x);
 		return x;
 	case CURVE_TM2:
 		
@@ -415,12 +380,12 @@ int16_t applyCurve(int16_t x, int8_t idx)
 //		x = TargetRange();
 		//x = INTSQRT(abs(x));
 		x=TargetRange();
-		if (x > 1023){
+		/*if (x > 1023){
 			x = 1024;
 		}
 		else if(x <-1023){
 			x = -1024;
-		}
+		}*/
 		return x;
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
