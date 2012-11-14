@@ -292,7 +292,7 @@ return x;
 
 int16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
-	x = x*x;
+	//x = x*x;
 	if (x < 1) {
 		x = 0;
 	}
