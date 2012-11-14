@@ -386,7 +386,7 @@ int16_t TargetRange() {
 	m = 4; //for debug set P1 for Azimuth, P2 for range
 		n = 5;
 	//Rmax = RangeMax(GVAR_VALUE(2,0));
-	Rmax = 1;  //for debug set rmax = 1
+	Rmax = 2;  //for debug set rmax = 1
 	//prevents divide by zero error...
 	if (Rmax < 1) {
 		Rmax = 1;
