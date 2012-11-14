@@ -356,8 +356,8 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		return x;
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
 		//x=INTACOS(x);
-		temp32=x*x;
-		x=INTSQRT(temp32);
+		temp32=x*1024;
+		x=INTSQRT(abs(temp32));
 		return x;
 		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
 		//x=INTASIN(x);
