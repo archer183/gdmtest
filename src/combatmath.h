@@ -297,50 +297,13 @@ int16_t INTSQRT(int32_t x){
 		x = 0;
 	}
 
-	//uint16_t delta,nmax,n2;
+
 	int16_t nmax,n2,n3;
-	//uint8_t tempvar = 0;
+
 	int32_t n = 0;
-	//int32_t Testvar2 = 0;
+
 	nmax = 4096;
-	//Testvar2 = nmax*nmax;
-	//delta = nmax/2;
-	//n=nmax/2;
-	//if (x < 1) {
-	//	n=0;
-	//}
-	//else if (x < 2) {
-	//	n=1;
-	//}
-	//else if (Testvar2 < x) {
-	//	n=nmax;
-	//}
-	//else while ( tempvar < 1){
-	//	delta = delta / 2;
-	//	Testvar = n*n;  //set the test variable.
-	//	Testvar2 = (n+1)*(n+1); //set the upper bound test variable
-	//	if (Testvar < x){
-	//		if (Testvar2 > x){
-	//		tempvar = 2;
-	//		}
-	//	}
-	//	else if (Testvar < x) {
-	//		n = n + delta;
-	//	}
-	//	else if (Testvar > x) {
-	//		n = n - delta;
-	//	}
-	//	else {
-	//		tempvar = 2;
-	//	}
-	//}
-	//if (n < 0){
-	//	n = 0;
-
-	//lets brute force it
-
-	//n2 = x/2;
-	//tempvar = 0;
+ 
 	n2 = -1;
 	n = 2048;
 	n3 = 0;
@@ -350,14 +313,6 @@ int16_t INTSQRT(int32_t x){
 	else {
 		
 	while ( n2 < 0 ) {
-		//Testvar = n;//*n;
-		//Testvar2 = (n+1);//*(n+1);
-	    /*if (n*n <= x) {
-			if ((n+1)*(n+1) > x) {
-				n2 = n;
-				n = nmax;
-				}
-		}*/
 		if (n == x/n) {
 			
 			n2 = n;
@@ -366,17 +321,11 @@ int16_t INTSQRT(int32_t x){
 			n = (n + x/n)/2;
 		}
 
-		//else if (n > nmax){
-			//n2 = nmax;
-			
-		//}
 		n3=n3+1;
 		if (n3 > 2000) {
 			n2 = 0;
 		}
-		//n = n+1;
 	}
-	//n2 = x/2;
 	}
 	return n2;
 }
