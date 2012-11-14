@@ -216,19 +216,35 @@ int16_t BETAVfcn(int16_t x) { /*this function converts from alpha(angle off cent
 							 angle for stern turrets with 0 pointed straight aft and positive WRT the LEFT hand rule, 
 							 e.g clockwise looking down on the ship vs alpha's angle positive counterclockwise looking down
 							 this means positive angles are to port, negative to starboard for a ship*/
-	if (x >1023 ){
-		x=1024;
-	}
-	else if (x < -1023){
-		x = -1024;
-	}
-	if (x > -1) {
-		x = 1024-x;
-	}
-	else {//if (x < 0){
-	 x = -x-1024;
-	}
-	return x;
+	//if (x >1023 ){
+  //	x=1024;
+	//}
+  // else if (x < -1023){
+  // 	x = -1024;
+  // }
+  // if (x > -1) {
+  // 	x = 1024-x;
+  // }
+  // else {//if (x < 0){
+  //  x = -x-1024;
+  // }
+  int16_t BetaV = 0;
+  BetaV = 1024-x;
+  if (x < 0) {
+    BetaV = BetaV-2048;
+    }
+    
+    if (BetaV < -1023) {
+    BetaV = -1024;
+    }
+    else if (BetaV > 1023) {
+    BetaV = 1024;
+    }
+    
+    
+  //new test code
+  return betaV;
+	//return x;
 }
 
 uint8_t ChannelChoice(int16_t x){
