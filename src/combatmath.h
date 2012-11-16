@@ -243,7 +243,7 @@ int16_t BETAVfcn(int16_t x) { /*this function converts from alpha(angle off cent
     
     
   //new test code
-  return betaV;
+  return BetaV;
 	//return x;
 }
 
