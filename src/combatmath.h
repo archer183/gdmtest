@@ -323,7 +323,7 @@ int16_t INTSQRT(int32_t x){
 	n2 = -1;
 	n = 2048;
 	n3 = 0;
-	if (x = 0) {
+	if (x == 0) {
 		n2 = 0;
 	} 
 	else {
