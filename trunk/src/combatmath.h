@@ -403,11 +403,12 @@ int16_t TargetRange(int16_t Range16) {
 	
 	//Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
 	
-	Range32 = Range16*Range16;
+	//***Range32 = Range16*Range16;
+	//***Range32a=Range16;
 
 	//Range32 = Range32 + Range32a + 2048*2048/Rmax/Rmax;  // next step is the square root.  still need to implement
 	
-	Range32 = Range32/Range16;
+	//***Range32 = Range32/Range32a;
 	
 	
 	//Range32 = INTSQRT(Range32);
@@ -433,7 +434,9 @@ int16_t TargetRange(int16_t Range16) {
 	//	Range32 = -1024;
 	//}
 
-	x = Range16-1024;
+	Range32 = Range16;
+
+	x = Range32-1024;
 
 	return x;
 
