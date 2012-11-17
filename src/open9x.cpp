@@ -357,7 +357,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
 		//x=INTACOS(x);
 		
-		x=INTSQRT(x*100);
+		x=INTSQRT(x);
 		if (x > 1022) {
 			x = 1022;
 		}
