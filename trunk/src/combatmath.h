@@ -308,7 +308,7 @@ return x;
 
 int16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
-	//x = x*x;
+	x = x*x;
 	if (x < 1) {
 		x = 0;
 	}
@@ -377,17 +377,17 @@ int16_t TargetRange(int16_t Range16) {
 	
 	RmaxStern = (2048*(Rmax + 1))/Rmax;
 
-	Az16=calibratedStick[m];  //-1 reverses pot to match physical turret
+	////Az16=calibratedStick[m];  //-1 reverses pot to match physical turret
 	//Range16=calibratedStick[n];
 	//Following conditional prevents values too large from being used
-	if (Range16 > 1024) {
-		Range16 = 1024;
-	}
-	else if (Range16 < -1024) {
-		Range16 = -1024;
-	}
+		//if (Range16 > 1024) {
+		//	Range16 = 1024;
+		//}
+		//else if (Range16 < -1024) {
+		//	Range16 = -1024;
+		//}
 
-	Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
+	////Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
 //	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
 	Range16 = Range16 + 1024; // shift range to 0 to 2048 for math purposes
 	// now we implement range_stern = sqrt( 1^2 + Rbow^2 -2*1*Rbow*Cos(BetaVirtual))    remember that 2 is 2, but 1 is not 1.  1 is turret cluster spacing/turret cluster spacing 
@@ -433,7 +433,7 @@ int16_t TargetRange(int16_t Range16) {
 	//	Range32 = -1024;
 	//}
 
-	x = Range32;
+	x = Range32 -1024;
 
 	return x;
 
