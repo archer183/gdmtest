@@ -433,7 +433,7 @@ int16_t TargetRange(int16_t Range16) {
 	//	Range32 = -1024;
 	//}
 
-	x = Range32-1024;
+	x = Range16-1024;
 
 	return x;
 
