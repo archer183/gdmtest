@@ -345,7 +345,7 @@ int16_t INTSQRT(int32_t x){
 	}
 	return n2;
 }
-int16_t TargetRange() {
+int16_t TargetRange(int16_t Range16) {
 	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables to select sources
 	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
 
@@ -360,7 +360,7 @@ int16_t TargetRange() {
 	*/
 
 	int32_t Range32,Range32a;
-	int16_t Range16,Az16,RmaxStern;
+	int16_t Az16,RmaxStern;
 	uint8_t m,n,Rmax;//,Rmult;   // m = Az stick n = range stick, 
 
 	//m = ChannelChoice(GVAR_VALUE(0,0));
@@ -368,7 +368,7 @@ int16_t TargetRange() {
 	m = 4; //for debug set P1 for Azimuth, P2 for range
 		n = 5;
 	//Rmax = RangeMax(GVAR_VALUE(2,0));
-	Rmax = 2;  //for debug set rmax = 1
+	Rmax = 2;  //for debug 
 	//prevents divide by zero error...
 	if (Rmax < 1) {
 		Rmax = 1;
@@ -378,7 +378,7 @@ int16_t TargetRange() {
 	RmaxStern = (2048*(Rmax + 1))/Rmax;
 
 	Az16=calibratedStick[m];  //-1 reverses pot to match physical turret
-	Range16=calibratedStick[n];
+	//Range16=calibratedStick[n];
 	//Following conditional prevents values too large from being used
 	if (Range16 > 1024) {
 		Range16 = 1024;
@@ -415,9 +415,11 @@ int16_t TargetRange() {
 	if (Range32 > RmaxStern){
 		Range32 = RmaxStern;  //this should be the largest possible value given that the inputs are shifted to 0-2048, so max of sqrt(2048^2+2048^2-2*2048*2048*cos(beta)) = 4096
 	}
+	else if (Range32 < 0) {
+		Range32 = 0;
+	}
 
-	//remember, everything is referenced currently to 0 to 2048 being full range on the primary turret.   we must now divide by Rmult to get 
-	//the range variable for the calculated back in range.  E.G. for 
+	//remember, everything is referenced currently to 0 to 2048 being full range on the primary turret.   
 	Range32 = (Range32*Rmax)/(Rmax+1); //this should result in a proper scaling....
 	Range32 = Range32 - 1024; //now in +/-1024 land
 	if (Range32 > 1023){
