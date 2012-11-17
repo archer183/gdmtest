@@ -355,9 +355,9 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=INTSIN(x);
 		return x;
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
-		//x=INTACOS(x);
+		x=INTACOS(x);
 		
-		x=INTSQRT(x);
+		/*x=INTSQRT(x);
 		if (x > 1022) {
 			x = 1022;
 		}
@@ -366,11 +366,11 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		}
 		else {
 			x = x;
-		}
+		}*/
 		return x;
 		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1000 It is obvious if you don't do that.
-		//x=INTASIN(x);
-			x=calibratedStick[4];
+		x=INTASIN(x);
+		/*	x=calibratedStick[4];
 			x = BETAVfcn(x);
 			if (x > 1022) {
 			x = 1022;
@@ -380,7 +380,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		}
 		else {
 			x = x;
-		}
+		}*/
 		return x;
 	case CURVE_TMP:
 		//x=GVAR_VALUE(0,0);
@@ -391,21 +391,21 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//	x=-1024;
 		//}
 		x = calibratedStick[4];
-		//x = BETAVfcn(x);
+		x = BETAVfcn(x);
 		return x;
 	case CURVE_TM2:
 		
 //		x=calibratedStick[4];
 //		x = TargetRange();
 		//x = INTSQRT(abs(x));
-		//x=TargetRange();
+		x=TargetRange(x);
 		/*if (x > 1023){
 			x = 1024;
 		}
 		else if(x <-1023){
 			x = -1024;
 		}*/
-		x = 1020;
+		//x = 1020;
 		return x;
     case CURVE_ABS_F: //f|abs(f)
 		return x > 0 ? RESX : -RESX;
