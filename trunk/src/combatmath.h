@@ -435,7 +435,8 @@ int16_t TargetRange(int16_t Range16) {
 	//}
 
 	Range32 = Range16;
-
+	Range32 = Range32*Range32;
+	Range32 = Range32/Range;
 	x = Range32-1024;
 
 	return x;
