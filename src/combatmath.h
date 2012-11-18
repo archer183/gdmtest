@@ -308,7 +308,7 @@ return x;
 
 int16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
-	x = x*x;
+	//x = x*x;
 	if (x < 1) {
 		x = 0;
 	}
@@ -403,7 +403,7 @@ int16_t TargetRange(int16_t Range16) {
 	
 	//Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
 	
-	//***Range32 = Range16*Range16;
+	Range32 = (int32_t)Range16*(int32_t)Range16;
 	//***Range32a=Range16;
 
 	//Range32 = Range32 + Range32a + 2048*2048/Rmax/Rmax;  // next step is the square root.  still need to implement
@@ -434,9 +434,9 @@ int16_t TargetRange(int16_t Range16) {
 	//	Range32 = -1024;
 	//}
 
-	Range32 = Range16;
-	Range32 = Range32*Range32;
-	Range32 = Range32/Range;
+	//Range32 = Range16;
+	//Range32 = Range32*Range32;
+	Range32 = Range32/((int32_t)Range16);
 	x = Range32-1024;
 
 	return x;
