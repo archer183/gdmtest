@@ -487,7 +487,7 @@ int16_t TargetRange2(){
 
 	R2Return = (int16_t)R2;
 
-	return R2Return;
+	return BetaV;
 
 
 
