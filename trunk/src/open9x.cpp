@@ -398,7 +398,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 //		x=calibratedStick[4];
 //		x = TargetRange();
 		//x = INTSQRT(abs(x));
-		x=TargetRange(x);
+		x=TargetRange2();
 		/*if (x > 1023){
 			x = 1024;
 		}

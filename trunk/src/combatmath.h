@@ -359,7 +359,7 @@ int16_t TargetRange(int16_t Range16) {
 	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
 	*/
 
-	int32_t Range32,Range32a;
+	int32_t Range32;
 	int16_t Az16,RmaxStern,x;
 	uint8_t m,n,Rmax;//,Rmult;   // m = Az stick n = range stick, 
 
@@ -440,6 +440,57 @@ int16_t TargetRange(int16_t Range16) {
 	x = Range32-1024;
 
 	return x;
+
+
+}
+
+int16_t TargetRange2(){
+
+	int8_t R1max,RangeIndex,AzIndex;
+	int16_t R1,Alpha,BetaV,R2Return;
+	int32_t R2;
+	//the following three should be set via global variables
+	RangeIndex = 5;
+	AzIndex = 4;
+	R1max = 2;
+
+	R1 = calibratedStick[RangeIndex];
+	Alpha = calibratedStick[AzIndex];
+
+	BetaV = BETAVfcn(Alpha);
+	//shift from +/-1024 to 0->2048
+	R1 = R1 + 1024;
+	//  -2*R1*L*cos(betav)  properly scaled.  
+	//cos returns +/-1020. -4 = -2*2048/1020
+	R2 = ((-4)*INTCOS(BetaV)*((int32_t)R1))/((int32_t)R1max);
+	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
+	R2 = (int32_t)R1*(int32_t)R1+R2+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	// R2 = sqrt of previous
+	R2 = INTSQRT(R2);
+	// this should output 0 to 2048*(R1max+1)/R1max
+	//now for the proper scaling
+
+	R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
+
+	//scale back to +/-1024
+
+	R2 = R2 - 1024;
+
+	//now for tail end error checking
+
+	if (R2 < -1023) {
+		R2 = -1024;
+	}
+	else if (R2 > 1023) {
+		R2 = 1024;
+	}
+
+	R2Return = (int16_t)R2;
+
+	return R2return;
+
+
+
 
 
 }
