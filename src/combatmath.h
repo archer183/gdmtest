@@ -447,7 +447,7 @@ int16_t TargetRange(int16_t Range16) {
 int16_t TargetRange2(){
 
 	int8_t R1max,RangeIndex,AzIndex;
-	int16_t R1,Alpha,BetaV,R2Return;
+	int16_t R1,Alpha,BetaV,Returnvar;
 	int32_t R2;
 	//the following three should be set via global variables
 	RangeIndex = 5;
@@ -478,16 +478,19 @@ int16_t TargetRange2(){
 
 	//now for tail end error checking
 
-	if (R2 < -1023) {
-		R2 = -1024;
+	//Returnvar = (int16_t)R2;
+	Returnvar = R1;
+
+	if (Returnvar < -1023) {
+		Returnvar = -1024;
 	}
-	else if (R2 > 1023) {
-		R2 = 1024;
+	else if (Returnvar > 1023) {
+		Returnvar = 1024;
 	}
 
-	R2Return = (int16_t)R2;
+	
 
-	return BetaV;
+	return Returnvar;
 
 
 
