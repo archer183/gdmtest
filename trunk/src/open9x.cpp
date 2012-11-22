@@ -381,7 +381,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		else {
 			x = x;
 		}*/
-			x = TargetRange4();
+			x = TargetRange2();
 		return x;
 	case CURVE_TMP:
 		//x=GVAR_VALUE(0,0);
@@ -400,7 +400,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 //		x=calibratedStick[4];
 //		x = TargetRange();
 		//x = INTSQRT(abs(x));
-		x=TargetRange2();
+		x=TargetRange4();
 		/*if (x > 1023){
 			x = 1024;
 		}

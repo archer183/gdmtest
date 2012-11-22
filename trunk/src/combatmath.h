@@ -466,22 +466,24 @@ int16_t TargetRange2(){
 	//cos returns +/-1020. -4 = -2*2048/1020
 	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (int32_t)R1*(int32_t)R1+R2+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	R2 = (int32_t)R1*(int32_t)R1+R2;//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
+	R2 = R2/2;
+
 	R2 = INTSQRT(R2);
 	// this should output 0 to 2048*(R1max+1)/R1max
 	//now for the proper scaling
 
-	R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
+	////R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
 
 	//scale back to +/-1024
-
+	
 	R2 = R2 - 1024;
 
 	//now for tail end error checking
 
 	//Returnvar = (int16_t)R2;
-	Returnvar = R1;
+	Returnvar = R2;
 
 	if (Returnvar < -1023) {
 		Returnvar = -1024;
@@ -536,7 +538,7 @@ int16_t TargetRange3(){
 	//now for tail end error checking
 
 	//Returnvar = (int16_t)R2;
-	Returnvar = R2t;
+	Returnvar = R2;
 
 	if (Returnvar < -1023) {
 		Returnvar = -1024;
@@ -576,9 +578,9 @@ int16_t TargetRange4(){
 	//cos returns +/-1020. -4 = -2*2048/1020
 	R2 = ((-4)*R2t*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	////R2 = (int32_t)R1*(int32_t)R1+R2+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	R2 = (int32_t)R1*(int32_t)R1;//+R2+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
-	////R2 = INTSQRT(R2);
+	R2 = INTSQRT(R2);
 	// this should output 0 to 2048*(R1max+1)/R1max
 	//now for the proper scaling
 
@@ -591,7 +593,7 @@ int16_t TargetRange4(){
 	//now for tail end error checking
 
 	//Returnvar = (int16_t)R2;
-	Returnvar = R2/4143;
+	Returnvar = R2-1024;
 
 	if (Returnvar < -1023) {
 		Returnvar = -1024;
