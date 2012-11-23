@@ -679,23 +679,23 @@ int16_t TargetRange4(){
 
 	int8_t R1max,RangeIndex,AzIndex;
 	int16_t R1,Alpha,BetaV,Returnvar;
-	int32_t R2,R1l;
+	int32_t R2;
 	//the following three should be set via global variables
 	RangeIndex = 5;
 	AzIndex = 4;
 	R1max = 2;
 
 	R1 = calibratedStick[RangeIndex];
-	Alpha = calibratedStick[AzIndex];
-
+	//Alpha = calibratedStick[AzIndex];
+	Alpha = 0;
 	BetaV = BETAVfcn(Alpha);
 	//shift from +/-1024 to 0->2048
 	R1 = R1 + 1024;
-	R1l=R1;
-	R2 = INTCOS(BetaV); 
+	
+	R2 = 1020;//INTCOS(BetaV); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
+	R2 = ((-4)*(int32_t)R2*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
 	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
 	R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
