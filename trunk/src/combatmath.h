@@ -698,6 +698,7 @@ int16_t TargetRange4(){
 	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
 	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
+	R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
 		
 	//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
@@ -708,7 +709,7 @@ int16_t TargetRange4(){
 	// this should output 0 to 2048*(R1max+1)/R1max
 	//now for the proper scaling
 
-	////R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
+	R2 = ((int32_t)R2*(int32_t)R1max)/((int32_t)(R1max+1));
 
 	//scale back to +/-1024
 	
