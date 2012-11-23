@@ -692,7 +692,7 @@ int16_t TargetRange4(){
 	//shift from +/-1024 to 0->2048
 	R1 = R1 + 1024;
 	R1l=R1;
-	R2 = INTCOS(BetaV);
+	R2 = INTCOS(BetaV); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
 	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
