@@ -466,7 +466,9 @@ int16_t TargetRange2(){
 	//cos returns +/-1020. -4 = -2*2048/1020
 	R2 = ((-4)*R2*(R1l))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (R1l*R1l + 2250000);//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	R2 = (int32_t)R1*R1;
+		
+	R2 = R2	+ 2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
 	//R2 = R2/int32_t(2);
 
@@ -612,4 +614,41 @@ int16_t TargetRange4(){
 
 
 
+}
+int16_t TR2(){
+
+	int8_t R1max,RangeIndex,AzIndex;
+	int16_t R1,Alpha,BetaV,Returnvar;
+	int32_t R2;
+	RangeIndex = 5;
+	AzIndex = 4;
+	R1max = 2;
+
+	R1 = calibratedStick[RangeIndex];
+	Alpha = calibratedStick[AzIndex];
+
+	BetaV = BETAVfcn(Alpha);
+	R1 = R1 + 1024;
+	R2 = INTCOS(BetaV);
+	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
+
+	R2 = (int32_t)R1*R1 + 2250000;
+
+
+	R2 = INTSQRT(R2);
+
+	R2 = R2 - 1024;
+
+	Returnvar = R2;
+
+	if (Returnvar < -1023) {
+		Returnvar = -1024;
+	}
+	else if (Returnvar > 1023) {
+		Returnvar = 1024;
+	}
+
+	
+
+	return Returnvar;
 }
