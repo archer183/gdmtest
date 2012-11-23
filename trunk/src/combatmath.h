@@ -304,7 +304,20 @@ else {
 
 return x;
 }
+uint16_t isqrt32b(uint32_t n)
+{
+    uint16_t c = 0x8000;
+    uint16_t g = 0x8000;
 
+    for(;;) {
+        if((uint32_t)g*g > n)
+            g ^= c;
+        c >>= 1;
+        if(c == 0)
+            return g;
+        g |= c;
+    }
+}
 
 int16_t INTSQRT(int32_t x){
 	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
@@ -468,7 +481,7 @@ int16_t TargetRange2(){
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
 	R2 = (int32_t)R1*R1;
 		
-	R2 = R2	+ 2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
 	//R2 = R2/int32_t(2);
 
