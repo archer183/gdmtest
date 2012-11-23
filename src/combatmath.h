@@ -477,11 +477,11 @@ int16_t TargetRange2(){
 	R2 = INTCOS(BetaV);
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*R2*(R1l))/((int32_t)R1max);
+	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
 	R2 = (int32_t)R1*(int32_t)R1;
 		
-	R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	R2 = R2	+ ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
 	//R2 = R2/int32_t(2);
 
@@ -695,9 +695,9 @@ int16_t TargetRange4(){
 	R2 = INTCOS(BetaV);
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*R2*(R1l))/((int32_t)R1max);
+	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (int32_t)R1*(int32_t)R1;
+	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
 		
 	//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
 	// R2 = sqrt of previous
