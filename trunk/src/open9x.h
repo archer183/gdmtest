@@ -500,7 +500,7 @@ enum BaseCurves {
   CURVE_SIN,
   CURVE_ACOS,
   CURVE_ASIN,
-  CURVE_TMP,
+  CURVE_RNG,
   CURVE_TM2,
   CURVE_BASE
 };
