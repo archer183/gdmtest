@@ -160,7 +160,7 @@ DSM2 = NO
 IRPROTOS = NO
 
 # TRANSLATIONS
-# Values = cz, de, en, fr, it, se, es, pt
+# Values = cz, de, en, fr, it, se, es 
 TRANSLATIONS = EN
 
 # TTS
@@ -197,6 +197,10 @@ CURVES = YES
 # Customizable Curves
 # Values = YES, NO
 XCURVES = YES
+
+#TRIG CURVES
+# VALUES = YES, NO
+#TRIGCURVES = YES
 
 # Global Vars
 # Values = YES, NO
@@ -442,7 +446,7 @@ RUN_FROM_FLASH = 1
 ifeq ($(PCB), X9D)
   # X9D, so ...
   OPT = 2
-  CPPDEFS += -DPCBX9D -DPCBSKY9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1 -DLCD212
+  CPPDEFS += -DPCBX9D -DPCBSKY9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1
   EXTRAINCDIRS += sky9x CoOS/kernel CoOS/portable
   BOARDSRC = board_sky9x.cpp 
   SRC += sky9x/core_cm3.c sky9x/board_lowlevel.c sky9x/crt.c sky9x/vectors_sam3s.c
@@ -520,8 +524,8 @@ ifeq ($(PCB), GRUVIN9X)
 
   ifeq ($(SDCARD), YES)
     CPPDEFS += -DRTCLOCK
-    CPPSRC += rtc.cpp gruvin9x/rtc_driver.cpp 
-    EXTRABOARDSRC += FatFs/ff.c FatFs/fattime.c FatFs/option/ccsbcs.c gruvin9x/diskio.cpp
+    CPPSRC += rtc.cpp gruvin9x/rtc_driver.cpp gruvin9x/diskio.cpp
+    EXTRABOARDSRC += FatFs/ff.c FatFs/fattime.c FatFs/option/ccsbcs.c 
   endif
     
   ifeq ($(VOICE), YES)
@@ -537,7 +541,7 @@ endif
 ifeq ($(PCB), STD128)
   # STD PCB with Atmega 128, so ...
   OPT = 2
-  CPPDEFS += -DPCBSTD -DM128 -DEEPROM_VARIANT=0x8000
+  CPPDEFS += -DPCBSTD -DM128 -DEEPROM_VARIANT=0
   EXTRAINCDIRS += stock
   BOARDSRC = board_stock.cpp
   EEPROMSRC = eeprom_avr.cpp
@@ -750,12 +754,6 @@ stock-stamp:
 	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock.txt
 	@cat stamp-open9x-stock.txt
 
-stock128-stamp:
-	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock128.txt
-	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock28.txt
-	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock128.txt
-	@cat stamp-open9x-stock128.txt
-
 v4-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-v4.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-v4.txt
@@ -851,7 +849,7 @@ FOXLIB=-L/usr/local/lib \
        -Wl,-rpath,$(FOXPATH)/src/.libs
 
 simu: stamp_header $(BOARDSRC) $(CPPSRC) Makefile simu.cpp simpgmspace.cpp *.h *.lbm eeprom.bin
-	g++ $(CPPFLAGS) simu.cpp $(BOARDSRC) $(CPPSRC) simpgmspace.cpp -MD -DSIMU -O1 -o simu $(FOXINC) $(FOXLIB) -pthread
+	g++ $(CPPFLAGS) simu.cpp $(BOARDSRC) $(CPPSRC) simpgmspace.cpp $(ARCH) -MD -DSIMU -o simu $(FOXINC) $(FOXLIB) -pthread
 
 eeprom.bin:
 	dd if=/dev/zero of=$@ bs=1 count=2048
@@ -1029,5 +1027,5 @@ gtest_main.a : gtest-all.o gtest_main.o
 # gtest_main.a, depending on whether it defines its own main()
 # function.
 
-gtests: $(BOARDSRC) $(CPPSRC) gtests.cpp simpgmspace.cpp *.h gtest_main.a
-	g++ -std=gnu++0x $(CPPFLAGS) $(BOARDSRC) $(CPPSRC) gtests.cpp simpgmspace.cpp -I$(GTEST_DIR) -o gtests -lpthread -MD -DSIMU gtest_main.a 
+gtests: $(CPPSRC) gtests.cpp simpgmspace.cpp *.h gtest_main.a
+	g++ $(CPPSRC) gtests.cpp simpgmspace.cpp $(CPPFLAGS) -I$(GTEST_DIR) $(ARCH) -o gtests -lpthread -MD -DSIMU gtest_main.a 
