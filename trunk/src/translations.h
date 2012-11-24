@@ -52,6 +52,9 @@
 #elif defined(TRANSLATIONS_ES)
 #include "translations/es.h"
 #define LEN_SPECIAL_CHARS 0
+#elif defined(TRANSLATIONS_PT)
+#include "translations/pt.h"
+#define LEN_SPECIAL_CHARS 0
 #else
 #include "translations/en.h"
 #define LEN_SPECIAL_CHARS 0
@@ -320,7 +323,7 @@ extern const pm_char STR_TOT[];
 extern const pm_char STR_TMR1LATMAXUS[];
 extern const pm_char STR_TMR1LATMINUS[];
 extern const pm_char STR_TMR1JITTERUS[];
-extern const pm_char STR_TMAINMAXMS[];
+extern const pm_char STR_TMIXMAXMS[];
 extern const pm_char STR_T10MSUS[];
 extern const pm_char STR_FREESTACKMINB[];
 extern const pm_char STR_MENUTORESET[];
@@ -464,6 +467,8 @@ extern const pm_char STR_SD_SIZE[];
 extern const pm_char STR_CURVE_TYPE[];
 extern const pm_char STR_GLOBAL_VARS[];
 extern const pm_char STR_OWN[];
+extern const pm_char STR_ROTARY_ENCODER[];
+extern const pm_char STR_DATE[];
 
 #if defined(VOICE)
 PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);

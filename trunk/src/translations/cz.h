@@ -9,7 +9,7 @@
 #define TR_NCHANNELS           "\0014CH\0016CH\0018CH10CH12CH14CH16CH"
 
 #define LEN_VBEEPMODE          "\005"
-#define TR_VBEEPMODE           "Tich\212""Alarm""BezKl""V\207e  "
+#define TR_VBEEPMODE           "Tich\212""Alarm""BezKl""V\207e\0"
 
 #define LEN_VBEEPLEN           "\005"
 #define TR_VBEEPLEN            "O====""=O===""==O==""===O=""====O"
@@ -36,7 +36,7 @@
 #define TR_VLCD                "NormalOptrex"
 
 #define LEN_VTRIMINC           "\007"
-#define TR_VTRIMINC            "Expo   ""ExJemn\212""Jemn\212  ""St\206edn\204""Hrub\212  "
+#define TR_VTRIMINC            "Expo\0  ""ExJemn\212""Jemn\212\0 ""St\206edn\204""Hrub\212\0 "
 
 #define LEN_RETA123            "\001"
 #if defined(PCBGRUVIN9X)
@@ -294,7 +294,7 @@
 #define TR_BAR                 "Ukazatel"
 #define TR_ALARM               INDENT"Alarm"
 #define TR_USRDATA             "U\217ivData"
-#define TR_BLADES              INDENT"ListyVr"
+#define TR_BLADES              INDENT"ListyVrt"
 #define TR_SCREEN              "Panel "
 #define TR_SOUND_LABEL         "Zvuk"
 #define TR_LENGTH              INDENT"D\202lka"
@@ -342,9 +342,9 @@
 #define TR_TMR1LATMINUS        "Tmr1Lat min\006us"
 #define TR_TMR1JITTERUS        "Tmr1 Jitter\006us"
 #if defined(PCBSKY9X)
-#define TR_TMAINMAXMS          "Tmain max\010ms"
+#define TR_TMIXMAXMS           "Tmix max\012ms"
 #else
-#define TR_TMAINMAXMS          "Tmain max\012ms"
+#define TR_TMIXMAXMS           "Tmix max\014ms"
 #endif
 #define TR_T10MSUS             "T10ms\016us"
 #define TR_FREESTACKMINB       "Free Stack\010b"
@@ -376,7 +376,7 @@
 #define TR_MENUFLIGHTPHASES    "LETOV\220 F\213ZE"
 #define TR_MENUHELISETUP       "HELI"
 #define TR_MENUDREXPO          "DV/EXPO"
-#define TR_MENULIMITS          "SERVA"
+#define TR_MENULIMITS          "LIMITY"
 #define TR_MENUCURVES          "K\215IVKY"
 #define TR_MENUCURVE           "\003CV"
 #define TR_MENUCUSTOMSWITCH    "VLASTN\214 SP\214NA\201"
@@ -422,8 +422,8 @@
 #define TR_CPU_MAH             "Spot\206eba"
 #define TR_COPROC              "CoProc."
 #define TR_COPROC_TEMP         "Tepl. MB \016>"
-#define TR_CAPAWARNING         "Alarm Kapacity"
-#define TR_TEMPWARNING         "Alarm Teploty"
+#define TR_CAPAWARNING         INDENT "Kapacita"
+#define TR_TEMPWARNING         INDENT "Teplota"
 #define TR_FUNC                "Fce."
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"
@@ -454,3 +454,5 @@
 #define TR_CURVE_TYPE          TR_SD_TYPE
 #define TR_GLOBAL_VARS         "Glob\200ln\204 prom\203nn\202"
 #define TR_OWN                 "Sv\200"
+#define TR_DATE                "Date"
+#define TR_ROTARY_ENCODER      "R.Encs"

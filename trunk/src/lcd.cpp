@@ -288,12 +288,12 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, int16_t val, LcdFlags flags, uint8_t 
   x -= fw + 1;
 
   for (uint8_t i=1; i<=len; i++) {
-    div_t qr = div(val, 10);
+    div_t qr = div((uint16_t)val, 10);
     char c = qr.rem + '0';
     uint8_t f = flags;
     if (dblsize) {
       if (c=='1' && i==len && xn>x+10) { x+=2; f|=CONDENSED; }
-      if (val >= 1000) { x+=FWNUM; f&=~DBLSIZE; }
+      if ((uint16_t)val >= 1000) { x+=FWNUM; f&=~DBLSIZE; }
     }
     lcd_putcAtt(x, y, c, f);
     if (mode==i) {
@@ -315,7 +315,7 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, int16_t val, LcdFlags flags, uint8_t 
         x--;
       }
     }
-    if (dblsize && val >= 1000 && val < 10000) x-=2;
+    if (dblsize && (uint16_t)val >= 1000 && (uint16_t)val < 10000) x-=2;
     val = qr.quot;
     x-=fw;
   }
@@ -460,6 +460,15 @@ void lcd_filled_rect(xcoord_t x, int8_t y, xcoord_t w, uint8_t h, uint8_t pat, u
   for (int8_t i=y; i<y+h; i++) {
     if (i>=0 && i<64) lcd_hlineStip(x, i, w, pat, att);
     pat = (pat >> 1) + ((pat & 1) << 7);
+  }
+}
+
+void lcd_invert_line(int8_t y)
+{
+  uint8_t *p  = &displayBuf[y * DISPLAY_W];
+  for (xcoord_t x=0; x<DISPLAY_W; x++) {
+    ASSERT_IN_DISPLAY(p);
+    *p++ ^= 0xff;
   }
 }
 

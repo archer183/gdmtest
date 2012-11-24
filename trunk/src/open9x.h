@@ -138,12 +138,6 @@
 #define IF_GVARS(x)
 #endif
 
-#if defined(PCBSTD)
-#define WDT_RESET_STOCK() wdt_reset()
-#else
-#define WDT_RESET_STOCK()
-#endif
-
 /*
 #define HELI_VARIANT   0x0004
 #define VOICE_VARIANT  0x0008
@@ -157,6 +151,8 @@
 #include "board_sky9x.h"
 #elif defined(PCBGRUVIN9X)
 #include "board_gruvin9x.h"
+#else
+#include "board_stock.h"
 #endif
 
 #if defined(SIMU)
@@ -400,12 +396,6 @@ extern uint8_t s_bind_allowed;
 
 #endif // defined (PCBGRUVIN9X)
 
-#if defined(PCBSKY9X)
-#define SLAVE_MODE (check_soft_power() == e_power_trainer)
-#else
-#define SLAVE_MODE (PING & (1<<INP_G_RF_POW))
-#endif
-
 extern const pm_uint8_t bchout_ar[];
 extern const pm_uint8_t modn12x3[];
 
@@ -423,37 +413,55 @@ extern uint8_t stickMode;
 extern uint8_t channel_order(uint8_t x);
 
 enum EnumKeys {
-  KEY_MENU ,
-  KEY_EXIT ,
-  KEY_DOWN ,
-  KEY_UP  ,
-  KEY_RIGHT ,
-  KEY_LEFT ,
-  TRM_LH_DWN  ,
-  TRM_LH_UP   ,
-  TRM_LV_DWN  ,
-  TRM_LV_UP   ,
-  TRM_RV_DWN  ,
-  TRM_RV_UP   ,
-  TRM_RH_DWN  ,
-  TRM_RH_UP   ,
+  KEY_MENU,
+  KEY_EXIT,
+#if defined(PCBX9D)
+  KEY_ENTER,
+  KEY_PAGE,
+  KEY_PLUS,
+  KEY_MINUS,
+#else
+  KEY_DOWN,
+  KEY_UP,
+  KEY_RIGHT,
+  KEY_LEFT,
+#endif
+  TRM_LH_DWN,
+  TRM_LH_UP,
+  TRM_LV_DWN,
+  TRM_LV_UP,
+  TRM_RV_DWN,
+  TRM_RV_UP,
+  TRM_RH_DWN,
+  TRM_RH_UP,
 #if defined(ROTARY_ENCODERS)
   BTN_REa,
   BTN_REb,
 #endif
-  //SW_NC     ,
-  //SW_ON     ,
-  SW_ThrCt  ,
-  SW_RuddDR ,
-  SW_ElevDR ,
-  SW_ID0    ,
-  SW_ID1    ,
-  SW_ID2    ,
-  SW_AileDR ,
-  SW_Gear   ,
+  //SW_NC,
+  //SW_ON,
+  SW_ThrCt,
+  SW_RuddDR,
+  SW_ElevDR,
+  SW_ID0,
+  SW_ID1,
+  SW_ID2,
+  SW_AileDR,
+  SW_Gear,
   SW_Trainer,
   NUM_KEYS = SW_ThrCt
 };
+
+#if defined(PCBX9D)
+#define KEY_RIGHT  KEY_PLUS
+#define KEY_UP     KEY_PLUS
+#define KEY_LEFT   KEY_MINUS
+#define KEY_DOWN   KEY_MINUS
+#else
+#define KEY_ENTER  KEY_MENU
+#define KEY_PLUS   KEY_RIGHT
+#define KEY_MINUS  KEY_LEFT
+#endif
 
 class Key
 {
@@ -474,7 +482,7 @@ class Key
 public:
   void input(bool val, EnumKeys enuk);
   bool state()       { return m_vals > 0; }
-  void pauseEvents() { m_state = KSTATE_PAUSE;  m_cnt = 0;}
+  void pauseEvents() { m_state = KSTATE_PAUSE; m_cnt = 0; }
   void killEvents()  { m_state = KSTATE_KILLED; }
 };
 
@@ -488,12 +496,6 @@ enum BaseCurves {
   CURVE_F_GT0,
   CURVE_F_LT0,
   CURVE_ABS_F,
-  CURVE_COS,
-  CURVE_SIN,
-  CURVE_ACOS,
-  CURVE_ASIN,
-  CURVE_TMP,
-  CURVE_TM2,
   CURVE_BASE
 };
 
@@ -632,10 +634,10 @@ extern char idx2char(int8_t idx);
 void clearKeyEvents();
 void pauseEvents(uint8_t enuk);
 void killEvents(uint8_t enuk);
-#if defined(PCBSTD)
-uint8_t getEvent();
-#else
+#if defined(PCBSKY9X)
 uint8_t getEvent(bool trim);
+#else
+uint8_t getEvent();
 #endif
 void putEvent(uint8_t evt);
 
@@ -685,8 +687,6 @@ enum PerOutMode {
   e_perout_mode_noinput = e_perout_mode_notrainer+e_perout_mode_notrims+e_perout_mode_nosticks
 };
 
-extern uint8_t s_perout_mode;
-
 #ifndef FORCEINLINE
 #define FORCEINLINE inline __attribute__ ((always_inline))
 #endif
@@ -700,8 +700,8 @@ extern uint8_t s_perout_mode;
 
 extern uint8_t s_perout_flight_phase;
 
-void    perOut(uint8_t tick10ms);
-void    perMain();
+void perOut(uint8_t mode, uint8_t tick10ms);
+void perMain();
 NOINLINE void per10ms();
 
 int16_t getValue(uint8_t i);
@@ -775,10 +775,8 @@ void resetAll();
 extern uint8_t unexpectedShutdown;
 extern uint8_t g_tmr1Latency_max;
 extern uint8_t g_tmr1Latency_min;
-extern uint16_t g_timeMainMax;
-#if defined(PCBGRUVIN9X)
-extern uint8_t  g_timeMainLast;
-#endif
+extern uint16_t maxMixerDuration;
+extern uint16_t lastMixerDuration;
 
 #if defined(THRTRACE)
 #define MAXTRACE 120
@@ -917,20 +915,6 @@ inline void pauseMixerCalculations()
 inline void resumeMixerCalculations()
 {
   CoLeaveMutexSection(mixerMutex);
-}
-#elif defined(PCBGRUVIN9X)
-inline void pauseMixerCalculations()
-{
-  cli();
-  TIMSK5 &= ~(1<<OCIE5A);
-  sei();
-}
-
-inline void resumeMixerCalculations()
-{
-  cli();
-  TIMSK5 |= (1<<OCIE5A);
-  sei();
 }
 #else
 #define pauseMixerCalculations()

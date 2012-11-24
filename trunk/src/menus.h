@@ -47,7 +47,7 @@ typedef void (*MenuFuncP)(uint8_t event);
 
 void displayScreenIndex(uint8_t index, uint8_t count, uint8_t attr);
 
-#if defined(PCBX9D)
+#if defined(LCD212)
 #define MENUS_SCROLLBAR_WIDTH 2
 #else
 #define MENUS_SCROLLBAR_WIDTH 0
@@ -136,8 +136,12 @@ int8_t checkIncDecGen(uint8_t event, int8_t i_val, int8_t i_min, int8_t i_max);
 #define CHECK_INCDEC_GENVAR(event, var, min, max) \
   var = checkIncDecGen(event,var,min,max)
 
-#if defined(ROTARY_ENCODERS)
+#if defined(PCBX9D)
+void check_rotary_encoder(uint8_t & event);
+#define CHECK_ROTARY_ENCODER(event) check_rotary_encoder(event)
+#elif defined(ROTARY_ENCODERS)
 void check_rotary_encoder();
+#define CHECK_ROTARY_ENCODER(event) check_rotary_encoder()
 #endif
 
 // Menus related stuff ...
@@ -152,10 +156,15 @@ void check_rotary_encoder();
 extern maxrow_t m_posVert;
 extern uint8_t m_posHorz;
 
-inline void minit(){m_posVert=m_posHorz=0;}
-bool check(uint8_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, const pm_uint8_t *subTab, uint8_t subTabMax, maxrow_t maxrow);
-bool check_simple(uint8_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, maxrow_t maxrow);
-bool check_submenu_simple(uint8_t event, uint8_t maxrow);
+#if defined(PCBX9D)
+typedef uint8_t & check_event_t;
+#else
+typedef uint8_t check_event_t;
+#endif
+
+bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, const pm_uint8_t *subTab, uint8_t subTabMax, maxrow_t maxrow);
+bool check_simple(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, maxrow_t maxrow);
+bool check_submenu_simple(check_event_t event, uint8_t maxrow);
 
 typedef void (*MenuFuncP_PROGMEM)(uint8_t event);
 
@@ -174,9 +183,9 @@ if (!check_simple(event,menu,tab,DIM(tab),(lines_count)-1)) return;
 SIMPLE_MENU_NOTITLE(tab, menu, lines_count); \
 TITLE(title)
 
-#define SUBMENU_NOTITLE(lines_count, ...) \
+#define SUBMENU_NOTITLE(lines_count, ...) { \
 static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
-if (!check(event,0,NULL,0,mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return;
+if (!check(event,0,NULL,0,mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; }
 
 #define SUBMENU(title, lines_count, ...) \
 static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \

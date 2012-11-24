@@ -73,6 +73,7 @@
 #define LEN_VCURVEFUNC   "\003"
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""TMP""TM2"
 //TRIG FUNCTIONS ADDED ABOVE
+
 #define LEN_VMLTPX       "\010"
 #define TR_VMLTPX        "Add     ""Multiply""Replace "
 
@@ -85,42 +86,42 @@
 #define LEN_VCSWFUNC     "\010"
 #define TR_VCSWFUNC      "---\0    ""v>ofs\0  ""v<ofs\0  ""|v|>ofs\0""|v|<ofs\0""AND\0    ""OR\0     ""XOR\0    ""v1==v2\0 ""v1!=v2\0 ""v1>v2\0  ""v1<v2\0  ""v1>=v2\0 ""v1<=v2\0 ""d>=ofs\0 ""|d|>=ofs"
 
-#define LEN_VFSWFUNC     "\015"
+#define LEN_VFSWFUNC     "\013"
 #if defined(VARIO)
-#define TR_VVARIO        "Vario\0       "
+#define TR_VVARIO        "Vario\0     "
 #else
-#define TR_VVARIO        "[Vario]\0     "
+#define TR_VVARIO        "[Vario]\0   "
 #endif
 #if defined(AUDIO)
-#define TR_SOUND         "Play Sound\0  "
+#define TR_SOUND         "Play Sound\0"
 #else
-#define TR_SOUND         "Beep\0        "
+#define TR_SOUND         "Beep\0      "
 #endif
 #if defined(HAPTIC)
-#define TR_HAPTIC        "Haptic\0      "
+#define TR_HAPTIC        "Haptic\0    "
 #else
-#define TR_HAPTIC        "[Haptic]\0    "
+#define TR_HAPTIC        "[Haptic]\0  "
 #endif
 #if defined(VOICE)
-#define TR_PLAY_TRACK    "Play Track\0  "
-#define TR_PLAY_VALUE    "Play Value\0  "
+#define TR_PLAY_TRACK    "Play Track\0"
+#define TR_PLAY_VALUE    "Play Value\0"
 #else
-#define TR_PLAY_TRACK    "[Play Track]\0"
-#define TR_PLAY_VALUE    "[Play Value]\0"
+#define TR_PLAY_TRACK    "[PlayTrack]"
+#define TR_PLAY_VALUE    "[PlayValue]"
 #endif
 #if defined(PCBSKY9X)
 #if defined(SDCARD)
-#define TR_SDCLOGS       "SD Logs\0     "
+#define TR_SDCLOGS       "SD Logs\0   "
 #else
-#define TR_SDCLOGS       "[SD Logs]\0   "
+#define TR_SDCLOGS       "[SD Logs]\0 "
 #endif
-#define TR_FSW_VOLUME    "Volume\0      "
-#define TR_FSW_BG_MUSIC  "BgMusic\0     ""BgMusic Pause"
+#define TR_FSW_VOLUME    "Volume\0    "
+#define TR_FSW_BG_MUSIC  "BgMusic\0   ""BgMusic ||\0"
 #elif defined(PCBGRUVIN9X)
 #if defined(SDCARD)
-#define TR_SDCLOGS       "SD Logs\0     "
+#define TR_SDCLOGS       "SD Logs\0   "
 #else
-#define TR_SDCLOGS       "[SD Logs]\0   "
+#define TR_SDCLOGS       "[SD Logs]\0 "
 #endif
 #define TR_FSW_VOLUME
 #define TR_FSW_BG_MUSIC
@@ -130,7 +131,7 @@
 #define TR_FSW_BG_MUSIC
 #endif
 #ifdef GVARS
-#define TR_FSW_ADJUST_GVAR  "Adjust \0     "
+#define TR_FSW_ADJUST_GVAR  "Adjust \0   "
 #else
 #define TR_FSW_ADJUST_GVAR
 #endif
@@ -140,7 +141,7 @@
 #define TR_FSW_TEST
 #endif
 
-#define TR_VFSWFUNC      "Safety\0      ""Trainer \0    ""Instant Trim\0" TR_SOUND TR_HAPTIC "Reset\0       " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_FSW_VOLUME "Backlight\0   " TR_FSW_BG_MUSIC TR_FSW_ADJUST_GVAR TR_FSW_TEST
+#define TR_VFSWFUNC      "Safety\0    ""Trainer \0  ""Inst. Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_FSW_VOLUME "Backlight\0 " TR_FSW_BG_MUSIC TR_FSW_ADJUST_GVAR TR_FSW_TEST
 
 #define LEN_VFSWRESET    "\006"
 #define TR_VFSWRESET     "Timer1""Timer2""All   ""Telem."
@@ -257,8 +258,8 @@
 #define TR_FADEIN              "Fade In"
 #define TR_FADEOUT             "Fade Out"
 #define TR_DEFAULT             "(default)"
-#define TR_CHECKTRIMS          "\006Check\012Trims"
-#define OFS_CHECKTRIMS         (9*FW)
+#define TR_CHECKTRIMS          CENTER"\006Check\012Trims"
+#define OFS_CHECKTRIMS         CENTER_OFS+(9*FW)
 #define TR_SWASHTYPE           "Swash Type"
 #define TR_COLLECTIVE          "Collective"
 #define TR_SWASHRING           "Swash Ring"
@@ -343,9 +344,9 @@
 #define TR_TMR1LATMINUS        "Tmr1Lat min\006us"
 #define TR_TMR1JITTERUS        "Tmr1 Jitter\006us"
 #if defined(PCBSKY9X)
-#define TR_TMAINMAXMS          "Tmain max\010ms"
+#define TR_TMIXMAXMS           "Tmix max\012ms"
 #else
-#define TR_TMAINMAXMS          "Tmain max\012ms"
+#define TR_TMIXMAXMS           "Tmix max\014ms"
 #endif
 #define TR_T10MSUS             "T10ms\016us"
 #define TR_FREESTACKMINB       "Free Stack\010b"
@@ -356,11 +357,11 @@
 #define TR_FP                  "FP"
 #define TR_EEPROMLOWMEM        "EEPROM low mem"
 #define TR_ALERT               "\016ALERT"
-#define TR_PRESSANYKEYTOSKIP   "Press any key to skip"
-#define TR_THROTTLENOTIDLE     "Throttle not idle"
-#define TR_ALARMSDISABLED      "Alarms Disabled"
+#define TR_PRESSANYKEYTOSKIP   CENTER"Press any key to skip"
+#define TR_THROTTLENOTIDLE     CENTER"Throttle not idle"
+#define TR_ALARMSDISABLED      CENTER"Alarms Disabled"
 #define TR_PRESSANYKEY         "\010Press any Key"
-#define TR_BADEEPROMDATA       "Bad EEprom Data"
+#define TR_BADEEPROMDATA       CENTER"Bad EEprom Data"
 #define TR_EEPROMFORMATTING    "Formatting EEPROM"
 #define TR_EEPROMOVERFLOW      "EEPROM overflow"
 #define TR_MENURADIOSETUP      "RADIO SETUP"
@@ -428,8 +429,8 @@
 #define TR_CPU_MAH             "Consumpt."
 #define TR_COPROC              "CoProc."
 #define TR_COPROC_TEMP         "MB Temp. \016>"
-#define TR_CAPAWARNING         "Capacity Warning"
-#define TR_TEMPWARNING         "Temp Warning"
+#define TR_CAPAWARNING         INDENT "Capacity Low"
+#define TR_TEMPWARNING         INDENT "Temp High"
 #define TR_FUNC                "Func"
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"
@@ -460,3 +461,5 @@
 #define TR_CURVE_TYPE          "Type"
 #define TR_GLOBAL_VARS         "Global Variables"
 #define TR_OWN                 "Own"
+#define TR_DATE                "Date"
+#define TR_ROTARY_ENCODER      "R.Encs"

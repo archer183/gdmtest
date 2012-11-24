@@ -17,6 +17,12 @@
 # in addition you will need some tools.  
 #  ffmpeg, sox, adconvertor.
 # have fun!
+# Sound pack maintainers (incomplete list)
+# French  : Bertrand Songis & André Bernet
+# English : Rob Thompson & Martin Hotar 
+# German  : Romolo Manfredini (Some corrections by Peer)
+# Italian : Romolo Manfredini
+# Czeck   : Martin Hotar
 
 
 
@@ -90,7 +96,7 @@ def generate(str, idx, alternate=0):
                 os.remove(temp)
             else:
                 os.rename(result, temp) 
-                subprocess.Popen(["ffmpeg", "-y", "-i", temp, "-acodec", "pcm_alaw", "-ar", "16000", result], stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
+                subprocess.Popen(["ffmpeg", "-y", "-i", temp, "-acodec", defaultcodec, "-ar", "16000", result], stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
                 os.remove(temp)
         elif board == 'gruvin9x':
             subprocess.Popen(["AD4CONVERTER", "-E4", result], stdout=subprocess.PIPE, stderr=subprocess.PIPE).wait()
@@ -129,7 +135,12 @@ if __name__ == "__main__":
         # tts.SetRate(1)
         if "list" in sys.argv:
             print tts.GetVoiceNames()
-            
+    
+    if "mulaw" in sys.argv:
+        defaultcodec = "pcm_mulaw"
+    else:
+        defaultcodec = "pcm_alaw"
+    
     if "en" in sys.argv:
         if "sapi" in sys.argv:
             if "scottish" in sys.argv:
@@ -141,7 +152,7 @@ if __name__ == "__main__":
             elif "australian" in sys.argv:	
             	tts.SetVoiceByName("ScanSoftKaren_Full_22kHz")
             	voice = "english-australian"   
-            elif "irish" in sys.argv:	
+            elif "irish" in sys.argv:
             	tts.SetVoiceByName("ScanSoftMoira_Full_22kHz")
             	voice = "english-irish"              	
             else:
@@ -188,41 +199,44 @@ if __name__ == "__main__":
                         (u"inactivity alarm", "inactiv", 230),
                         (u"throttle warning", "thralert", 232),
                         (u"switch warning", "swalert", 233),
-                        (u"tada", "tada", 245),
-                        (u"tick tock", "timerlt3", 250),
-                        (u"ten seconds", "timer10", 251),
-                        (u"twenty seconds", "timer20", 252),
-                        (u"thirty seconds", "timer30", 253),
+                        (u"Welcome to open nine ex!", "tada", 245),
+                        (u"tick. tock", "timerlt3", 250),
+                        (u"ten. seconds", "timer10", 251),
+                        (u"twenty. seconds", "timer20", 252),
+                        (u"thirty. seconds", "timer30", 253),
                        ]:
             systemSounds.extend(generate(s, f, a))
         for i, (s, f) in enumerate([
-                     (u"gear up", "gearup"),
-                     (u"gear down", "geardn"),
-                     (u"flaps up", "flapup"),
-                     (u"flaps down", "flapdn"),
-                     (u"landing", "attero"),
-                     (u"trainer on", "trnon"),
-                     (u"trainer off", "trnoff"),
-                     (u"engine off", "engoff"),
-                     (u"too high", "tohigh"),
-                     (u"too low", "tolow"),
-                     (u"low battery", "lowbat"),
-                     (u"crow on", "crowon"),
-                     (u"crow off", "crowof"),
-                     (u"rf signal low!", "siglow"),
-                     (u"rf signal critical", "sigcrt"),
-                     (u"high speed mode active", "spdmod"),
-                     (u"thermal mode active", "thmmod"),
-                     (u"normal mode active", "nrmmod"),
-                     (u"flight mode one", "fltmd1"),
-                     (u"flight mode two", "fltmd2"),
-                     (u"flight mode three", "fltmd3"),
-                     (u"flight mode four", "fltmd4"),
-                     (u"flight mode five", "fltmd5"),
-                     (u"flight mode six", "fltmd6"),
-                     (u"flight mode seven", "fltmd7"),
-                     (u"flight mode eight", "fltmd8"),
-                     (u"flight mode nine", "fltmd9"),
+                     (u"gear!, up!", "gearup"),
+                     (u"gear!, down!", "geardn"),
+                     (u"flaps!, up!", "flapup"),
+                     (u"flaps!, down!", "flapdn"),
+                     (u"trainer!, on!", "trnon"),
+                     (u"trainer!, off!", "trnoff"),
+                     (u"engine!, off!", "engoff"),
+                     (u"too. high!", "tohigh"),
+                     (u"too. low!", "tolow"),
+                     (u"low. battery!", "lowbat"),
+                     (u"crow!, on!", "crowon"),
+                     (u"crow!, off!", "crowof"),
+                     (u"rf. signal!, low!", "siglow"),
+                     (u"rf. signal!, critical!", "sigcrt"),
+                     (u"high. speed. mode!, active", "spdmod"),
+                     (u"thermal. mode!, on", "thmmod"),
+                     (u"normal. mode!, on", "nrmmod"),
+                     (u"landing. mode!, on", "lnding"),
+                     (u"acro. mode!, on", "acro"),
+                     (u"flight. mode!, one", "fltmd1"),
+                     (u"flight. mode!, two", "fltmd2"),
+                     (u"flight. mode!, three", "fltmd3"),
+                     (u"flight. mode!, four", "fltmd4"),
+                     (u"flight. mode!, five", "fltmd5"),
+                     (u"flight. mode!, six", "fltmd6"),
+                     (u"flight. mode!, seven", "fltmd7"),
+                     (u"flight. mode!, eight", "fltmd8"),
+                     (u"flight. mode!, nine", "fltmd9"),
+                     (u"vario!, on", "vrion"),
+                     (u"vario!, on", "vrioff"),
                      ]):
             sounds.extend(generate(s, f, 256+i))
 
@@ -300,11 +314,11 @@ if __name__ == "__main__":
                         (u"trenta secondi", "timer30", 253),
                      ]:
             systemSounds.extend(generate(s, f, a))
-        for i, s in enumerate(["timer", "", "tensione", "tensione", "trasmissione", "ricezione", "altitudine", "motore",
+        for i, s in enumerate(["timer", "timer",  "trasmissione", "ricezione", "A1", "A2", "altitudine", "motore",
                                "carburante", "temperatura", "temperatura", "velocita'", "distanza", "altitudine", "cella lipo",
                                "totale lipo", "tensione", "corrente", "consumo", "potenza", "accelerazione X", "accellerazione Y", "accelerazione Z",
-                               "direzione", "variometro"]):
-            systemSounds.extend(generate(s, 132+i))                
+                               "direzione", "variometro","minimo","massimo"]):
+            systemSounds.extend(generate(s, 132+i))
         for i, (s, f) in enumerate([
                      (u"carrello chiuso", "gearup"),
                      (u"carrello aperto", "geardn"),
@@ -333,6 +347,153 @@ if __name__ == "__main__":
                      (u"fase di volo 7", "fltmd7"),
                      (u"fase di volo 8", "fltmd8"),
                      (u"fase di volo 9", "fltmd9"),
+                     ]):
+            sounds.extend(generate(s, f, 256+i))
+
+    elif "de" in sys.argv:
+        if "sapi" in sys.argv:
+            tts.SetVoiceByName("ScanSoftVirginie_Full_22kHz")
+            voice = "german"
+        else:
+            espeakVoice = "mb-de4"
+            espeakspeed = "160"
+            voice = "german"
+
+        for i in range(101):
+            systemSounds.extend(generate(str(i), i))
+        systemSounds.extend(generate("tausend", 101))
+        for i, s in enumerate(["comma", "und", "minus", "uhr", "minute", "minuten", "sekunde", "sekunden"]):
+            systemSounds.extend(generate(s, 102+i))
+        for i, s in enumerate(["Volt", "Ampere", "Meter pro sekunde", "", "kilometer pro stunde", "Meter", "Grad", "Prozent", "Milliampere", "Milliampere pro stunde", "Watt", "db", "Fuesse", "Knoten", "Uhr", "Minuten", "Secunden", "R P M", "g"]):
+            systemSounds.extend(generate(s, 110+i))            
+        for s, f, a in [(u"Sender ist inaktiv,bitte Ueberpruefen Sie", "inactiv", 230),
+                        (u"Senderakku niedrig", "lowbatt", 231),
+                        (u"Gaskanal nicht Null, bitte pruefen", "thralert", 232),
+                        (u"Schalten fehlpositioniert, bitte pruefen", "swalert", 233),
+                        (u"Das EEPROM ist fehlerhaft", "eebad", 0),
+                        (u"Das EEPROM ist immer formatiert", "eeformat", 0),
+                        (u"fehler", "error", 0),
+                        (u"Trim zentriert", "midtrim", 244),
+                        (u"tada", "tada", 245),
+                        (u"Poti zentriert", "midpot", 246),
+                        (u"Maximale trimmung erreicht", "endtrim", 0),
+                        (u"Noch drei sekunden", "timerlt3", 250),
+                        (u"10 sekunden", "timer10", 251),
+                        (u"20 sekunden", "timer20", 252),
+                        (u"30 sekunden", "timer30", 253),
+                     ]:
+            systemSounds.extend(generate(s, f, a))
+        for i, s in enumerate(["Timer", "Timer",  "Sendung", "Empfang", "A1", "A2", "Hoehe", "Motor",
+                               "Treibstoff", "Temperatur", "Temperatur", "Geschwindigkeit", "Ferne", "Hoehe", "Lipo-Zelle",
+                               "Zellen gesamt", "Spannung", "Strom", "Verbrauch", "Power", "Beschleunigung X", "Beschleunigung Y", "Beschleunigung Z",
+                               "Richtung", "Variometer","Minimum","Maximum"]):
+            systemSounds.extend(generate(s, 129+i))
+        for i, (s, f) in enumerate([
+                     (u"Fahrwerk eingezogen", "gearup"),
+                     (u"Fahrwerk ausgefahren", "geardn"),
+                     (u"Klappen eingefahren", "flapup"),
+                     (u"Klappen ausgefahren", "flapdn"),
+                     (u"Landung", "attero"),
+                     (u"Trainer-Modus ein", "trnon"),
+                     (u"Trainer-Modus aus", "trnoff"),
+                     (u"Motor aus", "engoff"),
+                     (u"zu hoch", "tohigh"),
+                     (u"zu niedrig", "tolow"),
+                     (u"Batterie schwach", "lowbat"),
+                     (u"crow ein", "crowon"),
+                     (u"crow aus", "crowof"),
+                     (u"Funksignal schlecht!", "siglow"),
+                     (u"Funksignal kritisch!", "sigcrt"),
+                     (u"Schnell-Modus ist aktiviert", "spdmod"),
+                     (u"Thermik-Modus ist aktiviert", "thmmod"),
+                     (u"Normal-Modus ist aktiviert", "nrmmod"),
+                     (u"Regime 1", "fltmd1"),
+                     (u"Regime 2", "fltmd2"),
+                     (u"Regime 3", "fltmd3"),
+                     (u"Regime 4", "fltmd4"),
+                     (u"Regime 5", "fltmd5"),
+                     (u"Regime 6", "fltmd6"),
+                     (u"Regime 7", "fltmd7"),
+                     (u"Regime 8", "fltmd8"),
+                     (u"Regime 9", "fltmd9"),
+                     ]):
+            sounds.extend(generate(s, f, 256+i))
+
+    elif "pt" in sys.argv:
+        if "sapi" in sys.argv:
+            tts.SetVoiceByName("ScanSoftVirginie_Full_22kHz")
+            voice = "portuguese"
+        else:
+            espeakVoice = "mb-pt1+f1"
+            espeakspeed = "160"
+            voice = "portuguese"
+
+        for i in range(101):
+            systemSounds.extend(generate(str(i), i))
+        systemSounds.extend(generate("cento", 101))
+        systemSounds.extend(generate("duzentos", 102))
+        systemSounds.extend(generate("trezentos", 103))
+        systemSounds.extend(generate("quatrocentos", 104))
+        systemSounds.extend(generate("quinhentos", 105))
+        systemSounds.extend(generate("seiscentos", 106))
+        systemSounds.extend(generate("setecentos", 107))
+        systemSounds.extend(generate("oitocentos", 108))
+        systemSounds.extend(generate("novecentos", 109))
+        systemSounds.extend(generate("mil", 110))
+        for i, s in enumerate(["virgula", "uma", "duas", "e", "menos", "hora", "horas", "minuto", "minutos", "segundo", "segundos"]):
+            systemSounds.extend(generate(s, 111+i))
+        for i, s in enumerate([u"Volt", u"ampére", u"metros por segundo", u"", u"quilômetros por hora", u"metros", u"graus", u"cento", u"miliamperes", u"miliamperes por hora", u"watt", u"db", u"pés", u"nós", u"horas", u"minutos", u"segundos", u"RPM", u"g"]):
+            systemSounds.extend(generate(s, 122+i))            
+        for s, f, a in [(u"atenção, o rádio foi esquecido ligado, por favor desligue-o", "inactiv", 230),
+                        (u"bateria do rádio fraca", "lowbatt", 231),
+                        (u"atenção,acelerador não está no mínimo", "thralert", 232),
+                        (u"atenção, certifique-se que os interruptores estão na posição certa", "swalert", 233),
+                        (u"eeprom corrompida", "eebad", 0),
+                        (u"formatação da eeprom em curso", "eeformat", 0),
+                        (u"erro", "error", 0),
+                        (u"trim centrado", "midtrim", 244),
+                        (u"tada", "tada", 245),
+                        (u"potenciómetro centrado", "midpot", 246),
+                        (u"trim no máximo", "endtrim", 0),
+                        (u"3 segundos", "timerlt3", 250),
+                        (u"10 segundos", "timer10", 251),
+                        (u"20 segundos", "timer20", 252),
+                        (u"30 segundos", "timer30", 253),
+                     ]:
+            systemSounds.extend(generate(s, f, a))
+        for i, s in enumerate([u"cronómetro", u"cronómetro", u"transmissão", u"recepção", u"A1", u"A2", u"altitude", u"motor",
+                                u"combustível", u"temperatura", u"temperatura", u"velocidade", u"distância", u"altitude", u"célula lipo"
+                                u"Total lipo", u"tensão", u"corrente", u"consumo", u"potência", u"aceleração X", u"aceleração Y", u"aceleração Z"
+                                u"Direcção", u"variómetro", u"mínimo", u"máximo"]):
+            systemSounds.extend(generate(s, 141+i))
+        for i, (s, f) in enumerate([
+                      (u"trem, em cima.", "gearup"),
+                      (u"trem, em baixo.", "geardn"),
+                      (u"flaps recolhidos", "flapup"),
+                      (u"flaps estendidos", "flapdn"),
+                      (u"aterragem", "attero"),
+                      (u"modo de treino ligado", "trnon"),
+                      (u"modo de treino desligado", "trnoff"),
+                      (u"motor desligado", "engoff"),
+                      (u"muito alto", "tohigh"),
+                      (u"muito baixo", "tolow"),
+                      (u"bateria fraca", "lowbat"),
+                      (u"crou, activo", "crowon"),
+                      (u"crou, desligado", "crowof"),
+                      (u"recepção de sinal muito baixa", "siglow"),
+                      (u"recepção de sinal crítica", "sigcrt"),
+                      (u"modo de velocidade", "spdmod"),
+                      (u"modo de térmica", "thmmod"),
+                      (u"modo de voo normal", "nrmmod"),
+                      (u"fase de voo 1", "fltmd1"),
+                      (u"fase de voo 2", "fltmd2"),
+                      (u"fase de voo 3", "fltmd3"),
+                      (u"fase de voo 4", "fltmd4"),
+                      (u"fase de voo 5", "fltmd5"),
+                      (u"fase de vôo 6", "fltmd6"),
+                      (u"fase de voo 7", "fltmd7"),
+                      (u"fase de voo 8", "fltmd8"),
+                      (u"fase de voo 9", "fltmd9"),
                      ]):
             sounds.extend(generate(s, f, 256+i))
             

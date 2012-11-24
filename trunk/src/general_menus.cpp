@@ -120,7 +120,9 @@ enum menuGeneralSetupItems {
   ITEM_SETUP_FLASH_BEEP,
   ITEM_SETUP_BACKLIGHT_MODE,
   ITEM_SETUP_BACKLIGHT_DELAY,
-  IF_SPLASH(ITEM_SETUP_DISABLE_SPLASH)
+#if defined(SPLASH) && !defined(FSPLASH)
+  ITEM_SETUP_DISABLE_SPLASH,
+#endif
   IF_FRSKY(ITEM_SETUP_TIMEZONE)
   IF_FRSKY(ITEM_SETUP_GPSFORMAT)
   ITEM_SETUP_RX_CHANNEL_ORD,
@@ -151,7 +153,7 @@ void menuGeneralSetup(uint8_t event)
     switch(k) {
 #if defined(RTCLOCK)
       case ITEM_SETUP_DATE:
-        lcd_putsLeft(y, PSTR("Date"));
+        lcd_putsLeft(y, STR_DATE);
         lcd_putc(FW*15+5, y, '-'); lcd_putc(FW*18+3, y, '-');
         for (uint8_t j=0; j<3; j++) {
           uint8_t rowattr = (m_posHorz==j) ? attr : 0;
@@ -508,7 +510,7 @@ void menuGeneralSdManager(uint8_t event)
 
   switch(event) {
     case EVT_ENTRY:
-      f_chdir("/");
+      f_chdir(ROOT_PATH);
       reusableBuffer.sd.offset = 65535;
       break;
 #if defined(ROTARY_ENCODERS)
@@ -524,7 +526,6 @@ void menuGeneralSdManager(uint8_t event)
       if (m_posVert > 0) {
         uint8_t index = m_posVert-1-s_pgOfs;
         if (!reusableBuffer.sd.lines[index][SD_SCREEN_FILE_LENGTH+1]) {
-          killEvents(event);
           f_chdir(reusableBuffer.sd.lines[index]);
           s_pgOfs = 0;
           m_posVert = 1;
@@ -549,8 +550,12 @@ void menuGeneralSdManager(uint8_t event)
       else {
 #if defined(PCBSKY9X)
         uint8_t index = m_posVert-1-s_pgOfs;
-        char * line = reusableBuffer.sd.lines[index];
-        if (!strcmp(line+strlen(line)-4, SOUNDS_EXT)) {
+        char * ext = reusableBuffer.sd.lines[index];
+        ext += strlen(ext) - 4;
+        /* TODO if (!strcmp(ext, MODELS_EXT)) {
+          s_menu[s_menu_count++] = STR_LOAD_FILE;
+        }
+        else */ if (!strcmp(ext, SOUNDS_EXT)) {
           s_menu[s_menu_count++] = STR_PLAY_FILE;
         }
 #endif
@@ -688,7 +693,13 @@ void menuGeneralSdManager(uint8_t event)
         reusableBuffer.sd.offset = s_pgOfs-1;
       }
 #if defined(PCBSKY9X)
-      else if (result == STR_PLAY_FILE) {
+      /* TODO else if (result == STR_LOAD_FILE) {
+        f_getcwd(lfn, SD_SCREEN_FILE_LENGTH);
+        strcat(lfn, "/");
+        strcat(lfn, reusableBuffer.sd.lines[index]);
+        s_warning = eeLoadModelSD(lfn);
+      }
+      else */ if (result == STR_PLAY_FILE) {
         f_getcwd(lfn, SD_SCREEN_FILE_LENGTH);
         strcat(lfn, "/");
         strcat(lfn, reusableBuffer.sd.lines[index]);
@@ -703,7 +714,7 @@ void menuGeneralSdManager(uint8_t event)
 void menuGeneralTrainer(uint8_t event)
 {
   uint8_t y;
-  bool slave = SLAVE_MODE;
+  bool slave = SLAVE_MODE();
 
   MENU(STR_MENUTRAINER, menuTabDiag, e_Trainer, slave ? 1 : 7, {0, 2, 2, 2, 2, 0/*, 0*/});
 
