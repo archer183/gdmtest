@@ -1189,6 +1189,11 @@ uint8_t barCoord(int16_t value, int16_t min, int16_t max)
 
 void menuTelemetryFrsky(uint8_t event)
 {
+  if (event == EVT_KEY_FIRST(KEY_EXIT)) {
+    chainMenu(menuMainView);
+    return;
+  }
+
   switch (event) {
     case EVT_KEY_BREAK(KEY_UP):
       if (s_frsky_view-- == 0)
@@ -1198,10 +1203,6 @@ void menuTelemetryFrsky(uint8_t event)
     case EVT_KEY_BREAK(KEY_DOWN):
       if (s_frsky_view++ == FRSKY_VIEW_MAX)
         s_frsky_view = 0;
-      break;
-
-    case EVT_KEY_FIRST(KEY_EXIT):
-      chainMenu(menuMainView);
       break;
 
     case EVT_KEY_FIRST(KEY_MENU):
@@ -1217,7 +1218,7 @@ void menuTelemetryFrsky(uint8_t event)
     att = (s_timerState[0]==TMR_BEEPING ? BLINK : 0);
     putsTime(17*FW, 0, s_timerVal[0], att, att);
   }
-  lcd_filled_rect(0, 0, DISPLAY_W, 8);
+  lcd_invert_line(0);
 
   if (frskyStreaming >= 0) {
     if (s_frsky_view < MAX_FRSKY_SCREENS) {
@@ -1257,11 +1258,9 @@ void menuTelemetryFrsky(uint8_t event)
             uint8_t width = barCoord(value, barMin, barMax);
 
             // reversed barshade for T1/T2
-            uint8_t barShade;
+            uint8_t barShade = ((threshold > value) ? DOTTED : SOLID);
             if (source == TELEM_T1 || source == TELEM_T2)
-              barShade = ((threshold < value) ? DOTTED : SOLID);
-            else
-              barShade = ((threshold > value) ? DOTTED : SOLID);
+              barShade = -barShade;
 
             lcd_filled_rect(26, y+1, width, barHeight, barShade);
 

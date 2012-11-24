@@ -34,14 +34,18 @@
 #ifndef lcd_h
 #define lcd_h
 
-#if defined(PCBX9D)
-#define DISPLAY_W 192
+#if defined(LCD212)
+#define DISPLAY_W 212
 #define DISPLAY_H  64
 #define xcoord_t uint16_t
+#define CENTER      "\015"
+#define CENTER_OFS  (7*FW-FW/2)
 #else
 #define DISPLAY_W 128
 #define DISPLAY_H  64
 #define xcoord_t uint8_t
+#define CENTER
+#define CENTER_OFS 0
 #endif
 
 #define FW          6
@@ -168,7 +172,8 @@ extern void lcd_vlineStip(xcoord_t x, int8_t y, int8_t h, uint8_t pat, uint8_t a
 
 extern void lcd_rect(xcoord_t x, uint8_t y, xcoord_t w, uint8_t h, uint8_t pat=SOLID, uint8_t att=0);
 extern void lcd_filled_rect(xcoord_t x, int8_t y, xcoord_t w, uint8_t h, uint8_t pat=SOLID, uint8_t att=0);
-#define lcd_status_line() lcd_filled_rect(0, 7*FH, DISPLAY_W, 8)
+extern void lcd_invert_line(int8_t y);
+#define lcd_status_line() lcd_invert_line(7)
 inline void lcd_square(xcoord_t x, uint8_t y, xcoord_t w, uint8_t att=0) { lcd_rect(x, y, w, w, SOLID, att); }
 
 #define DO_CROSS(xx,yy,ww)          \

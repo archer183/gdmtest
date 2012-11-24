@@ -184,7 +184,7 @@ extern void menuMainView(uint8_t event);
 
 void menuTelemetryJeti(uint8_t event)
 {
-  TITLE("JETI");
+  TITLE(PSTR("JETI"));
 
   switch(event)
   {
@@ -193,7 +193,7 @@ void menuTelemetryJeti(uint8_t event)
     case EVT_KEY_FIRST(KEY_EXIT):
       JETI_DisableRXD();
       chainMenu(menuMainView);
-      break;
+      return;
   }
 
   for (uint8_t i = 0; i < 16; i++)

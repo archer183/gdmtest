@@ -70,6 +70,18 @@ void doMainScreenGrphics()
   }
 }
 
+#if defined(PCBX9D)
+#define EVT_KEY_MODEL_MENU   EVT_KEY_BREAK(KEY_MENU)
+#define EVT_KEY_GENERAL_MENU EVT_KEY_LONG(KEY_MENU)
+#define EVT_KEY_TELEMETRY    EVT_KEY_LONG(KEY_PAGE)
+#define EVT_KEY_STATISTICS   EVT_KEY_LONG(KEY_ENTER)
+#else
+#define EVT_KEY_MODEL_MENU   EVT_KEY_LONG(KEY_RIGHT)
+#define EVT_KEY_GENERAL_MENU EVT_KEY_LONG(KEY_LEFT)
+#define EVT_KEY_TELEMETRY    EVT_KEY_LONG(KEY_DOWN)
+#define EVT_KEY_STATISTICS   EVT_KEY_LONG(KEY_UP)
+#endif
+
 void menuMainView(uint8_t event)
 {
   uint8_t view = g_eeGeneral.view;
@@ -91,7 +103,7 @@ void menuMainView(uint8_t event)
     break;
     */
 
-#if !defined(READONLY)
+#if !defined(PCBX9D) && !defined(READONLY)
     case EVT_KEY_LONG(KEY_MENU):// go to last menu
       pushMenu(lastPopMenu());
       killEvents(event);
@@ -105,7 +117,7 @@ void menuMainView(uint8_t event)
         if (view_base == e_inputs)
           g_eeGeneral.view ^= ALTERNATE_VIEW;
         else
-          g_eeGeneral.view = (g_eeGeneral.view + (4*ALTERNATE_VIEW) + ((event==EVT_KEY_BREAK(KEY_RIGHT)) ? ALTERNATE_VIEW : -ALTERNATE_VIEW)) % (4*ALTERNATE_VIEW);
+          g_eeGeneral.view = (g_eeGeneral.view + (4*ALTERNATE_VIEW) + ((event==EVT_KEY_BREAK(KEY_LEFT)) ? -ALTERNATE_VIEW : ALTERNATE_VIEW)) % (4*ALTERNATE_VIEW);
 #else
         g_eeGeneral.view ^= ALTERNATE_VIEW;
 #endif
@@ -115,27 +127,31 @@ void menuMainView(uint8_t event)
       break;
 
 #if !defined(READONLY)
-    case EVT_KEY_LONG(KEY_RIGHT):
+    case EVT_KEY_MODEL_MENU:
       pushMenu(menuModelSelect);
       killEvents(event);
       break;
-    case EVT_KEY_LONG(KEY_LEFT):
+    case EVT_KEY_GENERAL_MENU:
       pushMenu(menuGeneralSetup);
       killEvents(event);
       break;
 #endif
 
+#if defined(PCBX9D)
+    case EVT_KEY_BREAK(KEY_PAGE):
+#else
     case EVT_KEY_BREAK(KEY_UP):
     case EVT_KEY_BREAK(KEY_DOWN):
+#endif
       g_eeGeneral.view = (event == EVT_KEY_BREAK(KEY_UP) ? (view_base == MAIN_VIEW_MAX ? 0 : view_base + 1) : (view_base == 0 ? MAIN_VIEW_MAX : view_base - 1));
       eeDirty(EE_GENERAL);
       AUDIO_KEYPAD_UP();
       break;
-    case EVT_KEY_LONG(KEY_UP):
+    case EVT_KEY_STATISTICS:
       chainMenu(menuStatisticsView);
       killEvents(event);
-      break;
-    case EVT_KEY_LONG(KEY_DOWN):
+      return;
+    case EVT_KEY_TELEMETRY:
 #if defined(FRSKY)
       chainMenu(menuTelemetryFrsky);
 #elif defined(JETI)
@@ -153,7 +169,7 @@ void menuMainView(uint8_t event)
       chainMenu(menuStatisticsDebug);
 #endif
       killEvents(event);
-      break;
+      return;
     case EVT_KEY_FIRST(KEY_EXIT):
       if (s_timerState[0]==TMR_BEEPING) {
         s_timerState[0] = TMR_STOPPED;
@@ -188,7 +204,7 @@ void menuMainView(uint8_t event)
   {
     // Flight Phase Name
     uint8_t phase = s_perout_flight_phase;
-#if defined(PCBX9D)
+#if defined(LCD212)
     uint8_t len = ZLEN(g_model.phaseData[phase].name);
     if (len > 0) {
       uint8_t tmp = (DISPLAY_W - 6*FW - 2 - len*FW/2);
@@ -223,7 +239,7 @@ void menuMainView(uint8_t event)
       lcd_putcAtt(20*FW-3, 0*FH, '!', INVERS);
     }
 
-#if defined(PCBX9D)
+#if defined(LCD212)
     // Main timer
     if (g_model.timers[0].mode) {
       uint8_t att = DBLSIZE | (s_timerState[0]==TMR_BEEPING ? BLINK|INVERS : 0);

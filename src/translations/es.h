@@ -337,9 +337,9 @@
 #define TR_TMR1LATMINUS        "Tmr1Lat min\006us"
 #define TR_TMR1JITTERUS        "Tmr1 Jitter\006us"
 #if defined(PCBSKY9X)
-#define TR_TMAINMAXMS          "Tmain max\010ms"
+#define TR_TMIXMAXMS           "Tmix max\012ms"
 #else
-#define TR_TMAINMAXMS          "Tmain max\012ms"
+#define TR_TMIXMAXMS           "Tmix max\014ms"
 #endif
 #define TR_T10MSUS             "T10ms\016us"
 #define TR_FREESTACKMINB       "Pila libre\010b"
@@ -389,7 +389,7 @@
 #define TR_RXNUM               "RxNum"
 #define TR_SYNCMENU            "Sync [MENU]"
 #define TR_BACK                "Atras"
-#define TR_LIMIT               INDENT"Limit"
+#define TR_LIMIT               INDENT "Limit"
 #define TR_MINRSSI             "Min Rssi"
 #define TR_LATITUDE            "Latitud"
 #define TR_LONGITUDE           "Longitud"
@@ -422,8 +422,8 @@
 #define TR_CPU_MAH             "Consum."
 #define TR_COPROC              "CoProc."
 #define TR_COPROC_TEMP         "MB Temp. \016>"
-#define TR_CAPAWARNING         "Aviso Capacidad"
-#define TR_TEMPWARNING         "Aviso Temperat."
+#define TR_CAPAWARNING         INDENT "Capacidad Low"
+#define TR_TEMPWARNING         INDENT "Temperat High"
 #define TR_FUNC                "Funcion"
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"
@@ -454,3 +454,5 @@
 #define TR_CURVE_TYPE          "Type"
 #define TR_GLOBAL_VARS         "Global Variables"
 #define TR_OWN                 "Own"
+#define TR_DATE                "Date"
+#define TR_ROTARY_ENCODER      "R.Encs"

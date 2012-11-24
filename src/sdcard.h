@@ -37,11 +37,13 @@
 #include "FatFs/ff.h"
 
 #ifdef SIMU
+#define ROOT_PATH    "."
 #define MODELS_PATH  "."
 #define LOGS_PATH    "."
 #define SOUNDS_PATH  "."
 #define SYSTEM_SOUNDS_PATH "."
 #else
+#define ROOT_PATH           "/"
 #define MODELS_PATH         "/9XMODELS"
 #define LOGS_PATH           "/9XLOGS"   // no trailing slash = important
 #define SOUNDS_PATH         "/9XSOUNDS" // no trailing slash = important
@@ -67,8 +69,11 @@ inline const pm_char *SDCARD_ERROR(FRESULT result)
     return STR_SDCARD_ERROR;
 }
 
-// TODO move the ARM function definition here (when cpp)
-extern void sdPoll10mS();
+#if defined(SIMU)
+#define sdMountPoll()
+#else
+extern void sdMountPoll();
+#endif
 
 #if defined(PCBSKY9X) && !(defined(SIMU))
 extern "C" {

@@ -214,7 +214,7 @@ const pm_char STR_TOT[] PROGMEM = TR_TOT;
 const pm_char STR_TMR1LATMAXUS[] PROGMEM = TR_TMR1LATMAXUS;
 const pm_char STR_TMR1LATMINUS[] PROGMEM = TR_TMR1LATMINUS;
 const pm_char STR_TMR1JITTERUS[] PROGMEM = TR_TMR1JITTERUS;
-const pm_char STR_TMAINMAXMS[] PROGMEM = TR_TMAINMAXMS;
+const pm_char STR_TMIXMAXMS[] PROGMEM = TR_TMIXMAXMS;
 #ifdef DEBUG
 const pm_char STR_T10MSUS[] PROGMEM = TR_T10MSUS;
 #endif
@@ -371,6 +371,8 @@ const pm_char STR_SD_SIZE[] PROGMEM = TR_SD_SIZE;
 const pm_char STR_CURVE_TYPE[] PROGMEM = TR_CURVE_TYPE;
 const pm_char STR_GLOBAL_VARS[] PROGMEM = TR_GLOBAL_VARS;
 const pm_char STR_OWN[] PROGMEM = TR_OWN;
+const pm_char STR_ROTARY_ENCODER[] PROGMEM = TR_ROTARY_ENCODER;
+const pm_char STR_DATE[] PROGMEM = TR_DATE;
 
 const pm_uchar font[] PROGMEM = {
 #include "font.lbm"

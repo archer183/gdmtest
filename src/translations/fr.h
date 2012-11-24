@@ -21,7 +21,7 @@
 #define TR_VFILTERADC    "SIMP""OSMP""FILT"
 
 #define LEN_VBLMODE      "\004"
-#define TR_VBLMODE       "OFF ""Btns""Stks""Tout""ON\0"
+#define TR_VBLMODE       "OFF\0""Btns""Stks""Tout""ON\0"
 
 #define LEN_TRNMODE      "\003"
 #define TR_TRNMODE       "OFF"" +="" :="
@@ -36,7 +36,7 @@
 #define TR_VLCD          "NormalOptrex"
 
 #define LEN_VTRIMINC     "\006"
-#define TR_VTRIMINC      "Expo  ""ExFin ""Fin   ""Moyen ""Gros  "
+#define TR_VTRIMINC      "Expo\0 ""ExFin\0""Fin\0  ""Moyen\0""Gros\0 "
 
 #define LEN_RETA123      "\001"
 #if defined(PCBGRUVIN9X)
@@ -74,7 +74,7 @@
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|"
 
 #define LEN_VMLTPX       "\010"
-#define TR_VMLTPX        "Ajoute  ""Multipl.""Remplace"
+#define TR_VMLTPX        "Ajoute\0 ""Multipl.""Remplace"
 
 #define LEN_VMLTPX2      "\002"
 #define TR_VMLTPX2       "+=""*="":="
@@ -135,7 +135,7 @@
 #define TR_FSW_ADJUST_GVAR
 #endif
 #ifdef DEBUG
-#define TR_FSW_TEST          "Test\0"
+#define TR_FSW_TEST          "Test\0        "
 #else
 #define TR_FSW_TEST
 #endif
@@ -146,7 +146,7 @@
 #define TR_VFSWRESET     "Timer1""Timer2""Timers""T\200l\200m."
 
 #define LEN_FUNCSOUNDS   "\006"
-#define TR_FUNCSOUNDS    "Beep1 ""Beep2 ""Beep3 ""Warn1 ""Warn2 ""Cheep ""Ring  ""SciFi ""Robot ""Chirp ""Tada  ""Crickt""Siren ""AlmClk""Ratata""Tick  "
+#define TR_FUNCSOUNDS    "Beep1\0""Beep2\0""Beep3\0""Warn1\0""Warn2\0""Cheep\0""Ring\0 ""SciFi\0""Robot\0""Chirp\0""Tada\0 ""Crickt""Siren\0""AlmClk""Ratata""Tick\0 "
 
 #define LEN_VTELEMCHNS   "\004"
 #define TR_VTELEMCHNS    "---\0""Chr1""Chr2""Tx\0 ""Rx\0 ""A1\0 ""A2\0 ""Alt\0""Rpm\0""Carb""T1\0 ""T2\0 ""Vit\0""Dist""AltG""Elem""Velm""Vfas""Cour""Cnsm""Puis""AccX""AccY""AccZ""Cap\0""VitV""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Vit+""Dst+""Cur+""Acc\0""Time"
@@ -180,14 +180,14 @@
 #define TR_VARIOSRC      "Data""A1\0 ""A2\0"
 
 #define LEN_VSCREEN      "\004"
-#define TR_VSCREEN       "Nums""Bars"
+#define TR_VSCREEN       "Val.""Bars"
 
 #define LEN_GPSFORMAT    "\004"
 #define TR_GPSFORMAT     "HMS NMEA"
 
 #define LEN2_VTEMPLATES  15
 #define LEN_VTEMPLATES   "\017"
-#define TR_VTEMPLATES    "Suppr Mixages\0\0""4 Voies simple\0""Coupure Gaz   \0""Empennage V   \0""Elevon\\Delta  \0""eCCPM         \0""Conf. H\200lico  \0""Test Servo    \0"
+#define TR_VTEMPLATES    "Suppr Mixages\0 ""4 Voies simple\0""Coupure Gaz\0   ""Empennage V\0   ""Elevon\\Delta\0  ""eCCPM\0         ""Conf. H\200lico\0  ""Test Servo\0    "
 
 #define LEN_VSWASHTYPE   "\004"
 #define TR_VSWASHTYPE    "--- ""120 ""120X""140 ""90\0"
@@ -321,7 +321,7 @@
 #define TR_SWITCHWARNING       "Alerte Int"
 #define TR_TIMEZONE            "Fuseau horaire"
 #define TR_RXCHANNELORD        "Ordre voies RX"
-#define TR_SLAVE               "Esclave"
+#define TR_SLAVE               "El\201ve"
 #define TR_MODESRC             "Mode\006% Source"
 #define TR_MULTIPLIER          "Multiplieur"
 #define TR_CAL                 "Cal"
@@ -343,9 +343,9 @@
 #define TR_TMR1LATMINUS        "Tmr1Lat min\006us"
 #define TR_TMR1JITTERUS        "Tmr1 Jitter\006us"
 #if defined(PCBSKY9X)
-#define TR_TMAINMAXMS          "Tmain max\010ms"
+#define TR_TMIXMAXMS           "Tmix max\012ms"
 #else
-#define TR_TMAINMAXMS          "Tmain max\010ms"
+#define TR_TMIXMAXMS           "Tmix max\014ms"
 #endif
 #define TR_T10MSUS             "T10ms\016us"
 #define TR_FREESTACKMINB       "Free Stack\010b"
@@ -404,7 +404,7 @@
 #define TR_SHUTDOWN            "ARRET EN COURS"
 #define TR_BATT_CALIB          "Calib. Batterie"
 #define TR_CURRENT_CALIB       "Calib. Courant"
-#define TR_VOLTAGE             INDENT"Voltage"
+#define TR_VOLTAGE             INDENT"Tension"
 #define TR_CURRENT             INDENT"Courant"
 #define TR_SELECT_MODEL        "S\200lect Mod\201le"
 #define TR_CREATE_MODEL        "Cr\200er Mod\201le"
@@ -428,8 +428,8 @@
 #define TR_CPU_MAH             "Consomm."
 #define TR_COPROC              "CoProc."
 #define TR_COPROC_TEMP         "Temp. MB \016>"
-#define TR_CAPAWARNING         "Alerte capacit\200"
-#define TR_TEMPWARNING         "Alerte temp"
+#define TR_CAPAWARNING         INDENT "Capacit\200 Basse"
+#define TR_TEMPWARNING         INDENT "Temp Haute"
 #define TR_FUNC                "Fonc"
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"
@@ -460,3 +460,5 @@
 #define TR_CURVE_TYPE          "Type"
 #define TR_GLOBAL_VARS         "Variables Globales"
 #define TR_OWN                 "Pers"
+#define TR_DATE                "Date"
+#define TR_ROTARY_ENCODER      "Enc.Rot."
