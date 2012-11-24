@@ -304,7 +304,7 @@ else {
 
 return x;
 }
-uint16_t isqrt32b(uint32_t n)
+uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
 {
     uint16_t c = 0x8000;
     uint16_t g = 0x8000;
@@ -319,47 +319,147 @@ uint16_t isqrt32b(uint32_t n)
     }
 }
 
-int16_t INTSQRT(int32_t x){
-	//this estimates the square root of x within the range of sqrt(x) = 0 to 4096
-	//x = x*x;
-	if (x < 1) {
-		x = 0;
-	}
+//int16_t INTSQRT(int32_t x){
+//	//DO NOT USE this estimates the square root of x within the range of sqrt(x) = 0 to 4096
+//	//x = x*x;
+//	if (x < 1) {
+//		x = 0;
+//	}
+//
+//
+//	int16_t nmax,n2,n3;
+//
+//	int32_t n = 0;
+//
+//	nmax = 4096;
+// 
+//	n2 = -1;
+//	n = 2048;
+//	n3 = 0;
+//	if (x == 0) {
+//		n2 = 0;
+//	} 
+//	else {
+//		
+//	while ( n2 < 0 ) {
+//		if (n == x/n) {
+//			
+//			n2 = n;
+//			}
+//		else {
+//			n = (n + x/n)/2;
+//		}
+//
+//		n3=n3+1;
+//		if (n3 > 2000) {
+//			n2 = 0;
+//		}
+//	}
+//	}
+//	return n2;
+//}
+//
+//int16_t TargetRange(int16_t Range16) {
+//	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables to select sources
+//	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
+//
+//	Range is dimensionless range.  Dimensionelss range is defined as range divided by the distance between bow and stern turret clusters on the ship.   E.G. math is the same
+//			for dimensionless range whether the turret spacing is 1m or 0.25m.  the differences is the ship with the closer turret spacing has a closer real range
+//			for an equivalent dimensionless range.  GRAVITY AND WIND not accounted for.  
+//
+//	**** Definitions ****
+//	Global variable #1:  input number (0 to 6) for azimuth.  Azimuth angle is taken directly from calibratedstick[n], so full angle range = +/- 1024 = +/- Pi radians
+//					referenced to bow of ship. Positive to Port, Negative to starboard.
+//	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
+//	*/
+//
+//	int32_t Range32;
+//	int16_t Az16,RmaxStern,x;
+//	uint8_t m,n,Rmax;//,Rmult;   // m = Az stick n = range stick, 
+//
+//	//m = ChannelChoice(GVAR_VALUE(0,0));
+//	//n = ChannelChoice(GVAR_VALUE(1,0));
+//	m = 4; //for debug set P1 for Azimuth, P2 for range
+//		n = 5;
+//	//Rmax = RangeMax(GVAR_VALUE(2,0));
+//	Rmax = 2;  //for debug 
+//	//prevents divide by zero error...
+//	if (Rmax < 1) {
+//		Rmax = 1;
+//	}
+//
+//	
+//	RmaxStern = (2048*(Rmax + 1))/Rmax;
+//
+//	////Az16=calibratedStick[m];  //-1 reverses pot to match physical turret
+//	//Range16=calibratedStick[n];
+//	//Following conditional prevents values too large from being used
+//		//if (Range16 > 1024) {
+//		//	Range16 = 1024;
+//		//}
+//		//else if (Range16 < -1024) {
+//		//	Range16 = -1024;
+//		//}
+//
+//	////Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
+////	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
+//	Range16 = Range16 + 1024; // shift range to 0 to 2048 for math purposes
+//	// now we implement range_stern = sqrt( 1^2 + Rbow^2 -2*1*Rbow*Cos(BetaVirtual))    remember that 2 is 2, but 1 is not 1.  1 is turret cluster spacing/turret cluster spacing 
+//	//and must be scaled based on the range input we will see for Rbow, hence the math below
+//
+//	//Take heed, do not exceed the limitation of a 32bit signed variable!  the parentheses are structured to minimize rounding errors in divisors!
+//
+//	//intcos returns +/-1020 so we must divide by 1020 so that effectively its range is +/-1.  but we must do so after it is multiplied out large enough so the errors don't
+//	//kill the accuracy
+//
+//	//adding conditionals to deal with possible integer overflow
+//	//Range32 = INTCOS(Az16)*4;  // the  4 is really 2048*2/1020
+//	
+//	//Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
+//	
+//	Range32 = (int32_t)Range16*(int32_t)Range16;
+//	//***Range32a=Range16;
+//
+//	//Range32 = Range32 + Range32a + 2048*2048/Rmax/Rmax;  // next step is the square root.  still need to implement
+//	
+//	//***Range32 = Range32/Range32a;
+//	
+//	
+//	//Range32 = INTSQRT(Range32);
+//
+//	////now we scale that range back to the +/-1024 we are expecting
+//
+//
+//
+//	//if (Range32 > RmaxStern){
+//	//	Range32 = RmaxStern;  //this should be the largest possible value given that the inputs are shifted to 0-2048, so max of sqrt(2048^2+2048^2-2*2048*2048*cos(beta)) = 4096
+//	//}
+//	//else if (Range32 < 0) {
+//	//	Range32 = 0;
+//	//}
+//
+//	////remember, everything is referenced currently to 0 to 2048 being full range on the primary turret.   
+//	//Range32 = (Range32*Rmax)/(Rmax+1); //this should result in a proper scaling....
+//	//Range32 = Range32 - 1024; //now in +/-1024 land
+//	//if (Range32 > 1023){
+//	//	Range32 = 1024;
+//	//}
+//	//else if(Range32 <-1023){
+//	//	Range32 = -1024;
+//	//}
+//
+//	//Range32 = Range16;
+//	//Range32 = Range32*Range32;
+//	Range32 = Range32/((int32_t)Range16);
+//	x = Range32-1024;
+//
+//	return x;
+//
+//
+//}
 
-
-	int16_t nmax,n2,n3;
-
-	int32_t n = 0;
-
-	nmax = 4096;
- 
-	n2 = -1;
-	n = 2048;
-	n3 = 0;
-	if (x == 0) {
-		n2 = 0;
-	} 
-	else {
-		
-	while ( n2 < 0 ) {
-		if (n == x/n) {
-			
-			n2 = n;
-			}
-		else {
-			n = (n + x/n)/2;
-		}
-
-		n3=n3+1;
-		if (n3 > 2000) {
-			n2 = 0;
-		}
-	}
-	}
-	return n2;
-}
-int16_t TargetRange(int16_t Range16) {
-	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables to select sources
+int16_t TargetRange(){
+	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables (TBD) to select sources
 	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
 
 	Range is dimensionless range.  Dimensionelss range is defined as range divided by the distance between bow and stern turret clusters on the ship.   E.G. math is the same
@@ -372,311 +472,6 @@ int16_t TargetRange(int16_t Range16) {
 	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
 	*/
 
-	int32_t Range32;
-	int16_t Az16,RmaxStern,x;
-	uint8_t m,n,Rmax;//,Rmult;   // m = Az stick n = range stick, 
-
-	//m = ChannelChoice(GVAR_VALUE(0,0));
-	//n = ChannelChoice(GVAR_VALUE(1,0));
-	m = 4; //for debug set P1 for Azimuth, P2 for range
-		n = 5;
-	//Rmax = RangeMax(GVAR_VALUE(2,0));
-	Rmax = 2;  //for debug 
-	//prevents divide by zero error...
-	if (Rmax < 1) {
-		Rmax = 1;
-	}
-
-	
-	RmaxStern = (2048*(Rmax + 1))/Rmax;
-
-	////Az16=calibratedStick[m];  //-1 reverses pot to match physical turret
-	//Range16=calibratedStick[n];
-	//Following conditional prevents values too large from being used
-		//if (Range16 > 1024) {
-		//	Range16 = 1024;
-		//}
-		//else if (Range16 < -1024) {
-		//	Range16 = -1024;
-		//}
-
-	////Az16 = BETAVfcn(Az16); //convert to virtual Beta for math purposes
-//	Az16 += 1024;  // shift range to 0 to 2048 for math purposes    ***** DO NOT SHIFT SINCE COSINE FUNCTION EXPECTS +/-1024 *****
-	Range16 = Range16 + 1024; // shift range to 0 to 2048 for math purposes
-	// now we implement range_stern = sqrt( 1^2 + Rbow^2 -2*1*Rbow*Cos(BetaVirtual))    remember that 2 is 2, but 1 is not 1.  1 is turret cluster spacing/turret cluster spacing 
-	//and must be scaled based on the range input we will see for Rbow, hence the math below
-
-	//Take heed, do not exceed the limitation of a 32bit signed variable!  the parentheses are structured to minimize rounding errors in divisors!
-
-	//intcos returns +/-1020 so we must divide by 1020 so that effectively its range is +/-1.  but we must do so after it is multiplied out large enough so the errors don't
-	//kill the accuracy
-
-	//adding conditionals to deal with possible integer overflow
-	//Range32 = INTCOS(Az16)*4;  // the  4 is really 2048*2/1020
-	
-	//Range32 = -1*(Range32*Range16)/Rmax;  //this output now exists in range of +/-8388608, still smaller than the limitation of -2147483648 to 2147483647, which we would exceed if not careful with previous step
-	
-	Range32 = (int32_t)Range16*(int32_t)Range16;
-	//***Range32a=Range16;
-
-	//Range32 = Range32 + Range32a + 2048*2048/Rmax/Rmax;  // next step is the square root.  still need to implement
-	
-	//***Range32 = Range32/Range32a;
-	
-	
-	//Range32 = INTSQRT(Range32);
-
-	////now we scale that range back to the +/-1024 we are expecting
-
-
-
-	//if (Range32 > RmaxStern){
-	//	Range32 = RmaxStern;  //this should be the largest possible value given that the inputs are shifted to 0-2048, so max of sqrt(2048^2+2048^2-2*2048*2048*cos(beta)) = 4096
-	//}
-	//else if (Range32 < 0) {
-	//	Range32 = 0;
-	//}
-
-	////remember, everything is referenced currently to 0 to 2048 being full range on the primary turret.   
-	//Range32 = (Range32*Rmax)/(Rmax+1); //this should result in a proper scaling....
-	//Range32 = Range32 - 1024; //now in +/-1024 land
-	//if (Range32 > 1023){
-	//	Range32 = 1024;
-	//}
-	//else if(Range32 <-1023){
-	//	Range32 = -1024;
-	//}
-
-	//Range32 = Range16;
-	//Range32 = Range32*Range32;
-	Range32 = Range32/((int32_t)Range16);
-	x = Range32-1024;
-
-	return x;
-
-
-}
-
-int16_t TargetRange2(){
-
-	int8_t R1max,RangeIndex,AzIndex;
-	int16_t R1,Alpha,BetaV,Returnvar;
-	int32_t R2,R1l;
-	//the following three should be set via global variables
-	RangeIndex = 5;
-	AzIndex = 4;
-	R1max = 2;
-
-	R1 = calibratedStick[RangeIndex];
-	Alpha = calibratedStick[AzIndex];
-
-	BetaV = BETAVfcn(Alpha);
-	//shift from +/-1024 to 0->2048
-	R1 = R1 + 1024;
-	R1l=R1;
-	R2 = INTCOS(BetaV);
-	//  -2*R1*L*cos(betav)  properly scaled.  
-	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
-	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (int32_t)R1*(int32_t)R1;
-		
-	R2 = R2	+ ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-	// R2 = sqrt of previous
-	//R2 = R2/int32_t(2);
-
-	////R2 = INTSQRT(R2);
-	R2=isqrt32b((uint32_t)R2);
-	// this should output 0 to 2048*(R1max+1)/R1max
-	//now for the proper scaling
-
-	////R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
-
-	//scale back to +/-1024
-	
-	R2 = R2 - 1024;
-
-	//now for tail end error checking
-
-	//Returnvar = (int16_t)R2;
-	Returnvar = R2;
-
-	if (Returnvar < -1023) {
-		Returnvar = -1024;
-	}
-	else if (Returnvar > 1023) {
-		Returnvar = 1024;
-	}
-
-	
-
-	return Returnvar;
-
-
-
-
-
-}
-int16_t TargetRange3(){
-
-														//int8_t R1max,RangeIndex,AzIndex;
-														//int16_t R1,Alpha,BetaV,Returnvar;
-														//int32_t R2,R2t;
-														////the following three should be set via global variables
-														//RangeIndex = 5;
-														//AzIndex = 4;
-														//R1max = 2;
-
-														//R1 = calibratedStick[RangeIndex];
-														//Alpha = calibratedStick[AzIndex];
-
-														//BetaV = BETAVfcn(Alpha);
-														////shift from +/-1024 to 0->2048
-														//R1 = R1 + 1024;
-
-														//R2t = INTCOS(BetaV);
-														////  -2*R1*L*cos(betav)  properly scaled.  
-														////cos returns +/-1020. -4 = -2*2048/1020
-														//R2 = ((-4)*R2t*((int32_t)R1))/((int32_t)R1max);
-														//// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-														//R2 = (int32_t)R1*(int32_t)R1+ 1048576;//+int32_t(R2)+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-														//// R2 = sqrt of previous
-														//R2 = INTSQRT(R2);
-														//// this should output 0 to 2048*(R1max+1)/R1max
-														////now for the proper scaling
-
-														//////R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
-
-
-
-														////scale back to +/-1024
-
-														//R2 = R2 - 1024;
-
-														////now for tail end error checking
-
-														////Returnvar = (int16_t)R2;
-														//Returnvar = R2;
-
-														//if (Returnvar < -1023) {
-														//	Returnvar = -1024;
-														//}
-														//else if (Returnvar > 1023) {
-														//	Returnvar = 1024;
-														//}
-
-														//
-
-														//return Returnvar;
-	int8_t R1max,RangeIndex,AzIndex;
-	int16_t R1,Alpha,BetaV,Returnvar;
-	int32_t R2,R1l;
-	//the following three should be set via global variables
-	RangeIndex = 5;
-	AzIndex = 4;
-	R1max = 2;
-
-	R1 = calibratedStick[RangeIndex];
-	Alpha = calibratedStick[AzIndex];
-
-	BetaV = BETAVfcn(Alpha);
-	//shift from +/-1024 to 0->2048
-	R1 = R1 + 1024;
-	R1l=R1;
-	R2 = INTCOS(BetaV);
-	//  -2*R1*L*cos(betav)  properly scaled.  
-	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*R2*(R1l))/((int32_t)R1max);
-	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (int32_t)R1*(int32_t)R1;
-		
-	R2 = R2/((int32_t)4)	+ (int32_t)562500;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-	// R2 = sqrt of previous
-	//R2 = R2/int32_t(2);
-
-	////R2 = INTSQRT(R2);
-	R2=isqrt32b((uint32_t)R2);
-	// this should output 0 to 2048*(R1max+1)/R1max
-	//now for the proper scaling
-
-	////R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
-
-	//scale back to +/-1024
-	
-	R2 = R2 - 1024;
-
-	//now for tail end error checking
-
-	//Returnvar = (int16_t)R2;
-	Returnvar = R2;
-
-	if (Returnvar < -1023) {
-		Returnvar = -1024;
-	}
-	else if (Returnvar > 1023) {
-		Returnvar = 1024;
-	}
-
-	
-
-	return Returnvar;
-
-
-
-
-
-}
-int16_t TargetRange4(){
-
-																//int8_t R1max,RangeIndex,AzIndex;
-																//int16_t R1,Alpha,BetaV,Returnvar;
-																//int32_t R2,R2t;
-																////the following three should be set via global variables
-																//RangeIndex = 5;
-																//AzIndex = 4;
-																//R1max = 2;
-
-																//R1 = calibratedStick[RangeIndex];
-																//Alpha = calibratedStick[AzIndex];
-
-																//BetaV = BETAVfcn(Alpha);
-																////shift from +/-1024 to 0->2048
-																//R1 = R1 + 1024;
-
-																//R2t = INTCOS(BetaV);
-																////  -2*R1*L*cos(betav)  properly scaled.  
-																////cos returns +/-1020. -4 = -2*2048/1020
-																//R2 = ((-4)*R2t*((int32_t)R1))/((int32_t)R1max);
-																//// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-																//R2 = (int32_t)R1*(int32_t)R1;//+int32_t(1024*1024);//+R2+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-																//// R2 = sqrt of previous
-																//R2 = INTSQRT(R2);
-																//// this should output 0 to 2048*(R1max+1)/R1max
-																////now for the proper scaling
-
-																//////R2 = (R2*(int32_t)R1max)/((int32_t)(R1max+1));
-
-																////scale back to +/-1024
-
-																//////R2 = R2 - 1024;
-
-																////now for tail end error checking
-
-																////Returnvar = (int16_t)R2;
-																//Returnvar = R2-1024;
-
-																//if (Returnvar < -1023) {
-																//	Returnvar = -1024;
-																//}
-																//else if (Returnvar > 1023) {
-																//	Returnvar = 1024;
-																//}
-
-																//
-
-																//return Returnvar;
-
-
 	int8_t R1max,RangeIndex,AzIndex;
 	int16_t R1,Alpha,BetaV,Returnvar;
 	int32_t R2;
@@ -686,13 +481,13 @@ int16_t TargetRange4(){
 	R1max = 2;
 
 	R1 = calibratedStick[RangeIndex];
-	//Alpha = calibratedStick[AzIndex];
-	Alpha = 0;
+	Alpha = calibratedStick[AzIndex];
+	//Alpha = 0;
 	BetaV = BETAVfcn(Alpha);
 	//shift from +/-1024 to 0->2048
 	R1 = R1 + 1024;
 	
-	R2 = 1020;//INTCOS(BetaV); 
+	R2 =INTCOS(BetaV); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
 	R2 = ((-4)*(int32_t)R2*((int32_t)R1))/((int32_t)R1max);
@@ -733,41 +528,4 @@ int16_t TargetRange4(){
 
 
 
-}
-int16_t TR2(){
-
-	int8_t R1max,RangeIndex,AzIndex;
-	int16_t R1,Alpha,BetaV,Returnvar;
-	int32_t R2;
-	RangeIndex = 5;
-	AzIndex = 4;
-	R1max = 2;
-
-	R1 = calibratedStick[RangeIndex];
-	Alpha = calibratedStick[AzIndex];
-
-	BetaV = BETAVfcn(Alpha);
-	R1 = R1 + 1024;
-	R2 = INTCOS(BetaV);
-	R2 = ((-4)*R2*((int32_t)R1))/((int32_t)R1max);
-
-	R2 = (int32_t)R1*R1 + 2250000;
-
-
-	R2 = INTSQRT(R2);
-
-	R2 = R2 - 1024;
-
-	Returnvar = R2;
-
-	if (Returnvar < -1023) {
-		Returnvar = -1024;
-	}
-	else if (Returnvar > 1023) {
-		Returnvar = 1024;
-	}
-
-	
-
-	return Returnvar;
 }
