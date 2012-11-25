@@ -79,12 +79,12 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 
  already tried to have only one return at the end */
-	uint8_t scp[65] = {255,255,255,254,254,253,252,251,250,249,
-		247,246,244,242,240,238,236,233,231,	228,
-		225,222,219,215,212,208,205,201,197,193,
-		189,	185,180,176,171,167,162,157,152,147,
-		142,136,131,	126,120,115,109,103,98,92,
-		86,80,74,68,62,56,50,44,37,31,
+	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
+		248,247,245,243,241,239,237,234,231,	229,
+		226,223,220,216,213,209,206,202,198,194,
+		190,	185,181,177,172,167,162,157,152,147,
+		142,137,132,	126,121,115,109,104,98,92,
+		86,80,74,68,62,56,50,44,38,31,
 		25,19,13,6,0};/*100,100,100,100,100,99,99,99,
 		98,98,97,96,96,95,94,93,92,91,90,89,88,87,86,
 		84,83,82,80,79,77,76,74,72,71,69,67,65,63,62,
@@ -93,7 +93,7 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 	/* Preceeding defines one quarter of a cosine centered on zero, phase shift to create sine.  
 	OUTPUT IS +/- 255 range for an input range of +/-128.  -1024 ->1024 is assumed in real life 
 	and is divided by 8 to get the correct range for this array.  Larger not used to save memory.
-	OUTPUT IS SCALED BACK UP tot +/-1020 by code. errors induced by this are small enough to ignore
+	OUTPUT IS SCALED BACK UP tot +/-1024 by code. errors induced by this are small enough to ignore
 	in most cases.  well worth it for not having to use 16 bit.  
 	
 	**Obsolete note follows**
@@ -122,18 +122,28 @@ int16_t INTCOS(int16_t x){
 		while (x < -128) {
 			x = x + 256;
 		}
-		if ( x < -64) {
+		if (x < -125) { //create 256 value from table above
+			x=-4*(scp[128-abs(x)]+1);
+		}
+		else if ( x < -64) {
 			x=-4*scp[128-abs(x)];
 		}
-		else if (x < 0) {
+		else if (x < -2) {
 			x=4*scp[abs(x)];
+		}
+		else if (x < 3) {
+			x=4*(scp[abs(x)]+1);
 		}
 		else if (x < 65) {
 			x = 4*scp[x];
 		}
-		else if (x < 129) {
+		else if (x < 126) {  //new code adds the 256 value to the origninal 255 to correctly scale the cosine to +/-1024
 			x = -4*scp[128-x];
 		}
+		else if (x < 129) {  //create the +256 end point
+			x = -4*(scp[128-x]+1);
+		}
+
       return x; // will add actual after verification of function of this change
 }
 int16_t INTSIN(int16_t x){
@@ -147,18 +157,28 @@ int16_t INTSIN(int16_t x){
 		if /*( x < -64) {
 			x=-4*scp[abs(x+64)];
 		}
-		else if*/ (x < 0) {
+		else if*/ (x < 0) {  //takes care of the pesky 256 value
+			if (x < -67 && x > -61){
+				x=-4*(scp[abs(x+64)]+1);
+			}
+			else {
 			x=-4*scp[abs(x+64)];
+			}
 		}
 		/*else if (x < 65) {
 			x = 4*scp[128-(64+x)];
 		}*/
 		else if (x < 129) {
+			if (x < 67 && x > 61){
+				x=-4*(scp[abs(x-64)]+1);
+			}
+			else {
 			x = 4*scp[abs(x-64)];
+			}
 		}
 		return x;
 }
-int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1020 It is obvious if you don't do that.
+int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
 		x=x/8;
 		//while (x > 128) {
 		//	x=x-256;
