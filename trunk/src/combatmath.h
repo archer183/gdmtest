@@ -100,12 +100,12 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 	Might consider going to unsigned 8 bit to allow array values from 0 to 200
 	for more resolution with no memory hit.  65 parts makes the symmetric math easier.  with int16 variables on the output,
 	this should not be a problem*/
-	uint8_t acosn[58]={239,237,235,232,230,228,
-		225,223,221,218,216,213,211,208,206,203,
-		201,198,195,193,190,187,184,182,179,176,
-		173,170,167,164,161,158,155,152,148,145,
-		141,138,134,131,127,123,119,115,111,106,
-		102,97,92,87,81,75,68,61,53,43,30,0};/*{106,104,102,101,99,97,
+	uint8_t acosn[58]={240,238,236,233,231,229,
+		226,224,221,219,216,214,212,209,206,204,
+		201,199,196,193,191,188,185,182,180,177,
+		174,171,168,165,162,159,155,152,149,145,
+		142,139,135,131,127,124,120,115,111,107,
+		102,97,92,87,81,75,69,61,53,43,31,0};/*{106,104,102,101,99,97,
 		95,94,92,90,88,86,85,83,81,79,77,74,
 		72,70,68,65,63,60,58,55,52,49,46,43,
 		39,35,30,24,17,0};*/
@@ -189,7 +189,7 @@ int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 			x = 128;
 		}
 		else if (x<-70) {
-			x=1020-(4*acosn[abs(x)-71])/3;
+			x=1024-(4*acosn[abs(x)-71])/3;
 		}
 		else if (x < 71) { //curve fit for middle section of arccos}
 			x=(((-10*x)/15)+128)*4;  //the 4x multiplier takes range from +/-255 to +/- 1024 effectively
@@ -204,7 +204,7 @@ int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 		return x;
 }
 
-int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1020 It is obvious if you don't do that.
+int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
 		x=x/8;
 		//while (x > 128) {
 		//	x=x-256;
@@ -215,7 +215,7 @@ int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 			x = 128;
 		}
 		else if (x<-70) {
-			x=1020-(4*acosn[abs(x)-71])/3;
+			x=1024-(4*acosn[abs(x)-71])/3;
 		}
 		else if (x < 71) { //curve fit for middle section of arccos}
 			x=(((-10*x)/15)+128)*4;  //the 4x multiplier takes range from +/-255 to +/- 1024 effectively
@@ -227,7 +227,12 @@ int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 			x = 0;
 		}
 		//x=x*8;
-		x=510-x;   //convert from ACOS TO ASIN ,  remember our angular range is +/-1020  = +/- Pi radians   so Pi/2 =510
+		x=512-x;   //convert from ACOS TO ASIN ,  remember our angular range is +/-1024  = +/- Pi radians   so Pi/2 =512
+		//this gives the middle band solution for arcsine =  (-Pi/2 to +Pi/2) anthing outside
+		//that range is also a solution within that range.
+
+
+		
 		return x;
 }
 
