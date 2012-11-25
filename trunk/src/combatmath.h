@@ -170,7 +170,7 @@ int16_t INTSIN(int16_t x){
 		}*/
 		else if (x < 129) {
 			if (x < 67 && x > 61){
-				x=-4*(scp[abs(x-64)]+1);
+				x=4*(scp[abs(x-64)]+1);
 			}
 			else {
 			x = 4*scp[abs(x-64)];
