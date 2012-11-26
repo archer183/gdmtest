@@ -71,8 +71,13 @@
 #define TR_POSNEG        "POS""NEG"
 
 #define LEN_VCURVEFUNC   "\003"
+
+#if defined(TRIG)
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""RNG""TM2"
 //TRIG FUNCTIONS ADDED ABOVE
+#else
+#define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|"
+#endif
 
 #define LEN_VMLTPX       "\010"
 #define TR_VMLTPX        "Add     ""Multiply""Replace "
