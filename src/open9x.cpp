@@ -331,7 +331,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
   return erg / 25; // 100*D5/RESX;
 }
 
-#if defined(CURVES)
+#if defined(CURVES) && defined(TRIG)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
   /* already tried to have only one return at the end */
@@ -367,6 +367,34 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		return x;
 	case CURVE_TM2:
 		return x;
+    case CURVE_ABS_F: //f|abs(f)
+      return x > 0 ? RESX : -RESX;
+  }
+  if (idx < 0) {
+    x = -x;
+    idx = -idx + CURVE_BASE - 1;
+  }
+  return intpol(x, idx - CURVE_BASE);
+}
+#elif defined(CURVES)
+int16_t applyCurve(int16_t x, int8_t idx)
+{
+  /* already tried to have only one return at the end */
+  switch(idx) {
+    case CURVE_NONE:
+      return x;
+    case CURVE_X_GT0:
+      if (x < 0) x = 0; //x|x>0
+      return x;
+    case CURVE_X_LT0:
+      if (x > 0) x = 0; //x|x<0
+      return x;
+    case CURVE_ABS_X: // x|abs(x)
+      return abs(x);
+    case CURVE_F_GT0: //f|f>0
+      return x > 0 ? RESX : 0;
+    case CURVE_F_LT0: //f|f<0
+      return x < 0 ? -RESX : 0;
     case CURVE_ABS_F: //f|abs(f)
       return x > 0 ? RESX : -RESX;
   }

@@ -487,7 +487,7 @@ public:
 };
 
 extern Key keys[NUM_KEYS];
-
+#if defined(TRIG)
 enum BaseCurves {
   CURVE_NONE,
   CURVE_X_GT0,
@@ -504,6 +504,18 @@ enum BaseCurves {
   CURVE_TM2,
   CURVE_BASE
 };
+#else
+enum BaseCurves {
+  CURVE_NONE,
+  CURVE_X_GT0,
+  CURVE_X_LT0,
+  CURVE_ABS_X,
+  CURVE_F_GT0,
+  CURVE_F_LT0,
+  CURVE_ABS_F,
+  CURVE_BASE
+};
+#endif
 
 #define SWASH_TYPE_120   1
 #define SWASH_TYPE_120X  2
