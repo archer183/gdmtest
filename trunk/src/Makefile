@@ -202,6 +202,10 @@ XCURVES = YES
 # Values = YES, NO
 GVARS = YES
 
+#trig and combat math.
+# Values = Yes , No
+TRIG = YES
+
 
 #------- END BUILD OPTIONS ---------------------------
 
@@ -384,6 +388,11 @@ endif
 # If STD-Support is enabled
 ifeq ($(EXT), STD)
   CPPDEFS += -DEXTSTD
+endif
+
+#trig and combat math
+ifeq ($(TRIG), YES)
+  CPPDEFS += -DTRIG
 endif
 
 # If ARDUPILOT-Support is enabled

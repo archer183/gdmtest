@@ -344,6 +344,78 @@ uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
     }
 }
 
+
+int16_t TargetRange(){
+	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables (TBD) to select sources
+	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
+
+	Range is dimensionless range.  Dimensionelss range is defined as range divided by the distance between bow and stern turret clusters on the ship.   E.G. math is the same
+			for dimensionless range whether the turret spacing is 1m or 0.25m.  the differences is the ship with the closer turret spacing has a closer real range
+			for an equivalent dimensionless range.  GRAVITY AND WIND not accounted for.  
+
+	**** Definitions ****
+	Global variable #1:  input number (0 to 6) for azimuth.  Azimuth angle is taken directly from calibratedstick[n], so full angle range = +/- 1024 = +/- Pi radians
+					referenced to bow of ship. Positive to Port, Negative to starboard.
+	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
+	*/
+
+	int8_t R1max,RangeIndex,AzIndex;
+	int16_t R1,Alpha,BetaV,Returnvar;
+	int32_t R2;
+	//the following three should be set via global variables
+	RangeIndex = 5;
+	AzIndex = 4;
+	R1max = 2;
+
+	R1 = calibratedStick[RangeIndex];
+	Alpha = calibratedStick[AzIndex];
+	//Alpha = 0;
+	BetaV = BETAVfcn(Alpha);
+	//shift from +/-1024 to 0->2048
+	R1 = R1 + 1024;
+	
+	R2 =INTCOS(BetaV); 
+	//  -2*R1*L*cos(betav)  properly scaled.  
+	//cos returns +/-1020. -4 = -2*2048/1020
+	R2 = ((-4)*(int32_t)R2*((int32_t)R1))/((int32_t)R1max);
+	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
+	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
+	R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
+		
+	//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	// R2 = sqrt of previous
+	//R2 = R2/int32_t(2);
+
+	////R2 = INTSQRT(R2);
+	R2=isqrt32b((uint32_t)R2);
+	// this should output 0 to 2048*(R1max+1)/R1max
+	//now for the proper scaling
+
+	R2 = ((int32_t)R2*(int32_t)R1max)/((int32_t)(R1max+1));
+
+	//scale back to +/-1024
+	
+	R2 = R2 - 1024;
+
+	//now for tail end error checking
+
+	//Returnvar = (int16_t)R2;
+	Returnvar = R2;
+
+	if (Returnvar < -1023) {
+		Returnvar = -1024;
+	}
+	else if (Returnvar > 1023) {
+		Returnvar = 1024;
+	}
+
+	
+
+	return Returnvar;
+
+
+
+}
 //int16_t INTSQRT(int32_t x){
 //	//DO NOT USE this estimates the square root of x within the range of sqrt(x) = 0 to 4096
 //	//x = x*x;
@@ -482,75 +554,3 @@ uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
 //
 //
 //}
-
-int16_t TargetRange(){
-	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables (TBD) to select sources
-	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
-
-	Range is dimensionless range.  Dimensionelss range is defined as range divided by the distance between bow and stern turret clusters on the ship.   E.G. math is the same
-			for dimensionless range whether the turret spacing is 1m or 0.25m.  the differences is the ship with the closer turret spacing has a closer real range
-			for an equivalent dimensionless range.  GRAVITY AND WIND not accounted for.  
-
-	**** Definitions ****
-	Global variable #1:  input number (0 to 6) for azimuth.  Azimuth angle is taken directly from calibratedstick[n], so full angle range = +/- 1024 = +/- Pi radians
-					referenced to bow of ship. Positive to Port, Negative to starboard.
-	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
-	*/
-
-	int8_t R1max,RangeIndex,AzIndex;
-	int16_t R1,Alpha,BetaV,Returnvar;
-	int32_t R2;
-	//the following three should be set via global variables
-	RangeIndex = 5;
-	AzIndex = 4;
-	R1max = 2;
-
-	R1 = calibratedStick[RangeIndex];
-	Alpha = calibratedStick[AzIndex];
-	//Alpha = 0;
-	BetaV = BETAVfcn(Alpha);
-	//shift from +/-1024 to 0->2048
-	R1 = R1 + 1024;
-	
-	R2 =INTCOS(BetaV); 
-	//  -2*R1*L*cos(betav)  properly scaled.  
-	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*(int32_t)R2*((int32_t)R1))/((int32_t)R1max);
-	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
-	R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
-		
-	//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-	// R2 = sqrt of previous
-	//R2 = R2/int32_t(2);
-
-	////R2 = INTSQRT(R2);
-	R2=isqrt32b((uint32_t)R2);
-	// this should output 0 to 2048*(R1max+1)/R1max
-	//now for the proper scaling
-
-	R2 = ((int32_t)R2*(int32_t)R1max)/((int32_t)(R1max+1));
-
-	//scale back to +/-1024
-	
-	R2 = R2 - 1024;
-
-	//now for tail end error checking
-
-	//Returnvar = (int16_t)R2;
-	Returnvar = R2;
-
-	if (Returnvar < -1023) {
-		Returnvar = -1024;
-	}
-	else if (Returnvar > 1023) {
-		Returnvar = 1024;
-	}
-
-	
-
-	return Returnvar;
-
-
-
-}
