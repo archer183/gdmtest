@@ -405,7 +405,7 @@ void TargetRange(){
 
 	Beta = abs(BetaV)+Beta;
 
-	if (alpha < 0) {  //flops to other side if alpha in negative half of range
+	if (Alpha < 0) {  //flops to other side if alpha in negative half of range
 		Beta = -Beta;
 	}
 
