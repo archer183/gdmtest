@@ -79,7 +79,7 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 
  already tried to have only one return at the end */
-	extern int16_t combatarray[2];
+extern int16_t combatarray[2] = {0,0};
 	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
 		226,223,220,216,213,209,206,202,198,194,
