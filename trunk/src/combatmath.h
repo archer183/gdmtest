@@ -79,6 +79,7 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 
  already tried to have only one return at the end */
+	extern int16_t combatarray[2];
 	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
 		226,223,220,216,213,209,206,202,198,194,
@@ -405,7 +406,7 @@ int16_t TargetRange(){
 	if (Returnvar < -1023) {
 		Returnvar = -1024;
 	}
-	else if (Returnvar > 1023) {
+	else if (Returnvar[0] > 1023) {
 		Returnvar = 1024;
 	}
 
@@ -416,6 +417,18 @@ int16_t TargetRange(){
 
 
 }
+
+void GvarTestFcn(int16_t x){
+
+	combatarray[0]=x;
+	combatarray[1]=abs(x);
+
+
+
+
+//return R2;
+}
+
 //int16_t INTSQRT(int32_t x){
 //	//DO NOT USE this estimates the square root of x within the range of sqrt(x) = 0 to 4096
 //	//x = x*x;
