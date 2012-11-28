@@ -406,7 +406,7 @@ int16_t TargetRange(){
 	if (Returnvar < -1023) {
 		Returnvar = -1024;
 	}
-	else if (Returnvar[0] > 1023) {
+	else if (Returnvar > 1023) {
 		Returnvar = 1024;
 	}
 
