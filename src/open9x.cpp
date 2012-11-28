@@ -360,14 +360,15 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=INTACOS(x);
 		return x;
 		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		//x=INTASIN(x);
-			x=combatarray[1];
+		x=INTASIN(x);
+		//	x=combatarray[1];
 		return x;
 	case CURVE_RNG:
-		x = TargetRange();
+		TargetRange();
+		x=combatarray[1];
 		return x;
-	case CURVE_TM2:
-		GvarTestFcn(x);
+	case CURVE_AZM:
+		//GvarTestFcn(x);
 		x=combatarray[0];
 		return x;
     case CURVE_ABS_F: //f|abs(f)

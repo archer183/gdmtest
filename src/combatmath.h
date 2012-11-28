@@ -346,7 +346,7 @@ uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
 }
 
 
-int16_t TargetRange(){
+void TargetRange(){
 	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables (TBD) to select sources
 	I would prefer to remove these but until I figure out the menu structure and modify it, this is how it is.
 
@@ -360,9 +360,9 @@ int16_t TargetRange(){
 	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
 	*/
 
-	int8_t R1max,RangeIndex,AzIndex;
+	int8_t R1max,RangeIndex,AzIndex,i;
 	int16_t R1,Alpha,BetaV,Returnvar;
-	int32_t R2;
+	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
 	RangeIndex = 5;
 	AzIndex = 4;
@@ -371,14 +371,14 @@ int16_t TargetRange(){
 	R1 = calibratedStick[RangeIndex];
 	Alpha = calibratedStick[AzIndex];
 	//Alpha = 0;
-	BetaV = BETAVfcn(Alpha);
+	BetaV = BETAVfcn(Alpha);  //converts from alpha to beta function.  alpha goes to beta virtual, alpha virtual goes to beta
 	//shift from +/-1024 to 0->2048
 	R1 = R1 + 1024;
 	
-	R2 =INTCOS(BetaV); 
+	CosBV =INTCOS(BetaV); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*(int32_t)R2*((int32_t)R1))/((int32_t)R1max);
+	R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
 	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
 	R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
@@ -392,6 +392,30 @@ int16_t TargetRange(){
 	// this should output 0 to 2048*(R1max+1)/R1max
 	//now for the proper scaling
 
+	//first find gamma as gamma+betaV=beta
+
+	//-L*cos(BetaV)  : Have to multiply by 1024 to change scale of fraction from +/-1 to +/-1024
+	Beta = (-1)*((int32_t)CosBV*(int32_t)2048)/((int32_t)R1max);
+	//R1-Lcos(betaV)
+	Beta=(int32_t)R1*(int32_t)1024-(int32_t)Beta;
+	//(R1-Lcos(betaV)/R2
+	Beta = (int32_t)Beta/((int32_t)R2);
+	Beta = INTACOS((int16_t)Beta);
+	//now we have the correction factor, so...
+
+	Beta = abs(BetaV)+Beta;
+
+	if (alpha < 0) {  //flops to other side if alpha in negative half of range
+		Beta = -Beta;
+	}
+
+
+
+	//code below must happen after the azimuth value is determined...
+
+
+
+
 	R2 = ((int32_t)R2*(int32_t)R1max)/((int32_t)(R1max+1));
 
 	//scale back to +/-1024
@@ -401,18 +425,28 @@ int16_t TargetRange(){
 	//now for tail end error checking
 
 	//Returnvar = (int16_t)R2;
-	Returnvar = R2;
+	/*Returnvar = R2;
 
 	if (Returnvar < -1023) {
 		Returnvar = -1024;
 	}
 	else if (Returnvar > 1023) {
 		Returnvar = 1024;
+	}*/
+	combatarray[1] = R2;
+	combatarray[0] = Beta;
+
+	i=0;
+	while (i<2){
+	if (combatarray[i] < -1023) {
+		combatarray[i] = -1024;
 	}
-
-	
-
-	return Returnvar;
+	else if (combatarray[i] > 1023) {
+		combatarray[i] = 1024;
+	}
+	i=i+1;
+	}
+	//return Returnvar;
 
 
 
