@@ -367,7 +367,7 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		TargetRange();
 		x=combatarray[1];
 		return x;
-	case CURVE_AZM:
+	case CURVE_BTA:
 		//GvarTestFcn(x);
 		x=combatarray[0];
 		return x;
