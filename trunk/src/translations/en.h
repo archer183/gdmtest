@@ -73,7 +73,7 @@
 #define LEN_VCURVEFUNC   "\003"
 
 #if defined(TRIG)
-#define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""RNG""BTA"
+#define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""RNG""BTA""BTV"
 //TRIG FUNCTIONS ADDED ABOVE
 #else
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|"

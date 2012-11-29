@@ -371,6 +371,9 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//GvarTestFcn(x);
 		x=combatarray[0];
 		return x;
+	case CURVE_BTV:
+		x=BETAVfcn(x);
+		return x;
     case CURVE_ABS_F: //f|abs(f)
       return x > 0 ? RESX : -RESX;
   }
