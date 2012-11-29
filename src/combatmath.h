@@ -395,7 +395,7 @@ void TargetRange(){
 	//first find gamma as gamma+betaV=beta
 
 	//-L*cos(BetaV)  : Have to multiply by 1024 to change scale of fraction from +/-1 to +/-1024
-	Beta = (-1)*((int32_t)CosBV*(int32_t)2048)/((int32_t)R1max);
+	Beta = ((int32_t)CosBV*(int32_t)2048)/((int32_t)R1max);
 	//R1-Lcos(betaV)
 	Beta=(int32_t)R1*(int32_t)1024-(int32_t)Beta;
 	//(R1-Lcos(betaV)/R2
