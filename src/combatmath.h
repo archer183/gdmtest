@@ -361,7 +361,7 @@ void TargetRange(){
 	*/
 
 	int8_t R1max,RangeIndex,AzIndex,i;
-	int16_t R1,Alpha,BetaV,Returnvar;
+	int16_t R1,Alpha,BetaV;
 	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
 	RangeIndex = 5;
@@ -375,7 +375,7 @@ void TargetRange(){
 	//shift from +/-1024 to 0->2048
 	R1 = R1 + 1024;
 	
-	If (R1 > 2048) {
+	if (R1 > 2048) {
 		R1 = 2048;
 	}
 	else if (R1 < 0){

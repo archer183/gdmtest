@@ -35,7 +35,7 @@
 
 #if defined(CURVES) && defined(TRIG)
 #include "combatmath.h"
-combatarray[5] = {0,0,0,0,0}
+int16_t combatarray[5] = {0,0,0,0,0}
 /*
 0 = Aft Bearing
 1 = Aft Range
@@ -343,8 +343,8 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 #if defined(CURVES) && defined(TRIG)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
-  /* already tried to have only one return at the end */
-  CombatTestFcn()
+  
+  CombatTestFcn();
 	switch(idx) {
     case CURVE_NONE:
       return x;
