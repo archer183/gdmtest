@@ -467,7 +467,7 @@ void CombatTestFcn(){
 
 	combatarray[2]=x;
 	combatarray[3]=y/100;
-	combatarray[4]=x/100
+	combatarray[4]=x/100;
 
 
 
