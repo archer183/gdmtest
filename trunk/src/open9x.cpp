@@ -35,6 +35,15 @@
 
 #if defined(CURVES) && defined(TRIG)
 #include "combatmath.h"
+combatarray[5] = {0,0,0,0,0}
+/*
+0 = Aft Bearing
+1 = Aft Range
+2-4 = Debugging variables
+
+
+*/
+
 #endif
 
 #if defined(PCBSKY9X)
@@ -335,7 +344,8 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 int16_t applyCurve(int16_t x, int8_t idx)
 {
   /* already tried to have only one return at the end */
-  switch(idx) {
+  CombatTestFcn()
+	switch(idx) {
     case CURVE_NONE:
       return x;
     case CURVE_X_GT0:
@@ -354,14 +364,16 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=INTCOS(x);
       return x; // will add actual after verification of function of this change
 	case CURVE_SIN:
-		x=INTSIN(x);
+		//x=INTSIN(x);
+		x=combatarray[4];
 		return x;
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		x=INTACOS(x);
+		//x=INTACOS(x);
+		x=combatarray[3];
 		return x;
-		case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		x=INTASIN(x);
-		//	x=combatarray[1];
+	case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
+		//x=INTASIN(x);
+		x=combatarray[2];
 		return x;
 	case CURVE_RNG:
 		TargetRange();
