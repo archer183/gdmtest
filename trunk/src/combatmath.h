@@ -346,7 +346,7 @@ uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
 }
 
 int16_t Comb_input_fcn(int16_t x){
-	x = abs(x)/100;
+	x = abs(x)/10;
 	if (x < 16){
 		x = ex_chans[x];
 	}
@@ -382,7 +382,7 @@ void TargetRange(){
 	//the following three should be set via global variables
 
 	R1 = GVAR_VALUE(2,0);
-	R1 = R1/100;
+	R1 = R1/10;
 	R1max = (int8_t)R1;
 	if (R1max < 1){
 		R1max = 1;
@@ -391,9 +391,10 @@ void TargetRange(){
 		R1max = 5;
 	}
 
-	R1 = Comb_input_fcn(2502);
-	Alpha = Comb_input_fcn(2402);
-
+	R1 = Comb_input_fcn(GVAR_VALUE(1,0));
+	Alpha = Comb_input_fcn(GVAR_VALUE(0,0));
+	combatarray[3]=(GVAR_VALUE(1,0));
+	combatarray[4]=(GVAR_VALUE(0,0));
 
 	/*RangeIndex = 5;
 	AzIndex = 4;
