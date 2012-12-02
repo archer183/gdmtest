@@ -344,7 +344,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
 int16_t applyCurve(int16_t x, int8_t idx)
 {
   
-  CombatTestFcn();
+  //CombatTestFcn();
 	switch(idx) {
     case CURVE_NONE:
       return x;
