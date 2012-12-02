@@ -462,8 +462,8 @@ void TargetRange(){
 void CombatTestFcn(){
 	int16_t x,y;
 
-	x =chans[1];
-	y=chans[0];
+	x =ex_chans[1];
+	y=ex_chans[0];
 
 	combatarray[2]=x;
 	combatarray[3]=y/100;
