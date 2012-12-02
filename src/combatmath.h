@@ -352,7 +352,7 @@ int16_t Comb_input_fcn(int16_t x){
 	}
 	else if (x > 19 && x < 27){
 		x = x-20;
-		x = calibratedStick[x]
+		x = calibratedStick[x];
 	}
 	else {
 		x = 0;
@@ -507,7 +507,7 @@ void TargetRange(){
 
 
 //return R2;
-}
+//}
 
 //int16_t INTSQRT(int32_t x){
 //	//DO NOT USE this estimates the square root of x within the range of sqrt(x) = 0 to 4096
