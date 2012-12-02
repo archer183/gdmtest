@@ -79,7 +79,7 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 
  already tried to have only one return at the end */
-extern int16_t combatarray[2] = {0,0};
+extern int16_t combatarray[5];
 	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
 		226,223,220,216,213,209,206,202,198,194,
@@ -375,6 +375,13 @@ void TargetRange(){
 	//shift from +/-1024 to 0->2048
 	R1 = R1 + 1024;
 	
+	If (R1 > 2048) {
+		R1 = 2048;
+	}
+	else if (R1 < 0){
+		R1 = 0;
+	}
+
 	CosBV =INTCOS(BetaV); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
 	//cos returns +/-1020. -4 = -2*2048/1020
@@ -452,11 +459,15 @@ void TargetRange(){
 
 }
 
-void GvarTestFcn(int16_t x){
+void CombatTestFcn(){
+	int16_t x,y;
 
-	combatarray[0]=x;
-	combatarray[1]=abs(x);
+	x =chans[1];
+	y=chans[0];
 
+	combatarray[2]=x;
+	combatarray[3]=y/100;
+	combatarray[4]=x/100
 
 
 
