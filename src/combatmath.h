@@ -350,9 +350,9 @@ int16_t Comb_input_fcn(int16_t x){
 	if (x < 16){
 		x = ex_chans[x];
 	}
-	else if (x > 19 && X < 27){
+	else if (x > 19 && x < 27){
 		x = x-20;
-		x = calibratedstick[x]
+		x = calibratedStick[x]
 	}
 	else {
 		x = 0;
