@@ -273,33 +273,33 @@ int16_t BETAVfcn(int16_t x) { /*this function converts from alpha(angle off cent
 	//return x;
 }
 
-uint8_t ChannelChoice(int16_t x){
-/* this function takes an input and selects channels 0 - 6 (0-3 for sticks, 4-6 for pots) and returns that array index*/
-x = x / 100;  //this takes the +/- 1024 input and converts it to +/- 10
-if (x < -8){
-	x = 0;
-}
-else if (x < -6){
-	x = 1;
-}
-else if (x < -4){ 
-	x = 2;
-}
-else if (x < -2){
-	x = 3;
-}
-else if (x < 0){ 
-	x = 4;
-}
-else if (x < 2){
-	x = 5;
-}
-else { 
-	x = 6;
-}
-
-return x;
-}
+//uint8_t ChannelChoice(int16_t x){
+///* this function takes an input and selects channels 0 - 6 (0-3 for sticks, 4-6 for pots) and returns that array index*/
+//x = x / 100;  //this takes the +/- 1024 input and converts it to +/- 10
+//if (x < -8){
+//	x = 0;
+//}
+//else if (x < -6){
+//	x = 1;
+//}
+//else if (x < -4){ 
+//	x = 2;
+//}
+//else if (x < -2){
+//	x = 3;
+//}
+//else if (x < 0){ 
+//	x = 4;
+//}
+//else if (x < 2){
+//	x = 5;
+//}
+//else { 
+//	x = 6;
+//}
+//
+//return x;
+//}
 
 
 uint8_t RangeMax(int16_t x){
@@ -345,6 +345,22 @@ uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
     }
 }
 
+int16_t Comb_input_fcn(int16_t x){
+	x = abs(x)/100;
+	if (x < 16){
+		x = ex_chans[x];
+	}
+	else if (x > 19 && X < 27){
+		x = x-20;
+		x = calibratedstick[x]
+	}
+	else {
+		x = 0;
+	}
+
+	return x;
+}
+
 
 void TargetRange(){
 	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables (TBD) to select sources
@@ -364,12 +380,29 @@ void TargetRange(){
 	int16_t R1,Alpha,BetaV;
 	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
-	RangeIndex = 5;
-	AzIndex = 4;
-	R1max = 2;
 
-	R1 = calibratedStick[RangeIndex];
-	Alpha = calibratedStick[AzIndex];
+	R1 = GVAR_VALUE(2,0);
+	R1 = R1/100;
+	R1max = (int8_t)R1;
+	if (R1max < 1){
+		R1max = 1;
+	}
+	if (R1max >5){
+		R1max = 5;
+	}
+
+	R1 = Comb_input_fcn(2502);
+	Alpha = Comb_input_fcn(2402);
+
+
+	/*RangeIndex = 5;
+	AzIndex = 4;
+	R1max = 2;*/
+
+	//R1 = calibratedStick[RangeIndex];
+	//Alpha = calibratedStick[AzIndex];
+
+
 	//Alpha = 0;
 	BetaV = BETAVfcn(Alpha);  //converts from alpha to beta function.  alpha goes to beta virtual, alpha virtual goes to beta
 	//shift from +/-1024 to 0->2048
@@ -442,6 +475,8 @@ void TargetRange(){
 	}*/
 	combatarray[1] = R2;
 	combatarray[0] = Beta;
+	combatarray[2] = R1max*1024/10;
+
 
 	i=0;
 	while (i<2){
@@ -459,15 +494,15 @@ void TargetRange(){
 
 }
 
-void CombatTestFcn(){
-	int16_t x,y;
-
-	x =ex_chans[1];
-	y=ex_chans[0];
-
-	combatarray[2]=x;
-	combatarray[3]=y/100;
-	combatarray[4]=x/100;
+//void CombatTestFcn(){
+//	int16_t x,y;
+//
+//	x =ex_chans[1];
+//	y=ex_chans[0];
+//
+//	combatarray[2]=x;
+//	combatarray[3]=y/100;
+//	combatarray[4]=x/100;
 
 
 
