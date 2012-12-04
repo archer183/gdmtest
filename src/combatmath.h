@@ -381,7 +381,7 @@ void TargetRange(){
 	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
 
-	R1 = GVAR_VALUE(2,0);
+	R1 = GVAR_VALUE(2,0);  // gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on
 	R1 = R1/10;
 	R1max = (int8_t)R1;
 	if (R1max < 1){
@@ -390,7 +390,8 @@ void TargetRange(){
 	if (R1max >5){
 		R1max = 5;
 	}
-
+	//gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on thru 150 =15 for mixes 0-15 (1-16 in display)
+	// 200 = 20 thru 260 = 26  correlates to input pots 0-6 (0,1,2,3 = sticks, 4,5,6 = pots)
 	R1 = Comb_input_fcn(GVAR_VALUE(1,0));
 	Alpha = Comb_input_fcn(GVAR_VALUE(0,0));
 	combatarray[3]=(GVAR_VALUE(1,0));

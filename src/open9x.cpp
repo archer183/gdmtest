@@ -364,16 +364,16 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		x=INTCOS(x);
       return x; // will add actual after verification of function of this change
 	case CURVE_SIN:
-		//x=INTSIN(x);
-		x=combatarray[2];
+		x=INTSIN(x);
+		//x=combatarray[2];
 		return x;
 	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		//x=INTACOS(x);
-		x=combatarray[3];
+		x=INTACOS(x);
+		//x=combatarray[3];
 		return x;
 	case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		//x=INTASIN(x);
-		x=combatarray[4];
+		x=INTASIN(x);
+		//x=combatarray[4];
 		return x;
 	case CURVE_RNG:
 		TargetRange();
