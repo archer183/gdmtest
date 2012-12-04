@@ -376,7 +376,7 @@ void TargetRange(){
 	Global Variabel #2: input number (0 to 6) for range.  Range is taken directly from calibratedstick[n] Range = +/-1024 = +/-100% = 0 to Max Range in menu structure
 	*/
 
-	int8_t R1max,RangeIndex,AzIndex,i;
+	int8_t R1max,i;
 	int16_t R1,Alpha,BetaV;
 	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
