@@ -26,7 +26,7 @@ DATA_DIR = /tmp
 BACKUP_FLASH = YES
 
 # Backup the old EEPROM (YES, NO)
-BACKUP_EEPROM = YES
+BACKUP_EEPROM = NO
 
 # Restore EEPROM to 9x (YES, NO) (will set BACKUP_EEPROM to YES).
 RESTORE_EEPROM = NO
