@@ -441,6 +441,11 @@ void TargetRange(){
 	//R1-Lcos(betaV)
 	Beta=(int32_t)R1*(int32_t)1024-(int32_t)Beta;
 	//(R1-Lcos(betaV)/R2
+
+	if (R2 = 0) {
+		R2 = 1;
+	}
+
 	Beta = (int32_t)Beta/((int32_t)R2);
 	Beta = INTACOS((int16_t)Beta);
 	//now we have the correction factor, so...
