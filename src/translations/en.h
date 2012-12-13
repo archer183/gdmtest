@@ -17,9 +17,6 @@
 #define LEN_VRENAVIG     "\003"
 #define TR_VRENAVIG      "No REaREb"
 
-#define LEN_VFILTERADC   "\004"
-#define TR_VFILTERADC    "SING""OSMP""FILT"
-
 #define LEN_VBLMODE      "\004"
 #define TR_VBLMODE       "OFF ""Keys""Stks""Both""ON\0"
 
@@ -114,7 +111,7 @@
 #define TR_PLAY_TRACK    "[PlayTrack]"
 #define TR_PLAY_VALUE    "[PlayValue]"
 #endif
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #if defined(SDCARD)
 #define TR_SDCLOGS       "SD Logs\0   "
 #else
@@ -141,7 +138,7 @@
 #define TR_FSW_ADJUST_GVAR
 #endif
 #ifdef DEBUG
-#define TR_FSW_TEST         "Test\0"
+#define TR_FSW_TEST      "Test\0"
 #else
 #define TR_FSW_TEST
 #endif
@@ -205,14 +202,25 @@
 #define TR_VRENCODERS    "REa""REb"
 
 #define LEN_VSWITCHES    "\003"
-#if defined(PCBSKY9X)
+#if defined(PCBX9D)
+#define TR_VSWITCHES     "SA\300""SA\301""SB\300""SB-""SB\301""SC\300""SC-""SC\301""SD\300""SD-""SD\301""SE\300""SE-""SE\301""SF\300""SF-""SF\301""SG\300""SG-""SG\301""SH\300""SH\301""CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC""CSD""CSE""CSF""CSG""CSH""CSI""CSJ""CSK""CSL""CSM""CSN""CSO""CSP""CSQ""CSR""CSS""CST""CSU""CSV""CSW"" ON"
+#elif defined(PCBSKY9X)
 #define TR_VSWITCHES     "THR""RUD""ELE""ID0""ID1""ID2""AIL""GEA""TRN""CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC""CSD""CSE""CSF""CSG""CSH""CSI""CSJ""CSK""CSL""CSM""CSN""CSO""CSP""CSQ""CSR""CSS""CST""CSU""CSV""CSW"" ON"
 #else
 #define TR_VSWITCHES     "THR""RUD""ELE""ID0""ID1""ID2""AIL""GEA""TRN""CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC"" ON"
 #endif
 
 #define LEN_VSRCRAW      "\004"
-#if defined(PCBSKY9X)
+#if defined(PCBX9D)
+#define TR_POTS_VSRCRAW  "S1\0 ""S2\0 ""S3\0 ""S4\0 "
+#define TR_SW_VSRCRAW    "SA\0 ""SB\0 ""SC\0 ""SD\0 ""SE\0 ""SF\0 ""SG\0 ""SH\0 "
+#else
+#define TR_POTS_VSRCRAW  "P1\0 ""P2\0 ""P3\0 "
+#define TR_SW_VSRCRAW    "3POS"
+#endif
+#if defined(PCBX9D)
+#define TR_ROTARY_ENCODERS_VSRCRAW
+#elif defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa "
 #elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
@@ -226,7 +234,7 @@
 #else
 #define TR_CYC_VSRCRAW   "[C1]""[C2]""[C3]"
 #endif
-#define TR_VSRCRAW       "Rud\0""Ele\0""Thr\0""Ail\0""P1\0 ""P2\0 ""P3\0 " TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX ""3POS" TR_CYC_VSRCRAW
+#define TR_VSRCRAW       "Rud\0""Ele\0""Thr\0""Ail\0" TR_POTS_VSRCRAW TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX " TR_SW_VSRCRAW TR_CYC_VSRCRAW
 
 #define LEN_VTMRMODES    "\003"
 #define TR_VTMRMODES     "OFF""ABS""THs""TH%""THt"
@@ -241,13 +249,14 @@
 
 #define TR_POPUPS              "[MENU]\010[EXIT]"
 #define OFS_EXIT               7
-#define TR_MENUWHENDONE        "[MENU] WHEN DONE"
+#define TR_MENUWHENDONE        CENTER"\006[MENU] WHEN DONE"
 #define TR_FREE                "free"
 #define TR_DELETEMODEL         "DELETE MODEL"
 #define TR_COPYINGMODEL        "Copying model..."
 #define TR_MOVINGMODEL         "Moving model..."
 #define TR_LOADINGMODEL        "Loading model..."
 #define TR_NAME                "Name"
+#define TR_BITMAP              "Bitmap"
 #define TR_TIMER               "Timer"
 #define TR_ELIMITS             "E.Limits"
 #define TR_ETRIMS              "E.Trims"
@@ -315,7 +324,6 @@
 #define TR_MEMORYWARNING       INDENT"Memory Low"
 #define TR_ALARMWARNING        INDENT"Sound Off"
 #define TR_RENAVIG             "RotEnc Navig"
-#define TR_FILTERADC           "ADC Filter"
 #define TR_THROTTLEREVERSE     "Thr reverse"
 #define TR_BEEP_LABEL          "Timer events"
 #define TR_MINUTEBEEP          INDENT"Minute"
@@ -333,9 +341,9 @@
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-#define TR_MENUTOSTART         "[MENU] TO START"
-#define TR_SETMIDPOINT         "SET MIDPOINT"
-#define TR_MOVESTICKSPOTS      "MOVE STICKS/POTS"
+#define TR_MENUTOSTART         CENTER"\006[MENU] TO START"
+#define TR_SETMIDPOINT         CENTER"SET MIDPOINT"
+#define TR_MOVESTICKSPOTS      CENTER"MOVE STICKS/POTS"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -348,7 +356,7 @@
 #define STR_US (STR_TMR1LATMAXUS+12)
 #define TR_TMR1LATMINUS        "Tmr1Lat min\006us"
 #define TR_TMR1JITTERUS        "Tmr1 Jitter\006us"
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #define TR_TMIXMAXMS           "Tmix max\012ms"
 #else
 #define TR_TMIXMAXMS           "Tmix max\014ms"
@@ -445,6 +453,7 @@
 #define TR_SDHC_CARD           "SD-HC CARD"
 #define TR_NO_SOUNDS_ON_SD     "No Sounds on SD"
 #define TR_NO_MODELS_ON_SD     "No Models on SD"
+#define TR_NO_BITMAPS_ON_SD    "No Bitmaps on SD"
 #define TR_PLAY_FILE           "Play"
 #define TR_DELETE_FILE         "Delete"
 #define TR_COPY_FILE           "Copy"
@@ -468,3 +477,4 @@
 #define TR_OWN                 "Own"
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "R.Encs"
+#define TR_CHANNELS_MONITOR    "CHANNEL MONITOR"

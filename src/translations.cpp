@@ -48,7 +48,6 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(VRENAVIG)
     ISTR(VRENCODERS)
 #endif
-    ISTR(VFILTERADC)
     ISTR(TRNMODE)
     ISTR(TRNCHN)
     ISTR(VTRIMINC)
@@ -65,7 +64,7 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(VFSWRESET)
     ISTR(FUNCSOUNDS)
     ISTR(VTELEMCHNS)
-#if defined(FRSKY) || defined(PCBSKY9X)
+#if defined(FRSKY) || defined(CPUARM)
     ISTR(VTELEMUNIT)
     ISTR(VALARM)
     ISTR(VALARMFN)
@@ -88,10 +87,10 @@ const pm_char STR_OPEN9X[] PROGMEM =
 #if defined(DSM2)
     ISTR(DSM2MODE)
 #endif
-#if defined(PCBGRUVIN9X) || defined (PCBSKY9X)
+#if defined(PCBGRUVIN9X) || defined (CPUARM)
     ISTR(DATETIME)
 #endif
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     ISTR(VLCD)
 #endif
     ;
@@ -105,6 +104,7 @@ const pm_char STR_COPYINGMODEL[] PROGMEM = TR_COPYINGMODEL;
 const pm_char STR_MOVINGMODEL[] PROGMEM = TR_MOVINGMODEL;
 const pm_char STR_LOADINGMODEL[] PROGMEM = TR_LOADINGMODEL;
 const pm_char STR_NAME[] PROGMEM = TR_NAME;
+const pm_char STR_BITMAP[] PROGMEM = TR_BITMAP;
 const pm_char STR_TIMER[] PROGMEM = TR_TIMER;
 const pm_char STR_ELIMITS[] PROGMEM = TR_ELIMITS;
 const pm_char STR_ETRIMS[] PROGMEM = TR_ETRIMS;
@@ -179,7 +179,6 @@ const pm_char STR_ALARMWARNING[] PROGMEM = TR_ALARMWARNING;
 #if defined(ROTARY_ENCODERS)
 const pm_char STR_RENAVIG[] PROGMEM = TR_RENAVIG;
 #endif
-const pm_char STR_FILTERADC[] PROGMEM = TR_FILTERADC;
 const pm_char STR_THROTTLEREVERSE[] PROGMEM = TR_THROTTLEREVERSE;
 const pm_char STR_BEEP_LABEL[] PROGMEM = TR_BEEP_LABEL;
 const pm_char STR_MINUTEBEEP[] PROGMEM = TR_MINUTEBEEP;
@@ -236,7 +235,7 @@ const pm_char STR_EEPROMOVERFLOW[] PROGMEM = TR_EEPROMOVERFLOW;
 const pm_char STR_TRIMS2OFFSETS[] PROGMEM = TR_TRIMS2OFFSETS;
 const pm_char STR_MENURADIOSETUP[] PROGMEM = TR_MENURADIOSETUP;
 
-#if defined(PCBGRUVIN9X) || defined(PCBSKY9X)
+#if defined(PCBGRUVIN9X) || defined(CPUARM)
 const pm_char STR_MENUDATEANDTIME[] PROGMEM = TR_MENUDATEANDTIME;
 #endif
 
@@ -295,18 +294,18 @@ const pm_char STR_LATITUDE[] PROGMEM = TR_LATITUDE;
 const pm_char STR_LONGITUDE[] PROGMEM = TR_LONGITUDE;
 #endif
 
-#if defined(PCBSKY9X) || defined(PCBGRUVIN9X)
+#if defined(CPUARM) || defined(PCBGRUVIN9X)
 const pm_char STR_SHUTDOWN[] PROGMEM = TR_SHUTDOWN;
 #endif
 
 const pm_char STR_BATT_CALIB[] PROGMEM = TR_BATT_CALIB;
 
-#if defined(PCBSKY9X) || defined(FRSKY)
+#if defined(CPUARM) || defined(FRSKY)
 const pm_char STR_VOLTAGE[] PROGMEM = TR_VOLTAGE;
 const pm_char STR_CURRENT[] PROGMEM = TR_CURRENT;
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 const pm_char STR_CURRENT_CALIB[] PROGMEM = TR_CURRENT_CALIB;
 #endif
 
@@ -350,6 +349,7 @@ const pm_char STR_SD_CARD[] PROGMEM = TR_SD_CARD;
 const pm_char STR_SDHC_CARD[] PROGMEM = TR_SDHC_CARD;
 const pm_char STR_NO_SOUNDS_ON_SD[] PROGMEM = TR_NO_SOUNDS_ON_SD;
 const pm_char STR_NO_MODELS_ON_SD[] PROGMEM = TR_NO_MODELS_ON_SD;
+const pm_char STR_NO_BITMAPS_ON_SD[] PROGMEM = TR_NO_BITMAPS_ON_SD;
 const pm_char STR_PLAY_FILE[] PROGMEM = TR_PLAY_FILE;
 const pm_char STR_DELETE_FILE[] PROGMEM = TR_DELETE_FILE;
 const pm_char STR_COPY_FILE[] PROGMEM = TR_COPY_FILE;
@@ -373,8 +373,9 @@ const pm_char STR_GLOBAL_VARS[] PROGMEM = TR_GLOBAL_VARS;
 const pm_char STR_OWN[] PROGMEM = TR_OWN;
 const pm_char STR_ROTARY_ENCODER[] PROGMEM = TR_ROTARY_ENCODER;
 const pm_char STR_DATE[] PROGMEM = TR_DATE;
+const pm_char STR_CHANNELS_MONITOR[] PROGMEM = TR_CHANNELS_MONITOR;
 
-const pm_uchar font[] PROGMEM = {
+const pm_uchar font_5x7[] PROGMEM = {
 #include "font.lbm"
 #if defined(TRANSLATIONS_SE)
 #include "font_se.lbm"
@@ -391,7 +392,7 @@ const pm_uchar font[] PROGMEM = {
 #endif
 };
 
-const pm_uchar font_dblsize[] PROGMEM = {
+const pm_uchar font_10x14[] PROGMEM = {
 #include "font_dblsize.lbm"
 #if defined(TRANSLATIONS_SE)
 #include "font_dblsize_se.lbm"
@@ -405,3 +406,26 @@ const pm_uchar font_dblsize[] PROGMEM = {
 #include "font_dblsize_es.lbm"
 #endif
 };
+
+#if defined(PCBX9D)
+const pm_uchar font_3x5[] PROGMEM = {
+#include "font_tiny.lbm"
+};
+
+const pm_uchar font_4x6[] PROGMEM = {
+#include "font_small.lbm"
+};
+
+const pm_uchar font_8x10[] PROGMEM = {
+#include "font_midsize.lbm"
+};
+
+const pm_uchar font_5x7_extra[] PROGMEM = {
+#include "font_extra.lbm"
+};
+
+const pm_uchar font_10x14_extra[] PROGMEM = {
+#include "font_dblsize_extra.lbm"
+};
+#endif
+

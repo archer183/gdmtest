@@ -78,11 +78,10 @@ extern const pm_char STR_OPEN9X[];
 #if defined(ROTARY_ENCODERS)
 #define OFS_VRENAVIG   (OFS_VBEEPMODE + sizeof(TR_VBEEPMODE))
 #define OFS_VRENCODERS (OFS_VRENAVIG + sizeof(TR_VRENAVIG))
-#define OFS_VFILTERADC (OFS_VRENCODERS + sizeof(TR_VRENCODERS))
+#define OFS_TRNMODE    (OFS_VRENCODERS + sizeof(TR_VRENCODERS))
 #else
-#define OFS_VFILTERADC (OFS_VBEEPMODE + sizeof(TR_VBEEPMODE))
+#define OFS_TRNMODE    (OFS_VBEEPMODE + sizeof(TR_VBEEPMODE))
 #endif
-#define OFS_TRNMODE    (OFS_VFILTERADC + sizeof(TR_VFILTERADC))
 #define OFS_TRNCHN     (OFS_TRNMODE + sizeof(TR_TRNMODE))
 #define OFS_VTRIMINC   (OFS_TRNCHN + sizeof(TR_TRNCHN))
 #define OFS_RETA123    (OFS_VTRIMINC + sizeof(TR_VTRIMINC))
@@ -98,7 +97,7 @@ extern const pm_char STR_OPEN9X[];
 #define OFS_VFSWRESET  (OFS_VFSWFUNC + sizeof(TR_VFSWFUNC))
 #define OFS_FUNCSOUNDS (OFS_VFSWRESET + sizeof(TR_VFSWRESET))
 #define OFS_VTELEMCHNS (OFS_FUNCSOUNDS + sizeof(TR_FUNCSOUNDS))
-#if defined(FRSKY) || defined(PCBSKY9X)
+#if defined(FRSKY) || defined(CPUARM)
 #define OFS_VTELEMUNIT (OFS_VTELEMCHNS + sizeof(TR_VTELEMCHNS))
 #define OFS_VALARM     (OFS_VTELEMUNIT + sizeof(TR_VTELEMUNIT))
 #define OFS_VALARMFN   (OFS_VALARM + sizeof(TR_VALARM))
@@ -133,10 +132,10 @@ extern const pm_char STR_OPEN9X[];
 #else
 #define OFS_ENDDSM2    (OFS_VTMRMODES + sizeof(TR_VTMRMODES))
 #endif
-#if defined(PCBGRUVIN9X) || defined (PCBSKY9X) 
+#if defined(PCBGRUVIN9X) || defined(CPUARM)
 #define OFS_DATETIME   (OFS_ENDDSM2)
 #endif
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #define OFS_VLCD       (OFS_DATETIME + sizeof(TR_DATETIME))
 #endif
 
@@ -147,7 +146,6 @@ extern const pm_char STR_OPEN9X[];
 #define STR_VBEEPLEN   (STR_OPEN9X + OFS_VBEEPLEN)
 #endif
 #define STR_VBEEPMODE  (STR_OPEN9X + OFS_VBEEPMODE)
-#define STR_VFILTERADC (STR_OPEN9X + OFS_VFILTERADC)
 #define STR_TRNMODE    (STR_OPEN9X + OFS_TRNMODE)
 #define STR_TRNCHN     (STR_OPEN9X + OFS_TRNCHN)
 #define STR_VTRIMINC   (STR_OPEN9X + OFS_VTRIMINC)
@@ -167,7 +165,7 @@ extern const pm_char STR_OPEN9X[];
 #define STR_FUNCSOUNDS (STR_OPEN9X + OFS_FUNCSOUNDS)
 #define STR_VTELEMCHNS (STR_OPEN9X + OFS_VTELEMCHNS)
 
-#if defined(FRSKY) || defined(PCBSKY9X)
+#if defined(FRSKY) || defined(CPUARM)
 #define STR_VTELEMUNIT (STR_OPEN9X + OFS_VTELEMUNIT)
 #define STR_VALARM     (STR_OPEN9X + OFS_VALARM)
 #define STR_VALARMFN   (STR_OPEN9X + OFS_VALARMFN)
@@ -201,11 +199,11 @@ extern const pm_char STR_OPEN9X[];
 #define STR_VRENCODERS     (STR_OPEN9X + OFS_VRENCODERS)
 #endif
 
-#if defined(PCBGRUVIN9X) || defined(PCBSKY9X)
+#if defined(PCBGRUVIN9X) || defined(CPUARM)
 #define STR_DATETIME   (STR_OPEN9X + OFS_DATETIME)
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #define STR_VLCD       (STR_OPEN9X + OFS_VLCD)
 #endif
 
@@ -222,6 +220,7 @@ extern const pm_char STR_COPYINGMODEL[];
 extern const pm_char STR_MOVINGMODEL[];
 extern const pm_char STR_LOADINGMODEL[];
 extern const pm_char STR_NAME[];
+extern const pm_char STR_BITMAP[];
 extern const pm_char STR_TIMER[];
 extern const pm_char STR_ELIMITS[];
 extern const pm_char STR_ETRIMS[];
@@ -288,7 +287,6 @@ extern const pm_char STR_INACTIVITYALARM[];
 extern const pm_char STR_MEMORYWARNING[];
 extern const pm_char STR_ALARMWARNING[];
 extern const pm_char STR_RENAVIG[];
-extern const pm_char STR_FILTERADC[];
 extern const pm_char STR_THROTTLEREVERSE[];
 extern const pm_char STR_BEEP_LABEL[];
 extern const pm_char STR_MINUTEBEEP[];
@@ -384,18 +382,18 @@ extern const pm_char STR_LATITUDE[];
 extern const pm_char STR_LONGITUDE[];
 #endif
 
-#if defined(PCBSKY9X) || defined(PCBGRUVIN9X)
+#if defined(CPUARM) || defined(PCBGRUVIN9X)
 extern const pm_char STR_SHUTDOWN[];
 #endif
 
 extern const pm_char STR_BATT_CALIB[];
 
-#if defined(PCBSKY9X) || defined(FRSKY)
+#if defined(CPUARM) || defined(FRSKY)
 extern const pm_char STR_VOLTAGE[];
 extern const pm_char STR_CURRENT[];
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 extern const pm_char STR_CURRENT_CALIB[];
 #define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
 #else
@@ -418,8 +416,16 @@ extern const pm_char STR_MODELS_EXT[];
 #define STR_UPDATE_LIST STR_DELAYDOWN
 #endif
 
-extern const pm_uchar font[];
-extern const pm_uchar font_dblsize[];
+extern const pm_uchar font_5x7[];
+extern const pm_uchar font_10x14[];
+
+#if defined(PCBX9D)
+extern const pm_uchar font_3x5[];
+extern const pm_uchar font_4x6[];
+extern const pm_uchar font_8x10[];
+extern const pm_uchar font_5x7_extra[];
+extern const pm_uchar font_10x14_extra[];
+#endif
 
 extern const pm_char STR_WARNING[];
 extern const pm_char STR_EEPROMWARN[];
@@ -446,6 +452,7 @@ extern const pm_char STR_SD_CARD[];
 extern const pm_char STR_SDHC_CARD[];
 extern const pm_char STR_NO_SOUNDS_ON_SD[];
 extern const pm_char STR_NO_MODELS_ON_SD[];
+extern const pm_char STR_NO_BITMAPS_ON_SD[];
 extern const pm_char STR_PLAY_FILE[];
 extern const pm_char STR_DELETE_FILE[];
 extern const pm_char STR_COPY_FILE[];
@@ -469,6 +476,7 @@ extern const pm_char STR_GLOBAL_VARS[];
 extern const pm_char STR_OWN[];
 extern const pm_char STR_ROTARY_ENCODER[];
 extern const pm_char STR_DATE[];
+extern const pm_char STR_CHANNELS_MONITOR[];
 
 #if defined(VOICE)
 PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);

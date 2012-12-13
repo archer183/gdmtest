@@ -17,9 +17,6 @@
 #define LEN_VRENAVIG           "\003"
 #define TR_VRENAVIG            "Ne REaREb"
 
-#define LEN_VFILTERADC         "\004"
-#define TR_VFILTERADC          "SING""OSMP""FILT"
-
 #define LEN_VBLMODE            "\005"
 #define TR_VBLMODE             "Vyp\0 ""Kl\200v.""P\200ky\0""Kl+P\200""Zap\0 "
 
@@ -234,7 +231,7 @@
 
 #define TR_POPUPS              "[MENU]\010[EXIT]"
 #define OFS_EXIT               7
-#define TR_MENUWHENDONE        "\001[MENU] > DAL\207\214"
+#define TR_MENUWHENDONE        CENTER"\007[MENU] > DAL\207\214"
 #define TR_FREE                "voln\202:"
 #define TR_DELETEMODEL         "SMAZAT MODEL"
 #define TR_COPYINGMODEL        "Kop\204ruji model.."
@@ -253,6 +250,7 @@
 #define TR_MS                  "ms"
 #define TR_SWITCH              "Sp\204na\201"
 #define TR_TRIMS               "Trimy"
+#define TR_BITMAP              "Bitmap"
 #define TR_FADEIN              "P\206echod Zap"
 #define TR_FADEOUT             "P\206echod Vyp"
 #define TR_DEFAULT             "(v\212choz\204)"
@@ -308,7 +306,6 @@
 #define TR_MEMORYWARNING       INDENT"Pln\200 Pam\203t'"
 #define TR_ALARMWARNING        INDENT"Vypnut\212 Zvuk"
 #define TR_RENAVIG             "Navig. RotEnc"
-#define TR_FILTERADC           "Filtr ADC"
 #define TR_THROTTLEREVERSE     "Revers Plynu"
 #define TR_BEEP_LABEL          "Upozorn\203n\204 Stopek"
 #define TR_MINUTEBEEP          INDENT"Cel\200 minuta"
@@ -326,9 +323,9 @@
 #define TR_CAL                 "Kal."
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-#define TR_MENUTOSTART         "\001[MENU] = START"
-#define TR_SETMIDPOINT         "NASTAV ST\215EDY"
-#define TR_MOVESTICKSPOTS      "H\216BEJ P\213KY/POTY"
+#define TR_MENUTOSTART         CENTER"\007[MENU] = START"
+#define TR_SETMIDPOINT         CENTER"NASTAV ST\215EDY"
+#define TR_MOVESTICKSPOTS      CENTER"H\216BEJ P\213KY/POTY"
 #define TR_RXBATT              "Rx Bat.:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -450,9 +447,11 @@
 #define TR_SD_TYPE             "Typ:"
 #define TR_SD_SPEED            "Rychlost:"
 #define TR_SD_SECTORS          "Sektor\211 :"
+#define TR_NO_BITMAPS_ON_SD    "No Bitmaps on SD"
 #define TR_SD_SIZE             "Velikost:"
 #define TR_CURVE_TYPE          TR_SD_TYPE
 #define TR_GLOBAL_VARS         "Glob\200ln\204 prom\203nn\202"
 #define TR_OWN                 "Sv\200"
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "R.Encs"
+#define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"

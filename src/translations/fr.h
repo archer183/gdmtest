@@ -17,9 +17,6 @@
 #define LEN_VRENAVIG     "\003"
 #define TR_VRENAVIG      "NonREaREb"
 
-#define LEN_VFILTERADC   "\004"
-#define TR_VFILTERADC    "SIMP""OSMP""FILT"
-
 #define LEN_VBLMODE      "\004"
 #define TR_VBLMODE       "OFF\0""Btns""Stks""Tout""ON\0"
 
@@ -235,7 +232,7 @@
 
 #define TR_POPUPS              "[MENU]\010[QUIT]"
 #define OFS_EXIT               7
-#define TR_MENUWHENDONE        "[MENU] QUAND PRET"
+#define TR_MENUWHENDONE        CENTER"\006[MENU] QUAND PRET"
 #define TR_FREE                "libre"
 #define TR_DELETEMODEL         "SUPPRIMER MODELE"
 #define TR_COPYINGMODEL        "Copie..."
@@ -253,6 +250,7 @@
 #define TR_PPMFRAME            "Trame PPM"
 #define TR_MS                  "ms"
 #define TR_SWITCH              "Inter"
+#define TR_BITMAP              "Bitmap"
 #define TR_TRIMS               "Trims"
 #define TR_FADEIN              "Fondu ON"
 #define TR_FADEOUT             "Fondu OFF"
@@ -309,7 +307,6 @@
 #define TR_MEMORYWARNING       INDENT"M\200moire faible"
 #define TR_ALARMWARNING        INDENT"Sons d\200sactiv\200s"
 #define TR_RENAVIG             "Navig EncRot"
-#define TR_FILTERADC           "Filtre ADC"
 #define TR_THROTTLEREVERSE     "Inversion Gaz"
 #define TR_BEEP_LABEL          "Bips Chronos"
 #define TR_MINUTEBEEP          INDENT"Minutes"
@@ -327,9 +324,9 @@
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-#define TR_MENUTOSTART         "[MENU] POUR DEBUT"
-#define TR_SETMIDPOINT         "REGLER NEUTRES"
-#define TR_MOVESTICKSPOTS      "BOUGER STICKS/POTS"
+#define TR_MENUTOSTART         CENTER"\006[MENU] POUR DEBUT"
+#define TR_SETMIDPOINT         CENTER"REGLER NEUTRES"
+#define TR_MOVESTICKSPOTS      CENTER"BOUGER STICKS/POTS"
 #define TR_RXBATT              "Batt.RX"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -450,6 +447,7 @@
 #define TR_HARDWARE            "MATERIEL"
 #define TR_FORMATTING          "Formatage..."
 #define TR_TEMP_CALIB          "Calib. temp"
+#define TR_NO_BITMAPS_ON_SD    "No Bitmaps on SD"
 #define TR_TIME                "Heure"
 #define TR_BAUDRATE            "Baudrate BT"
 #define TR_SD_INFO_TITLE       "INFO SD"
@@ -462,3 +460,4 @@
 #define TR_OWN                 "Pers"
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "Enc.Rot."
+#define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"

@@ -106,12 +106,11 @@ enum menuGeneralSetupItems {
   ITEM_SETUP_ALARMS_LABEL,
   ITEM_SETUP_BATTERY_WARNING,
   IF_PCBSKY9X(ITEM_SETUP_CAPACITY_WARNING)
-  IF_PCBSKY9X(ITEM_SETUP_TEMPERATURE_WARNING)
+  IF_CPUARM(ITEM_SETUP_TEMPERATURE_WARNING)
   ITEM_SETUP_INACTIVITY_ALARM,
   ITEM_SETUP_MEMORY_WARNING,
   ITEM_SETUP_ALARM_WARNING,
   IF_ROTARY_ENCODERS(ITEM_SETUP_RE_NAVIGATION)
-  ITEM_SETUP_FILTER_ADC,
   ITEM_SETUP_THROTTLE_REVERSED,
   ITEM_SETUP_BEEP_LABEL,
   ITEM_SETUP_MINUTE_BEEP,
@@ -140,7 +139,7 @@ void menuGeneralSetup(uint8_t event)
   }
 #endif
 
-  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) (uint8_t)-1, 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC((uint8_t)-1) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) 0, (uint8_t)-1, 0, IF_PCBSKY9X(0) IF_PCBSKY9X(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, 0, (uint8_t)-1, 0, 0, (uint8_t)-1, 0, 0, 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, (uint8_t)-1, 1});
+  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) (uint8_t)-1, 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC((uint8_t)-1) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) 0, (uint8_t)-1, 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, (uint8_t)-1, 0, 0, (uint8_t)-1, 0, 0, 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, (uint8_t)-1, IF_PCBX9D(0) 1/*to force edit mode*/});
 
   uint8_t sub = m_posVert - 1;
 
@@ -242,7 +241,7 @@ void menuGeneralSetup(uint8_t event)
       case ITEM_SETUP_SPEAKER_VOLUME:
       {
         lcd_putsLeft(y, STR_SPEAKER_VOLUME);
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
         lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.speakerVolume, attr|LEFT);
         if (attr) {
           CHECK_INCDEC_GENVAR(event, g_eeGeneral.speakerVolume, 0, NUM_VOL_LEVELS-1);
@@ -337,7 +336,9 @@ void menuGeneralSetup(uint8_t event)
         putsTelemetryValue(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.mAhWarn*50, UNIT_MAH, attr|LEFT) ;
         if(attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.mAhWarn, 0, 100);
         break;
+#endif
 
+#if defined(CPUARM)
       case ITEM_SETUP_TEMPERATURE_WARNING:
         lcd_putsLeft(y, STR_TEMPWARNING);
         putsTelemetryValue(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.temperatureWarn, UNIT_DEGREES, attr|LEFT) ;
@@ -352,9 +353,9 @@ void menuGeneralSetup(uint8_t event)
         if(attr) g_eeGeneral.inactivityTimer = checkIncDec(event, g_eeGeneral.inactivityTimer, 0, 250, EE_GENERAL); //0..250minutes
         break;
 
-#if defined(ROTARY_ENCODERS)
+#if defined(ROTARY_ENCODERS) && NUM_ROTARY_ENCODERS > 0
       case ITEM_SETUP_RE_NAVIGATION:
-        g_eeGeneral.reNavigation = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_RENAVIG, STR_VRENAVIG, g_eeGeneral.reNavigation, 0, ROTARY_ENCODERS, attr, event);
+        g_eeGeneral.reNavigation = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_RENAVIG, STR_VRENAVIG, g_eeGeneral.reNavigation, 0, NUM_ROTARY_ENCODERS, attr, event);
         if (attr && checkIncDec_Ret) {
           for (uint8_t i=0; i<ROTARY_ENCODERS; i++)
             g_rotenc[i] = 0;
@@ -363,10 +364,6 @@ void menuGeneralSetup(uint8_t event)
         }
         break;
 #endif
-
-      case ITEM_SETUP_FILTER_ADC:
-        g_eeGeneral.filterInput = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_FILTERADC, STR_VFILTERADC, g_eeGeneral.filterInput, 0, 2, attr, event);
-        break;
 
       case ITEM_SETUP_BEEP_LABEL:
         lcd_putsLeft(y, STR_BEEP_LABEL);
@@ -548,7 +545,7 @@ void menuGeneralSdManager(uint8_t event)
         s_menu[s_menu_count++] = STR_SD_FORMAT;
       }
       else {
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
         uint8_t index = m_posVert-1-s_pgOfs;
         char * ext = reusableBuffer.sd.lines[index];
         ext += strlen(ext) - 4;
@@ -669,7 +666,7 @@ void menuGeneralSdManager(uint8_t event)
       else if (result == STR_SD_FORMAT) {
         displayPopup(STR_FORMATTING);
         closeLogs();
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
         Card_state = SD_ST_DATA;
         audioQueue.stopSD();
 #endif
@@ -692,7 +689,7 @@ void menuGeneralSdManager(uint8_t event)
         if ((uint16_t)m_posVert == reusableBuffer.sd.count) m_posVert--;
         reusableBuffer.sd.offset = s_pgOfs-1;
       }
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
       /* TODO else if (result == STR_LOAD_FILE) {
         f_getcwd(lfn, SD_SCREEN_FILE_LENGTH);
         strcat(lfn, "/");
@@ -793,7 +790,7 @@ void menuGeneralVersion(uint8_t event)
   lcd_putsLeft(2*FH, stamp1);
   lcd_putsLeft(3*FH, stamp2);
   lcd_putsLeft(4*FH, stamp3);
-#if defined(PCBSKY9X)
+#if defined(PCBSKY9X) && !defined(REVA)
   if (Coproc_valid == 1) {
      lcd_putsLeft(5*FH, PSTR("CoPr:"));
      lcd_outdez8(10*FW, 5*FH, Coproc_read);
@@ -819,9 +816,11 @@ void menuGeneralDiagKeys(uint8_t event)
 
   for(uint8_t i=0; i<9; i++) {
     uint8_t y = i*FH; //+FH;
-    if(i>(SW_ID0-SW_BASE_DIAG)) y-=FH; //overwrite ID0
+#if !defined(PCBX9D)
+    if(i>(SW_ID0-SW_BASE)) y-=FH; //overwrite ID0
     putsSwitches(8*FW, y, i+1, 0); //ohne off,on
-    displayKeyState(11*FW+2, y, (EnumKeys)(SW_BASE_DIAG+i));
+    displayKeyState(11*FW+2, y, (EnumKeys)(SW_BASE+i));
+#endif
 
     if (i<8) {
       y = i/2*FH+FH*4;
@@ -848,9 +847,9 @@ void menuGeneralDiagKeys(uint8_t event)
 
 void menuGeneralDiagAna(uint8_t event)
 {
-#if defined(PCBSKY9X) && defined(REVB)
+#if defined(PCBSKY9X) && !defined(REVA)
 #define ANAS_ITEMS_COUNT 4
-#elif defined(PCBSKY9X)
+#elif defined(CPUARM)
 #define ANAS_ITEMS_COUNT 3
 #else
 #define ANAS_ITEMS_COUNT 2
@@ -867,13 +866,13 @@ void menuGeneralDiagAna(uint8_t event)
     lcd_outdez8(x+10*FW-1, y, (int16_t)calibratedStick[CONVERT_MODE(i+1)-1]*25/256);
   }
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
   // Display raw BandGap result (debug)
   lcd_puts(64+5, 1+4*FH, STR_BG);
   lcd_outdezAtt(64+5+6*FW-3, 1+4*FH, BandGap, 0);
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   lcd_putsLeft(5*FH, STR_BATT_CALIB);
   static uint32_t adcBatt;
   adcBatt = ((adcBatt * 7) + anaIn(7)) / 8; // running average, sourced directly (to avoid unending debate :P)
@@ -893,13 +892,13 @@ void menuGeneralDiagAna(uint8_t event)
 #endif
   if (m_posVert==1) CHECK_INCDEC_GENVAR(event, g_eeGeneral.vBatCalib, -127, 127);
 
-#if defined(PCBSKY9X) && defined(REVB)
+#if defined(PCBSKY9X) && !defined(REVA)
   lcd_putsLeft(6*FH, STR_CURRENT_CALIB);
   putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 6*FH, getCurrent(), UNIT_MILLIAMPS, (m_posVert==2 ? INVERS : 0)) ;
   if (m_posVert==2) CHECK_INCDEC_GENVAR(event, g_eeGeneral.currentCalib, -49, 49);
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   lcd_putsLeft(7*FH, STR_TEMP_CALIB);
   putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 7*FH, getTemperature(), UNIT_DEGREES, (m_posVert==3 ? INVERS : 0)) ;
   if (m_posVert==3) CHECK_INCDEC_GENVAR(event, g_eeGeneral.temperatureCalib, -100, 100);
@@ -951,11 +950,10 @@ void menuGeneralCalib(uint8_t event)
 
   static uint8_t idxState;
 
-  for (uint8_t i=0; i<7; i++) { //get low and high vals for sticks and trims
+  for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) { //get low and high vals for sticks and trims
     int16_t vt = anaIn(i);
     reusableBuffer.calib.loVals[i] = min(vt, reusableBuffer.calib.loVals[i]);
     reusableBuffer.calib.hiVals[i] = max(vt, reusableBuffer.calib.hiVals[i]);
-    //if(i>=4) midVals[i] = (loVals[i] + hiVals[i])/2;
   }
 
   s_noScroll = idxState; // make sure we don't scroll while calibrating
@@ -966,7 +964,7 @@ void menuGeneralCalib(uint8_t event)
       idxState = 0;
       break;
 
-    case EVT_KEY_BREAK(KEY_MENU):
+    case EVT_KEY_BREAK(KEY_ENTER):
       idxState++;
       if (idxState==3) {
         STORE_GENERALVARS;
@@ -979,15 +977,15 @@ void menuGeneralCalib(uint8_t event)
   switch (idxState) {
     case 0:
       // START CALIBRATION
-      lcd_puts(3*FW, 3*FH, STR_MENUTOSTART);
+      lcd_putsLeft(3*FH, STR_MENUTOSTART);
       break;
 
     case 1:
       // SET MIDPOINT
       lcd_putsAtt(5*FW, 2*FH, STR_SETMIDPOINT, s_noScroll ? INVERS : 0);
-      lcd_puts(3*FW, 3*FH, STR_MENUWHENDONE);
+      lcd_putsLeft(3*FH, STR_MENUWHENDONE);
 
-      for (uint8_t i=0; i<7; i++) {
+      for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
         reusableBuffer.calib.loVals[i] = 15000;
         reusableBuffer.calib.hiVals[i] = -15000;
         reusableBuffer.calib.midVals[i] = anaIn(i);
@@ -997,9 +995,9 @@ void menuGeneralCalib(uint8_t event)
     case 2:
       // MOVE STICKS/POTS
       lcd_putsAtt(3*FW, 2*FH, STR_MOVESTICKSPOTS, s_noScroll ? INVERS : 0);
-      lcd_puts(3*FW, 3*FH, STR_MENUWHENDONE);
+      lcd_putsLeft(3*FH, STR_MENUWHENDONE);
 
-      for (uint8_t i=0; i<7; i++) {
+      for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
         if (abs(reusableBuffer.calib.loVals[i]-reusableBuffer.calib.hiVals[i])>50) {
           g_eeGeneral.calibMid[i] = reusableBuffer.calib.midVals[i];
           int16_t v = reusableBuffer.calib.midVals[i] - reusableBuffer.calib.loVals[i];
@@ -1013,5 +1011,8 @@ void menuGeneralCalib(uint8_t event)
       break;
   }
 
-  doMainScreenGrphics();
+  doMainScreenGraphics();
+#if defined(PCBX9D)
+  drawPotsBars();
+#endif
 }

@@ -46,10 +46,10 @@ inline void board_init()
   DDRG = 0b00010000;  PORTG = 0xff; // 7-6:N/A, 5:GearSW, 4: Sim_Ctrl[out], 3:IDL1_Sw, 2:TCut_Sw, 1:RF_Power[in], 0: RudDr_Sw
 
 #if defined(DEBUG) && !defined(VOICE)
-  DDRH = 0b11110000;  PORTH = 0b11011111; // PORTH:7-6 enabled for timing analysis output ... see below ...
+  DDRH = 0b11111000;  PORTH = 0b11010111; // PORTH:7-6 enabled for timing analysis output ... see below ...
 #else
-  DDRH = 0b10110000;  PORTH = 0b11011111; // [7:0 DSM/PPM TX-caddy control. 1=PPM, 0=DSM ]
-                                          // [6:SOMO14D-BUSY 5:SOMO14D-DATA 4:SOMO14D-CLK]
+  DDRH = 0b10111000;  PORTH = 0b11010111; // [7:0 DSM/PPM TX-caddy control. 1=PPM, 0=DSM ]
+                                          // [6:SOMO14D-BUSY 5:SOMO14D-DATA 4:SOMO14D-CLK 3:SOMO14D-RESET]
                                           // [2:VIB_OPTION -- setting to input for now]
                                           // [1:TxD 0:RxD Spare serial port]
 #endif
@@ -103,11 +103,14 @@ inline void board_init()
 #endif
   /***************************************************/
 
+#if defined (VOICE)
   /*
    * SOMO set-up (V4 board only)
    */
-  OCR4A = 0x7d;
+  OCR4A = 0x1F4; //2ms
   TCCR4B = (1 << WGM42) | (3<<CS40); // CTC OCR1A, 16MHz / 64 (4us ticks)
+  TIMSK4 |= (1<<OCIE4A); // Start the interrupt so the unit reset can occur
+#endif
 
 #if defined(EXTRA_ROTARY_ENCODERS)
   //configure uart1 here
@@ -157,9 +160,8 @@ ISR(USART1_RX_vect)
     }
   }
 }
-#endif //EXTRA_ROTARY_ENCODERS
-
-#endif
+#endif // EXTRA_ROTARY_ENCODERS
+#endif // !SIMU
 
 uint8_t check_soft_power()
 {
@@ -177,10 +179,7 @@ void soft_power_off()
 #endif
 }
 
-#ifndef SIMU
-FORCEINLINE
-#endif
-uint8_t keyDown()
+FORCEINLINE uint8_t keyDown()
 {
   return (~PINL) & 0x3F;
 }
@@ -193,15 +192,15 @@ bool keyState(EnumKeys enuk)
     return keys[enuk].state() ? 1 : 0;
 
   switch(enuk){
-    case SW_ElevDR:
+    case SW_ELE:
       result = PINC & (1<<INP_C_ElevDR);
       break;
 
-    case SW_AileDR:
+    case SW_AIL:
       result = PINC & (1<<INP_C_AileDR);
       break;
 
-    case SW_RuddDR:
+    case SW_RUD:
       result = PING & (1<<INP_G_RuddDR);
       break;
       //     INP_G_ID1 INP_B_ID2
@@ -220,15 +219,15 @@ bool keyState(EnumKeys enuk)
       result = !(PINB & (1<<INP_B_ID2));
       break;
 
-    case SW_Gear:
+    case SW_GEA:
       result = PING & (1<<INP_G_Gear);
       break;
 
-    case SW_ThrCt:
+    case SW_THR:
       result = PING & (1<<INP_G_ThrCt);
       break;
 
-    case SW_Trainer:
+    case SW_TRN:
       result = PINB & (1<<INP_B_Trainer);
       break;
 
@@ -239,10 +238,7 @@ bool keyState(EnumKeys enuk)
   return result;
 }
 
-#ifndef SIMU
-FORCEINLINE
-#endif
-void readKeysAndTrims()
+FORCEINLINE void readKeysAndTrims()
 {
   /* Original keys were connected to PORTB as follows:
 
@@ -296,3 +292,32 @@ void readKeysAndTrims()
     ++enuk;
   }
 }
+
+#if defined(ROTARY_ENCODERS)
+
+#if !defined(EXTRA_ROTARY_ENCODERS)
+ISR(INT2_vect)
+{
+  uint8_t input = (PIND & 0x0C);
+  if (input == 0 || input == 0x0C) incRotaryEncoder(0, -1);
+}
+
+ISR(INT3_vect)
+{
+  uint8_t input = (PIND & 0x0C);
+  if (input == 0 || input == 0x0C) incRotaryEncoder(0, +1);
+}
+#endif // !defined(EXTRA_ROTARY_ENCODERS)
+
+ISR(INT5_vect)
+{
+  uint8_t input = (PINE & 0x60);
+  if (input == 0 || input == 0x60) incRotaryEncoder(1, +1);
+}
+
+ISR(INT6_vect)
+{
+  uint8_t input = (PINE & 0x60);
+  if (input == 0 || input == 0x60) incRotaryEncoder(1, -1);
+}
+#endif // defined(ROTARY_ENCODERS)

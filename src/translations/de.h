@@ -17,9 +17,6 @@
 #define LEN_VRENAVIG                    "\003"
 #define TR_VRENAVIG                     "AUSDGaDGb"
 
-#define LEN_VFILTERADC                  "\004"
-#define TR_VFILTERADC                   "SING""OSMP""FILT"
-
 #define LEN_VBLMODE                     "\004"
 #define TR_VBLMODE                      "OFF ""Tast""Knpl""Alle""ON\0"
 
@@ -235,7 +232,7 @@
 
 #define TR_POPUPS                       "[MENU]\010[EXIT]"
 #define OFS_EXIT                        7
-#define TR_MENUWHENDONE                 "[MENU] > Weiter"
+#define TR_MENUWHENDONE                 CENTER"\006[MENU] > Weiter"
 #define TR_FREE                         "frei"
 #define TR_DELETEMODEL                  "Modell l\203schen?"
 #define TR_COPYINGMODEL                 "Kopiere Modell"
@@ -253,6 +250,7 @@
 #define TR_PPMFRAME                     "PPM Einst."
 #define TR_MS                           "ms"
 #define TR_SWITCH                       "Schalt."
+#define TR_BITMAP             				  "Bitmap"
 #define TR_TRIMS                        "Trims"
 #define TR_FADEIN                       "Einblendung"
 #define TR_FADEOUT                      "Abblendung"
@@ -309,7 +307,6 @@
 #define TR_MEMORYWARNING       					INDENT"Speicher voll"
 #define TR_ALARMWARNING        					INDENT"Ton aus"
 #define TR_RENAVIG                      "Drehgeb. Navig."
-#define TR_FILTERADC                    "ADC Filter"
 #define TR_THROTTLEREVERSE              "Gasumkehrung"
 #define TR_BEEP_LABEL          					"Stoppuhrpieper"
 #define TR_MINUTEBEEP                   INDENT"Minuten"
@@ -327,9 +324,9 @@
 #define TR_CAL                          "Kal."
 #define TR_VTRIM                        "Trim- +"
 #define TR_BG                           "BG:"
-#define TR_MENUTOSTART                  "[MENU] > Starten"
-#define TR_SETMIDPOINT                  "NEUTRALSTELLUNG"
-#define TR_MOVESTICKSPOTS               "KNPL/POTIS BEWEGEN"
+#define TR_MENUTOSTART                  CENTER"\006[MENU] > Starten"
+#define TR_SETMIDPOINT                  CENTER"NEUTRALSTELLUNG"
+#define TR_MOVESTICKSPOTS               CENTER"KNPL/POTIS BEWEGEN"
 #define TR_RXBATT                       "Rx Batt:"
 #define TR_TXnRX                        "Tx:\0Rx:"
 #define OFS_RX                          4
@@ -450,6 +447,7 @@
 #define TR_HARDWARE            "HARDWARE"
 #define TR_FORMATTING          "Formattierung..."
 #define TR_TEMP_CALIB          "Temp. Kalib."
+#define TR_NO_BITMAPS_ON_SD    "No Bitmaps on SD"
 #define TR_TIME                "Zeit"
 #define TR_BAUDRATE            "BT Baudrate"
 #define TR_SD_INFO_TITLE       "SD INFO"
@@ -462,3 +460,4 @@
 #define TR_OWN                 "Eigen"
 #define TR_DATE                "Datum"
 #define TR_ROTARY_ENCODER      "Drehgeber"
+#define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"
