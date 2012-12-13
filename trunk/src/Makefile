@@ -27,7 +27,6 @@ BACKUP_FLASH = YES
 
 # Backup the old EEPROM (YES, NO)
 BACKUP_EEPROM = NO
-
 # Restore EEPROM to 9x (YES, NO) (will set BACKUP_EEPROM to YES).
 RESTORE_EEPROM = NO
 
@@ -55,7 +54,7 @@ PCB = STD
 
 # PCB revision
 # Values: REVA, REVB
-PCBREV = REVB
+PCBREV =
 
 # Enable JETI-Telemetry or FrSky Telemetry reception on UART0
 # For this option you need to modify your hardware!
@@ -100,7 +99,12 @@ VOICE = NO
 HAPTIC = NO
 
 # SmartieParts 2.2 Backlight support (inverted)
+# Values = YES, NO 
 SP22 = NO
+
+# TelemetrEZ
+# Values = YES, NO 
+TELEMETREZ = NO
 
 # SPLASH on START
 # Values = YES, NO, FIXED
@@ -201,11 +205,9 @@ XCURVES = YES
 # Global Vars
 # Values = YES, NO
 GVARS = YES
-
 #trig and combat math.
 # Values = Yes , No
 TRIG = YES
-
 
 #------- END BUILD OPTIONS ---------------------------
 
@@ -245,8 +247,11 @@ ifeq ($(PCB), SKY9X)
   ifeq ($(PCBREV), REVA)
     CPPDEFS += -DREVA
     LDSCRIPT = sky9x/sam3s2c_flash.ld
-  else
+  else ifeq ($(PCBREV), REVB)
     CPPDEFS += -DREVB
+    LDSCRIPT = sky9x/sam3s4c_flash.ld
+  else
+    CPPDEFS += -DREVC
     LDSCRIPT = sky9x/sam3s4c_flash.ld
   endif
   TRGT = arm-none-eabi-
@@ -254,7 +259,6 @@ ifeq ($(PCB), SKY9X)
 endif
 
 ifeq ($(PCB), X9D)
-  CPPDEFS += -DREVB
   LDSCRIPT = sky9x/sam3s4c_flash.ld
   TRGT = arm-none-eabi-
   MCU  = cortex-m4
@@ -286,7 +290,7 @@ SRC =
 STD_TTS_SRC = translations/tts_$(shell sh -c "echo $(TTS) | tr '[:upper:]' '[:lower:]'").cpp
 TTS_SRC = $(shell sh -c "if test -f $(STD_TTS_SRC); then echo $(STD_TTS_SRC); else echo translations/tts_en.cpp; fi")
 
-CPPSRC = open9x.cpp $(PULSESSRC) stamp.cpp menus.cpp model_menus.cpp general_menus.cpp main_views.cpp statistics_views.cpp $(EEPROMSRC) lcd.cpp drivers.cpp translations.cpp $(TTS_SRC)
+CPPSRC = open9x.cpp $(PULSESSRC) stamp.cpp menus.cpp model_menus.cpp general_menus.cpp main_views.cpp statistics_views.cpp $(EEPROMSRC) lcd.cpp keys.cpp translations.cpp $(TTS_SRC)
 
 ifeq ($(EXT), JETI)
  CPPSRC += jeti.cpp
@@ -394,7 +398,6 @@ endif
 ifeq ($(TRIG), YES)
   CPPDEFS += -DTRIG
 endif
-
 # If ARDUPILOT-Support is enabled
 ifeq ($(EXT), ARDUPILOT)
   CPPDEFS += -DARDUPILOT
@@ -452,9 +455,10 @@ RUN_FROM_FLASH = 1
 ifeq ($(PCB), X9D)
   # X9D, so ...
   OPT = 2
-  CPPDEFS += -DPCBX9D -DPCBSKY9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1 -DLCD212
+  CPPDEFS += -DPCBX9D -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1 -DLCD212
   EXTRAINCDIRS += sky9x CoOS/kernel CoOS/portable
-  BOARDSRC = board_sky9x.cpp 
+  BOARDSRC = board_x9d.cpp 
+  EXTRABOARDSRC += x9d/lcd_driver.cpp
   SRC += sky9x/core_cm3.c sky9x/board_lowlevel.c sky9x/crt.c sky9x/vectors_sam3s.c
   SRC += CoOS/kernel/core.c CoOS/kernel/hook.c CoOS/kernel/task.c CoOS/kernel/event.c CoOS/kernel/time.c CoOS/kernel/timer.c CoOS/kernel/flag.c CoOS/kernel/mutex.c CoOS/kernel/serviceReq.c CoOS/portable/GCC/port.c CoOS/portable/arch.c
   SRC += sky9x/usb/device/core/USBD_UDP.c sky9x/usb/device/core/USBDDriver.c
@@ -464,7 +468,8 @@ ifeq ($(PCB), X9D)
   EEPROMSRC = eeprom_arm.cpp eeprom_conversions.cpp
   PULSESSRC = pulses_arm.cpp
   CPPSRC += sky9x/audio.cpp haptic.cpp
-  CPPSRC += sky9x/sound_driver.cpp sky9x/haptic_driver.cpp sky9x/sdcard_driver.cpp
+  CPPSRC += sky9x/sound_driver.cpp sky9x/sdcard_driver.cpp
+  CPPSRC += bmp.cpp monitors_views.cpp
   
   ifeq ($(SDCARD), YES)
     EXTRABOARDSRC += FatFs/ff.c FatFs/fattime.c FatFs/option/ccsbcs.c sky9x/diskio.cpp
@@ -486,9 +491,10 @@ endif
 ifeq ($(PCB), SKY9X)
   # SKY9X, so ...
   OPT = 2
-  CPPDEFS += -DPCBSKY9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DRTCLOCK -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1
+  CPPDEFS += -DPCBSKY9X -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DRTCLOCK -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1
   EXTRAINCDIRS += sky9x CoOS/kernel CoOS/portable
   BOARDSRC = board_sky9x.cpp
+  EXTRABOARDSRC += sky9x/lcd_driver.cpp
   SRC += sky9x/core_cm3.c sky9x/board_lowlevel.c sky9x/crt.c sky9x/vectors_sam3s.c
   SRC += CoOS/kernel/core.c CoOS/kernel/hook.c CoOS/kernel/task.c CoOS/kernel/event.c CoOS/kernel/time.c CoOS/kernel/timer.c CoOS/kernel/flag.c CoOS/kernel/mutex.c CoOS/kernel/serviceReq.c CoOS/portable/GCC/port.c CoOS/portable/arch.c
   SRC += sky9x/usb/device/core/USBD_UDP.c sky9x/usb/device/core/USBDDriver.c
@@ -524,6 +530,7 @@ ifeq ($(PCB), GRUVIN9X)
   CPPDEFS += -DPCBGRUVIN9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DROTARY_ENCODERS=2 
   EXTRAINCDIRS += gruvin9x stock FatFs FatFs/option
   BOARDSRC += board_gruvin9x.cpp
+  EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp  
   CPPSRC += stock/audio.cpp haptic.cpp
@@ -547,11 +554,12 @@ endif
 ifeq ($(PCB), STD128)
   # STD PCB with Atmega 128, so ...
   OPT = 2
-  CPPDEFS += -DPCBSTD -DM128 -DEEPROM_VARIANT=0x8000
+  CPPDEFS += -DPCBSTD -DCPUM128 -DEEPROM_VARIANT=0x8000
   EXTRAINCDIRS += stock
   BOARDSRC = board_stock.cpp
+  EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
-  PULSESSRC = pulses_avr.cpp  
+  PULSESSRC = pulses_avr.cpp
     
   ifeq ($(AUDIO), YES)
     CPPDEFS += -DAUDIO
@@ -573,14 +581,19 @@ ifeq ($(PCB), STD128)
   ifeq ($(SP22), YES)
    CPPDEFS += -DSP22
   endif
+  
+  ifeq ($(TELEMETREZ), YES)
+   CPPDEFS += -DTELEMETREZ
+  endif
 endif
 
 ifeq ($(PCB), STD)
   # STD PCB, so ...
   OPT = s
   EXTRAINCDIRS += stock
-  CPPDEFS += -DPCBSTD -DM64 -DEEPROM_VARIANT=$(shell echo ${EEPROM_VARIANT} | bc)
+  CPPDEFS += -DPCBSTD -DCPUM64 -DEEPROM_VARIANT=$(shell echo ${EEPROM_VARIANT} | bc)
   BOARDSRC = board_stock.cpp
+  EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp
    
@@ -603,6 +616,10 @@ ifeq ($(PCB), STD)
   
   ifeq ($(SP22), YES)
    CPPDEFS += -DSP22
+  endif
+  
+  ifeq ($(TELEMETREZ), YES)
+   CPPDEFS += -DTELEMETREZ
   endif
 endif
 
@@ -742,7 +759,7 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-lbm: font.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm asterisk.lbm
+lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm asterisk.lbm
 
 # Build stamp-file
 stamp_header:
@@ -762,7 +779,7 @@ stock-stamp:
 
 stock128-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock128.txt
-	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock28.txt
+	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock128.txt
 	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock128.txt
 	@cat stamp-open9x-stock128.txt
 
@@ -778,26 +795,43 @@ arm-stamp:
 	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-arm.txt
 	@cat stamp-open9x-arm.txt
 
-font.lbm: font_6x1.xbm translations/font_se.xbm translations/font_de.xbm translations/font_it.xbm translations/font_cz.xbm translations/font_fr.xbm translations/font_es.xbm
+font.lbm: font.xbm font_extra.xbm translations/font_se.xbm translations/font_de.xbm translations/font_it.xbm translations/font_cz.xbm translations/font_fr.xbm translations/font_es.xbm
 	@echo
 	@echo "Convert font from xbm to lbm:"
-	$(IMG2LBM) $< $@ char
-	$(IMG2LBM) translations/font_se.xbm translations/font_se.lbm char
-	$(IMG2LBM) translations/font_de.xbm translations/font_de.lbm char
-	$(IMG2LBM) translations/font_it.xbm translations/font_it.lbm char
-	$(IMG2LBM) translations/font_cz.xbm translations/font_cz.lbm char
-	$(IMG2LBM) translations/font_fr.xbm translations/font_fr.lbm char
-	$(IMG2LBM) translations/font_es.xbm translations/font_es.lbm char
+	$(IMG2LBM) font.xbm font.lbm 5x7
+	$(IMG2LBM) font_extra.xbm font_extra.lbm 5x7
+	$(IMG2LBM) translations/font_se.xbm translations/font_se.lbm 5x7
+	$(IMG2LBM) translations/font_de.xbm translations/font_de.lbm 5x7
+	$(IMG2LBM) translations/font_it.xbm translations/font_it.lbm 5x7
+	$(IMG2LBM) translations/font_cz.xbm translations/font_cz.lbm 5x7
+	$(IMG2LBM) translations/font_fr.xbm translations/font_fr.lbm 5x7
+	$(IMG2LBM) translations/font_es.xbm translations/font_es.lbm 5x7
 
-font_dblsize.lbm: font_dblsize.xbm translations/font_dblsize_se.xbm translations/font_dblsize_de.xbm translations/font_dblsize_it.xbm translations/font_dblsize_fr.xbm translations/font_dblsize_es.xbm
+font_tiny.lbm: font_tiny.xbm
 	@echo
 	@echo "Convert font from xbm to lbm:"
-	$(IMG2LBM) $< $@ dblsize
-	$(IMG2LBM) translations/font_dblsize_se.xbm translations/font_dblsize_se.lbm dblsize
-	$(IMG2LBM) translations/font_dblsize_de.xbm translations/font_dblsize_de.lbm dblsize
-	$(IMG2LBM) translations/font_dblsize_it.xbm translations/font_dblsize_it.lbm dblsize
-	$(IMG2LBM) translations/font_dblsize_fr.xbm translations/font_dblsize_fr.lbm dblsize
-	$(IMG2LBM) translations/font_dblsize_es.xbm translations/font_dblsize_es.lbm dblsize
+	$(IMG2LBM) $< $@ 3x5
+
+font_small.lbm: font_small.xbm
+	@echo
+	@echo "Convert font from xbm to lbm:"
+	$(IMG2LBM) $< $@ 4x6
+
+font_midsize.lbm: font_midsize.xbm
+	@echo
+	@echo "Convert font from xbm to lbm:"
+	$(IMG2LBM) $< $@ 8x10
+	
+font_dblsize.lbm: font_dblsize.xbm font_dblsize_extra.xbm translations/font_dblsize_se.xbm translations/font_dblsize_de.xbm translations/font_dblsize_it.xbm translations/font_dblsize_fr.xbm translations/font_dblsize_es.xbm
+	@echo
+	@echo "Convert font from xbm to lbm:"
+	$(IMG2LBM) font_dblsize.xbm font_dblsize.lbm 10x14
+	$(IMG2LBM) font_dblsize_extra.xbm font_dblsize_extra.lbm 10x14
+	$(IMG2LBM) translations/font_dblsize_se.xbm translations/font_dblsize_se.lbm 10x14
+	$(IMG2LBM) translations/font_dblsize_de.xbm translations/font_dblsize_de.lbm 10x14
+	$(IMG2LBM) translations/font_dblsize_it.xbm translations/font_dblsize_it.lbm 10x14
+	$(IMG2LBM) translations/font_dblsize_fr.xbm translations/font_dblsize_fr.lbm 10x14
+	$(IMG2LBM) translations/font_dblsize_es.xbm translations/font_dblsize_es.lbm 10x14
 
 sticks.lbm: sticks_4x1.xbm
 	@echo
@@ -861,7 +895,7 @@ FOXLIB=-L/usr/local/lib \
        -Wl,-rpath,$(FOXPATH)/src/.libs
 
 simu: stamp_header $(BOARDSRC) $(CPPSRC) Makefile simu.cpp simpgmspace.cpp *.h *.lbm eeprom.bin
-	g++ $(CPPFLAGS) simu.cpp $(BOARDSRC) $(CPPSRC) simpgmspace.cpp -MD -DSIMU -O1 -o simu $(FOXINC) $(FOXLIB) -pthread
+	g++ $(CPPFLAGS) simu.cpp $(BOARDSRC) $(CPPSRC) simpgmspace.cpp -MD -DSIMU -O0 -o simu $(FOXINC) $(FOXLIB) -pthread
 
 eeprom.bin:
 	dd if=/dev/zero of=$@ bs=1 count=2048

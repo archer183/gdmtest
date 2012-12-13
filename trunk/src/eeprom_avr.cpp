@@ -77,7 +77,7 @@ ISR(EE_READY_vect)
     eeprom_write_byte();
   }
   else {
-#if defined (PCBGRUVIN9X)
+#if defined(PCBGRUVIN9X)
     EECR &= ~(1<<EERIE);
 #else
     EECR &= ~(1<<EERIE);
@@ -95,10 +95,8 @@ void eeWriteBlockCmp(const void *i_pointer_ram, uint16_t i_pointer_eeprom, size_
   eeprom_buffer_data = (const char*)i_pointer_ram;
   eeprom_buffer_size = size+1;
 
-#ifdef SIMU
+#if defined(SIMU)
   sem_post(eeprom_write_sem);
-#elif defined (PCBSKY9X)
-
 #elif defined (PCBGRUVIN9X)
   EECR |= (1<<EERIE);
 #else
@@ -821,7 +819,7 @@ bool eeLoadGeneral()
   if (theFile.readRlc((uint8_t*)&g_eeGeneral, 1) == 1 && g_eeGeneral.version == EEPROM_VER) {
     theFile.openRlc(FILE_GENERAL);
     if (theFile.readRlc((uint8_t*)&g_eeGeneral, sizeof(g_eeGeneral)) <= sizeof(EEGeneral)) {
-#if defined(M64)
+#if defined(CPUM64)
       if (g_eeGeneral.variant == EEPROM_VARIANT && g_eeGeneral.chkSum == evalChkSum()) {
         return true;
       }
@@ -896,14 +894,16 @@ void eeLoadModel(uint8_t id)
     activeFunctions = 0;
     activeFunctionSwitches = 0;
 
-    resetProto();
-
 #if defined(PCBGRUVIN9X)
     for (uint8_t i=0; i<MAX_TIMERS; i++) {
       if (g_model.timers[i].remanent) {
         s_timerVal[i] = g_model.timers[i].value;
       }
     }
+#endif
+
+#if defined(FRSKY)
+    FRSKY_setModelAlarms();
 #endif
   }
 }

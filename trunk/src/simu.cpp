@@ -136,8 +136,8 @@ Open9xSim::Open9xSim(FXApp* a)
   arrow[2]= new FXArrowButton(hf10,this,1000,ARROW_RIGHT);
   for(int i=4; i<8; i++){
     knobs[i]= new FXKnob(hf11,NULL,0,KNOB_TICKS|LAYOUT_LEFT);
-    knobs[i]->setRange(0,1023);
-    knobs[i]->setValue(512);
+    knobs[i]->setRange(-1024, 1024);
+    knobs[i]->setValue(0);
   }
   
   arrow2[0]= new FXArrowButton(hf00,this,1000,ARROW_LEFT);
@@ -239,7 +239,15 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 
 
   if(hasFocus()) {
-#ifdef REVB
+#if defined(PCBSKY9X) && defined(REVA)
+#define ERSKY9X_RETURN_MASK (0x40)
+#define ERSKY9X_EXIT_MASK   (0x80000000)
+#define ERSKY9X_EXIT_PIO    PIOA
+#define ERSKY9X_UP_MASK     (0x08 >> 1)
+#define ERSKY9X_RIGHT_MASK  (0x20 >> 1)
+#define ERSKY9X_DOWN_MASK   (0x10 >> 1)
+#define ERSKY9X_LEFT_MASK   (0x40 >> 1)
+#else
 #define ERSKY9X_RETURN_MASK (0x20)
 #define ERSKY9X_EXIT_MASK   (0x01000000)
 #define ERSKY9X_EXIT_PIO    PIOC
@@ -249,14 +257,6 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 #define ERSKY9X_LEFT_MASK   (0x10 >> 1)
 #define ERSKY9X_MENU_MASK   (0x04 >> 1)
 #define ERSKY9X_PAGE_MASK   (0x40 >> 1)
-#else
-#define ERSKY9X_RETURN_MASK (0x40)
-#define ERSKY9X_EXIT_MASK   (0x80000000)
-#define ERSKY9X_EXIT_PIO    PIOA
-#define ERSKY9X_UP_MASK     (0x08 >> 1)
-#define ERSKY9X_RIGHT_MASK  (0x20 >> 1)
-#define ERSKY9X_DOWN_MASK   (0x10 >> 1)
-#define ERSKY9X_LEFT_MASK   (0x40 >> 1)
 #endif
     static uint64_t keys1[]={
       KEY_Return,    INP_B_KEY_MEN, INP_L_KEY_MEN, (uint64_t)PIOB, ERSKY9X_RETURN_MASK,
@@ -273,7 +273,7 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 #endif
     };
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     PIOC->PIO_PDSR |= ERSKY9X_DOWN_MASK | ERSKY9X_UP_MASK | ERSKY9X_RIGHT_MASK | ERSKY9X_LEFT_MASK ;
     ERSKY9X_EXIT_PIO->PIO_PDSR |= ERSKY9X_EXIT_MASK;
     PIOB->PIO_PDSR |= ERSKY9X_RETURN_MASK;
@@ -290,7 +290,7 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 
     for(unsigned i=0; i<DIM(keys1);i+=5) {
       if (getApp()->getKeyState(keys1[i])) {
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
         ((Pio*)keys1[i+3])->PIO_PDSR &= ~(keys1[i+4]);
 #elif defined(PCBGRUVIN9X)
         pin |= (1<<keys1[i+2]);
@@ -300,7 +300,7 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
       }
     }
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #elif defined(PCBGRUVIN9X)
     pinl = pin;
 #else
@@ -315,7 +315,7 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 #else
     static FXuint keys2[]={KEY_F8, KEY_F7, KEY_F4, KEY_F3, KEY_F6, KEY_F5, KEY_F1, KEY_F2  };
 #endif
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     PIOA->PIO_PDSR |= (0x00800000 | 0x01000000 | 0x00000002 | 0x00000001);
     PIOB->PIO_PDSR |= (0x00000050);
     PIOC->PIO_PDSR |= (0x10000000 | 0x00000400 | 0x00000200);
@@ -324,9 +324,10 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 #else
     pind  = 0;
 #endif
+
     for(unsigned i=0; i<DIM(keys2);i++){
       if(getApp()->getKeyState(keys2[i])) {
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
         switch(i) {
           case 6:
             PIOA->PIO_PDSR &= ~0x00800000;
@@ -361,76 +362,58 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
       }
     }
 
-#if defined(PCBSKY9X)
-    struct SwitchKey {
-        FXuint key;
-        volatile uint32_t & pin;
-        uint32_t shift;
-        uint32_t value;
-    };
+#if defined(PCBX9D)
+#define SWITCH_KEY(key, swtch, states) \
+    static bool state##key = 0; \
+    static uint8_t state##swtch = 0; \
+    if (getApp()->getKeyState(KEY_##key)) { \
+      if (!state##key) { \
+        state##swtch = (state##swtch+1) % states; \
+        setSwitch(DSW(SW_##swtch+state##swtch)); \
+        state##key = true; \
+      } \
+    } \
+    else { \
+      state##key = false; \
+    }
 #else
-    struct SwitchKey {
-      FXuint key;
-      volatile unsigned char& pin;
-      unsigned char shift;
-      unsigned char value;
-    };
-#endif
-    
-    static SwitchKey keys3[] = {
-#if defined(PCBSKY9X)
-      { KEY_1, PIOC->PIO_PDSR,  20, 0 },
-      { KEY_6, PIOA->PIO_PDSR,  2, 0 },
-      { KEY_2, PIOA->PIO_PDSR,  15, 0 },
-      { KEY_3, PIOC->PIO_PDSR,  31, 0 },
-      { KEY_7, PIOC->PIO_PDSR,  16, 0 },
-      { KEY_8, PIOC->PIO_PDSR,  8, 0 } };
-#else
-#if defined(PCBGRUVIN9X) || defined(JETI) || defined(FRSKY) || defined(NMEA) || defined(ARDUPILOT)
-      { KEY_1, pinc,  INP_C_ThrCt, 0 },
-      { KEY_6, pinc,  INP_C_AileDR, 0 },
-#else
-      { KEY_1, pine,  INP_E_ThrCt, 0 },
-      { KEY_6, pine,  INP_E_AileDR, 0 },
-#endif
-      { KEY_2, ping,  INP_G_RuddDR, 0 },
-      { KEY_3, pine,  INP_E_ElevDR, 0 },
-      //KEY_4, ping,  INP_G_ID1, 0,
-      //KEY_5, pine,  INP_E_ID2, 0,
-      { KEY_7, pine,  INP_E_Gear, 0 },
-      { KEY_8, pine,  INP_E_Trainer, 0 } };
+#define SWITCH_KEY(key, swtch, states) \
+    static bool state##key = 0; \
+    static uint8_t state##swtch = 0; \
+    if (getApp()->getKeyState(KEY_##key)) { \
+      if (!state##key) { \
+        state##swtch = (state##swtch+1) % states; \
+        if (states > 2) \
+          setSwitch(DSW(SW_##swtch+state##swtch)); \
+        else \
+          setSwitch(state##swtch ? DSW(SW_##swtch) : -DSW(SW_##swtch)); \
+        state##key = true; \
+      } \
+    } \
+    else { \
+      state##key = false; \
+    }
 #endif
 
-    for(unsigned i=0; i<DIM(keys3); i++){
-      bool ks = getApp()->getKeyState(keys3[i].key);
-      if (ks != keys3[i].value) {
-        if (ks) keys3[i].pin ^= (1<<keys3[i].shift);
-        keys3[i].value = ks;
-      }
-    }
-      //     INP_G_ID1 INP_E_ID2
-      // id0    0        1
-      // id1    1        1
-      // id2    1        0
-    static FXuint id=0,k4st=0,k5st=0;
-    bool ks=getApp()->getKeyState(KEY_4);
-    if(ks != k4st){
-      if(ks && id>0) id--;
-      k4st = ks;
-    }
-    ks=getApp()->getKeyState(KEY_5);
-    if(ks != k5st){
-      if(ks && id<2) id++;
-      k5st = ks;
-    }
-
-    switch(id){
-      case 0: setSwitch(DSW_ID0); break;
-      case 1: setSwitch(DSW_ID1); break;
-      case 2: setSwitch(DSW_ID2); break;
-    }
+#if defined(PCBX9D)
+    SWITCH_KEY(A, SA0, 2);
+    SWITCH_KEY(B, SB0, 3);
+    SWITCH_KEY(C, SC0, 3);
+    SWITCH_KEY(D, SD0, 3);
+    SWITCH_KEY(E, SE0, 3);
+    SWITCH_KEY(F, SF0, 3);
+    SWITCH_KEY(G, SG0, 3);
+    SWITCH_KEY(H, SH0, 2);
+#else
+    SWITCH_KEY(1, THR, 2);
+    SWITCH_KEY(2, RUD, 2);
+    SWITCH_KEY(3, ELE, 2);
+    SWITCH_KEY(4, ID0, 3);
+    SWITCH_KEY(5, AIL, 2);
+    SWITCH_KEY(6, GEA, 2);
+    SWITCH_KEY(7, TRN, 2);
+#endif
   }
-
 
   per10ms();
   refreshDiplay();
@@ -442,14 +425,18 @@ void Open9xSim::refreshDiplay()
 {
   if (lcd_refresh) {
     lcd_refresh = false;
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     if (PWM->PWM_CH_NUM[0].PWM_CDTY != 100)
 #elif defined(PCBGRUVIN9X)
     if (portc & 1<<OUT_C_LIGHT)
 #else
     if (portb & 1<<OUT_B_LIGHT)
 #endif
+#if defined(PCBX9D)
+      bmf->setOffColor(FXRGB(47,123,227));
+#else
       bmf->setOffColor(FXRGB(150,200,152));
+#endif
     else
       bmf->setOffColor(FXRGB(200,200,200));
 
@@ -501,6 +488,10 @@ int main(int argc,char **argv)
   // so that persistent settings are now available.
   application.init(argc,argv);
 
+#if !defined(PCBX9D)
+  setSwitch(DSW(SW_ID0));
+#endif
+
   // This creates the main window. We pass in the title to be displayed
   // above the window, and possibly some icons for when its iconified.
   // The decorations determine stuff like the borders, close buttons,
@@ -530,13 +521,17 @@ int main(int argc,char **argv)
 
 uint16_t anaIn(uint8_t chan)
 {
+#if defined(PCBX9D)
+  if (chan == 8)
+    return 1500;
+#elif defined(PCBGRUVIN9X)
   if (chan == 7)
-#ifdef PCBGRUVIN9X
     return 150;
 #else
+  if (chan == 7)
     return 1500;
 #endif
-  else if (chan<4)
+  else if (chan<NUM_STICKS)
     return th9xSim->sliders[chan]->getValue();
   else
     return th9xSim->knobs[chan]->getValue();

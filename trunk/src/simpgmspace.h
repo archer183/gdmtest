@@ -96,7 +96,7 @@ typedef const int16_t pm_int16_t;
 typedef const int8_t pm_int8_t;
 
 extern sem_t *eeprom_write_sem;
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 extern Pio Pioa, Piob, Pioc;
 extern Twi Twio;
 extern Dacc dacc;
@@ -199,6 +199,7 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define COM1B0 dummyport
 #define COM0A0 dummyport
 #define TCNT1 dummyport16
+#define TCNT1L dummyport
 #define TCNT5 dummyport16
 #define ICR1 dummyport16
 #define TIFR dummyport
@@ -263,7 +264,9 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define UPE0    0
 #define FE0     0
 
-#if defined(PCBSKY9X)
+#define ISR(x)     void x()
+
+#if defined(CPUARM)
 extern volatile uint32_t Tenms;
 extern uint32_t Master_frequency;
 #define NVIC_EnableIRQ(x)
@@ -277,10 +280,10 @@ extern uint8_t portb, portc, porth, dummyport;
 extern uint16_t dummyport16;
 extern uint8_t main_thread_running;
 
-#define getADC_filt()
-#define getADC_single()
-#define getADC_osmp()
+#define getADC()
 #define getADC_bandgap()
+
+#define SIMU_SLEEP(x) do { if (!main_thread_running) return; sleep(x/*ms*/); } while (0)
 
 extern void setSwitch(int8_t swtch);
 

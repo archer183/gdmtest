@@ -42,17 +42,20 @@
 #define LOGS_PATH    "."
 #define SOUNDS_PATH  "."
 #define SYSTEM_SOUNDS_PATH "."
+#define BITMAPS_PATH  "."
 #else
 #define ROOT_PATH           "/"
 #define MODELS_PATH         "/9XMODELS"
 #define LOGS_PATH           "/9XLOGS"   // no trailing slash = important
 #define SOUNDS_PATH         "/9XSOUNDS" // no trailing slash = important
 #define SYSTEM_SOUNDS_PATH  "/9XSOUNDS/SYSTEM" // no trailing slash = important
+#define BITMAPS_PATH        MODELS_PATH
 #endif
 
 #define MODELS_EXT   ".bin"
 #define LOGS_EXT     ".csv"
 #define SOUNDS_EXT   ".wav"
+#define BITMAPS_EXT  ".bmp"
 
 extern FATFS g_FATFS_Obj;
 
@@ -75,7 +78,7 @@ inline const pm_char *SDCARD_ERROR(FRESULT result)
 extern void sdMountPoll();
 #endif
 
-#if defined(PCBSKY9X) && !(defined(SIMU))
+#if defined(CPUARM) && !(defined(SIMU))
 extern "C" {
 extern uint32_t sd_card_ready();
 extern uint32_t sd_card_mounted();
@@ -85,7 +88,9 @@ extern uint32_t sd_card_mounted();
 #define sd_card_mounted() (true)
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(PCBX9D)
+#define O9X_FOURCC 0x3378396F // o9x for X9D
+#elif defined(PCBSKY9X)
 #define O9X_FOURCC 0x3278396F // o9x for sky9x
 #elif defined(PCBGRUVIN9X)
 #define O9X_FOURCC 0x3178396F // o9x for gruvin9x

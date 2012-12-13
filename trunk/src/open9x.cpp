@@ -45,8 +45,7 @@ int16_t combatarray[5] = {0,0,0,0,0};
 */
 
 #endif
-
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #define MIXER_STACK_SIZE    500
 #define MENUS_STACK_SIZE    1000
 #define AUDIO_STACK_SIZE    500
@@ -90,7 +89,7 @@ const pm_uchar splashdata[] PROGMEM = { 'S','P','S',0,
 const pm_uchar * splash_lbm = splashdata+4;
 #endif
 
-#if !defined(M64) || defined(EXTSTD)
+#if !defined(CPUM64) || defined(EXTSTD)
 const pm_uchar asterisk_lbm[] PROGMEM = {
 #include "asterisk.lbm"
 };
@@ -101,7 +100,19 @@ const pm_uchar asterisk_lbm[] PROGMEM = {
 EEGeneral  g_eeGeneral;
 ModelData  g_model;
 
-#if !defined(PCBSKY9X)
+#if defined(PCBX9D) && defined(SDCARD)
+uint8_t modelBitmap[64*32/8];
+void loadModelBitmap()
+{
+  char lfn[] = BITMAPS_PATH "/xxxxxxxxxx.bmp";
+  strncpy(lfn+sizeof(BITMAPS_PATH), g_model.bitmap, sizeof(g_model.bitmap));
+  lfn[sizeof(BITMAPS_PATH)+sizeof(g_model.bitmap)] = '\0';
+  strcat(lfn+sizeof(BITMAPS_PATH), BITMAPS_EXT);
+  bmpLoad(modelBitmap, lfn);
+}
+#endif
+
+#if !defined(CPUARM)
 uint8_t g_tmr1Latency_max;
 uint8_t g_tmr1Latency_min;
 #endif
@@ -112,7 +123,7 @@ uint8_t unexpectedShutdown = 0;
 uint16_t maxMixerDuration;
 uint16_t lastMixerDuration;
 
-#if defined(AUDIO) && !defined(PCBSKY9X)
+#if defined(AUDIO) && !defined(CPUARM)
 audioQueue  audio;
 #endif
 
@@ -170,7 +181,7 @@ char idx2char(int8_t idx)
   return ' ';
 }
 
-#if defined(PCBX9D)
+#if defined(CPUARM)
 uint8_t zlen(const char *str, uint8_t size)
 {
   while (size > 0) {
@@ -181,6 +192,68 @@ uint8_t zlen(const char *str, uint8_t size)
   return size;
 }
 #endif
+
+volatile tmr10ms_t g_tmr10ms;
+
+#if defined(CPUARM)
+volatile uint8_t rtc_count=0;
+#endif
+
+void per10ms()
+{
+  g_tmr10ms++;
+
+  if (lightOffCounter) lightOffCounter--;
+  if (s_noHi) s_noHi--;
+  if (trimsCheckTimer) trimsCheckTimer --;
+  if ((g_blinkTmr10ms & 0x1F) == 0) {
+    inacCounter++;
+    if ((((uint8_t)inacCounter)&0x0F)==0x01 && g_eeGeneral.inactivityTimer && g_vbat100mV>50 && inacCounter > ((uint16_t)g_eeGeneral.inactivityTimer*187))
+      AUDIO_INACTIVITY();
+  }
+
+#if defined(CPUARM)
+  Tenms |= 1 ;                    // 10 mS has passed
+#endif
+
+#if defined(RTCLOCK)
+  /* Update global Date/Time every 100 per10ms cycles */
+  if (++g_ms100 == 100) {
+    g_rtcTime++;   // inc global unix timestamp one second
+#if defined(CPUARM)
+    if (g_rtcTime < 60 || rtc_count<5) {
+      rtc_init();
+      rtc_count++;
+    }
+    else {
+      read_coprocessor(true);
+    }
+#endif
+    g_ms100 = 0;
+  }
+#endif
+
+  readKeysAndTrims();
+
+#if defined(MAVLINK) && !defined(CPUARM)
+  check_mavlink();
+#endif
+
+#if defined(FRSKY) && !defined(CPUARM) && !(defined(PCBSTD) && (defined(AUDIO) || defined(VOICE)))
+#if defined(DSM2_SERIAL)
+  if (s_current_protocol != PROTO_DSM2)
+    check_frsky();
+#else
+  check_frsky();
+#endif
+#endif
+
+  // These moved here from perOut() to improve beep trigger reliability.
+  if(mixWarning & 1) if(((g_tmr10ms&0xFF)==  0)) AUDIO_MIX_WARNING_1();
+  if(mixWarning & 2) if(((g_tmr10ms&0xFF)== 64) || ((g_tmr10ms&0xFF)== 72)) AUDIO_MIX_WARNING_2();
+  if(mixWarning & 4) if(((g_tmr10ms&0xFF)==128) || ((g_tmr10ms&0xFF)==136) || ((g_tmr10ms&0xFF)==144)) AUDIO_MIX_WARNING_3();
+
+}
 
 PhaseData *phaseaddress(uint8_t idx)
 {
@@ -229,7 +302,7 @@ CustomSwData *cswaddress(uint8_t idx)
   return &g_model.customSw[idx];
 }
 
-#if defined(M64)
+#if defined(CPUM64)
 void memclear(void *ptr, uint8_t size)
 {
   memset(ptr, 0, size);
@@ -277,33 +350,6 @@ void modelDefault(uint8_t id)
 {
   memset(&g_model, 0, sizeof(g_model));
   applyDefaultTemplate();
-}
-
-void resetProto()
-{
-#if defined(DSM2_SERIAL)
-  if (g_model.protocol == PROTO_DSM2) {
-    cli();
-#if defined(FRSKY)
-    DSM2_Init();
-#endif
-    sei();
-  }
-  else {
-    cli();
-#if defined(FRSKY)
-    FRSKY_Init();
-#else
-    DSM2_Done();
-#endif
-    sei();
-#if defined(FRSKY)
-    FRSKY_setModelAlarms();
-#endif
-  }
-#elif defined(FRSKY)
-  FRSKY_setModelAlarms();
-#endif
 }
 
 int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 100
@@ -535,7 +581,7 @@ void applyExpos(int16_t *anas)
   }
 }
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
 int16_t calc100toRESX(int8_t x)
 {
   // return (int16_t)x*10 + x/4 - x/64;
@@ -557,7 +603,6 @@ int16_t calcRESXto1000(int16_t x)
 // *1000/1024 = x - x/32 + x/128
   return (x - x/32 + x/128);
 }
-
 #endif
 
 int16_t applyLimits(uint8_t channel, int32_t value)
@@ -601,7 +646,7 @@ int16_t applyLimits(uint8_t channel, int32_t value)
 }
 
 int16_t calibratedStick[NUM_STICKS+NUM_POTS];
-int16_t g_chans512[NUM_CHNOUT];
+int16_t g_chans512[NUM_CHNOUT] = {0};
 int16_t ex_chans[NUM_CHNOUT] = {0}; // Outputs (before LIMITS) of the last perMain
 #ifdef HELI
 int16_t cyc_anas[3] = {0};
@@ -617,12 +662,24 @@ int16_t getValue(uint8_t i)
 #endif
   else if(i<MIXSRC_TrimAil) return calc1000toRESX((int16_t)8 * getTrimValue(s_perout_flight_phase, i-(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS)));
   else if(i<MIXSRC_MAX) return 1024;
+#if defined(PCBX9D)
+  else if(i<MIXSRC_SA) return (keyState(SW_SA0) ? -1024 : 1024);
+  else if(i<MIXSRC_SB) return (keyState(SW_SB0) ? -1024 : (keyState(SW_SB1) ? 0 : 1024));
+  else if(i<MIXSRC_SC) return (keyState(SW_SC0) ? -1024 : (keyState(SW_SC1) ? 0 : 1024));
+  else if(i<MIXSRC_SD) return (keyState(SW_SD0) ? -1024 : (keyState(SW_SD1) ? 0 : 1024));
+  else if(i<MIXSRC_SE) return (keyState(SW_SE0) ? -1024 : (keyState(SW_SE1) ? 0 : 1024));
+  else if(i<MIXSRC_SF) return (keyState(SW_SF0) ? -1024 : (keyState(SW_SF1) ? 0 : 1024));
+  else if(i<MIXSRC_SG) return (keyState(SW_SG0) ? -1024 : (keyState(SW_SG1) ? 0 : 1024));
+  else if(i<MIXSRC_SH) return (keyState(SW_SH0) ? -1024 : 1024);
+#else
   else if(i<MIXSRC_3POS) return (keyState(SW_ID0) ? -1024 : (keyState(SW_ID1) ? 0 : 1024));
+  // here the switches are skipped
   else if(i<MIXSRC_3POS+3)
 #if defined(HELI)
     return cyc_anas[i-MIXSRC_3POS];
 #else
     return 0;
+#endif
 #endif
   else if(i<CSW_PPM_BASE+NUM_CAL_PPM) return (g_ppmIns[i-CSW_PPM_BASE] - g_eeGeneral.trainer.calib[i-CSW_PPM_BASE])*2;
   else if(i<CSW_PPM_BASE+NUM_PPM) return g_ppmIns[i-CSW_PPM_BASE]*2;
@@ -662,7 +719,7 @@ int16_t getValue(uint8_t i)
   else return 0;
 }
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #define GETSWITCH_RECURSIVE_TYPE uint32_t
 volatile bool s_default_switch_value;
 #else
@@ -673,7 +730,7 @@ volatile GETSWITCH_RECURSIVE_TYPE s_last_switch_used;
 volatile GETSWITCH_RECURSIVE_TYPE s_last_switch_value;
 /* recursive function. stack as of today (16/03/2012) grows by 8bytes at each call, which is ok! */
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 uint32_t delays[NUM_CSW];
 uint32_t durations[NUM_CSW];
 #endif
@@ -685,7 +742,7 @@ bool __getSwitch(int8_t swtch)
   bool result;
 
   if (swtch == 0)
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     return s_default_switch_value;
 #else
     return s_last_switch_used & ((GETSWITCH_RECURSIVE_TYPE)1<<15);
@@ -728,7 +785,7 @@ bool __getSwitch(int8_t swtch)
         }
       }
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
       if (result)
         s_last_switch_value |= ((GETSWITCH_RECURSIVE_TYPE)1<<cs_idx);
 #endif
@@ -823,7 +880,7 @@ bool __getSwitch(int8_t swtch)
       }
     }
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     if (cs->delay) {
       if (result) {
         if (delays[cs_idx] > get_tmr10ms())
@@ -856,7 +913,7 @@ bool __getSwitch(int8_t swtch)
 
 bool getSwitch(int8_t swtch, bool nc)
 {
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   s_last_switch_used = 0;
   s_last_switch_value = 0;
   s_default_switch_value = nc;
@@ -923,7 +980,7 @@ uint8_t getFlightPhase()
 int16_t getRawTrimValue(uint8_t phase, uint8_t idx)
 {
   PhaseData *p = phaseaddress(phase);
-#if defined(M64)
+#if defined(CPUM64)
   return (((int16_t)p->trim[idx]) << 2) + ((p->trim_ext >> (2*idx)) & 0x03);
 #else
   return p->trim[idx];
@@ -938,7 +995,7 @@ int16_t getTrimValue(uint8_t phase, uint8_t idx)
 void setTrimValue(uint8_t phase, uint8_t idx, int16_t trim)
 {
   PhaseData *p = phaseaddress(phase);
-#if defined(M64)
+#if defined(CPUM64)
   p->trim[idx] = (int8_t)(trim >> 2);
   p->trim_ext = (p->trim_ext & ~(0x03 << (2*idx))) + (((trim & 0x03) << (2*idx)));
 #else
@@ -1013,7 +1070,7 @@ void incRotaryEncoder(uint8_t idx, int8_t inc)
 uint8_t s_gvar_timer = 0;
 uint8_t s_gvar_last = 0;
 
-#if defined(M64)
+#if defined(CPUM64)
 int16_t getGVarValue(int8_t x, int16_t min, int16_t max)
 {
   return (x >= 126 || x <= -126) ? limit(min, GVAR_VALUE((uint8_t)x - 126, -1), max) : x;
@@ -1065,7 +1122,7 @@ void setGVarValue(uint8_t idx, int8_t value, int8_t phase)
 
 #endif
 
-#if defined(FRSKY) || defined(PCBSKY9X)
+#if defined(FRSKY) || defined(CPUARM)
 void putsTelemetryValue(uint8_t x, uint8_t y, int16_t val, uint8_t unit, uint8_t att)
 {
 #ifdef IMPERIAL_UNITS
@@ -1092,27 +1149,12 @@ void putsTelemetryValue(uint8_t x, uint8_t y, int16_t val, uint8_t unit, uint8_t
   }
 #endif
   lcd_outdezAtt(x, (att & DBLSIZE ? y - FH : y), val, att & (~NO_UNIT));
-  if (~att & NO_UNIT && unit != UNIT_RAW)
+  if (!(att & NO_UNIT) && unit != UNIT_RAW)
     lcd_putsiAtt(lcdLastPos/*+1*/, y, STR_VTELEMUNIT, unit, 0);
 }
 #endif
 
-void clearKeyEvents()
-{
-#if defined(PCBSKY9X)
-  CoTickDelay(100);  // 200ms
-#endif
-
-#if defined(SIMU)
-  while (keyDown() && main_thread_running) sleep(1/*ms*/);
-#else
-  while (keyDown()) wdt_reset();  // loop until all keys are up
-#endif
-  memclear(keys, sizeof(keys));
-  putEvent(0);
-}
-
-#define INAC_DEVISOR 256   // Bypass splash screen with stick movement
+#define INAC_DEVISOR 512   // Bypass splash screen with stick movement
 uint16_t stickMoveValue()
 {
   uint16_t sum = 0;
@@ -1126,7 +1168,7 @@ void checkBacklight()
   static uint8_t tmr10ms ;
 
   if (tmr10ms != g_blinkTmr10ms) {
-    tmr10ms = g_blinkTmr10ms ;
+    tmr10ms = g_blinkTmr10ms;
     uint16_t tsum = stickMoveValue();
     if (tsum != inacSum) {
       inacSum = tsum;
@@ -1134,16 +1176,8 @@ void checkBacklight()
       if (g_eeGeneral.backlightMode & e_backlight_mode_sticks)
         backlightOn();
     }
-    else if (g_eeGeneral.inactivityTimer && (!g_vbat100mV || g_vbat100mV>50)) {
-      if (++inacPrescale > 15 ) {
-        inacCounter++;
-        inacPrescale = 0;
-        if (inacCounter > ((uint16_t)g_eeGeneral.inactivityTimer*25*15))
-          if ((inacCounter&0x1F)==1) AUDIO_INACTIVITY();
-      }
-    }
 
-    if (g_eeGeneral.backlightMode == e_backlight_mode_on || g_LightOffCounter || isFunctionActive(FUNC_BACKLIGHT))
+    if (g_eeGeneral.backlightMode == e_backlight_mode_on || lightOffCounter || isFunctionActive(FUNC_BACKLIGHT))
       BACKLIGHT_ON();
     else
       BACKLIGHT_OFF();
@@ -1156,7 +1190,7 @@ void checkBacklight()
 
 void backlightOn()
 {
-  g_LightOffCounter = ((uint16_t)g_eeGeneral.lightAutoOff*250) << 1;
+  lightOffCounter = ((uint16_t)g_eeGeneral.lightAutoOff*250) << 1;
 }
 
 #if defined(SPLASH)
@@ -1170,7 +1204,7 @@ void doSplash()
     lcd_img(0, 0, splash_lbm, 0, 0);
     refreshDisplay();
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
     AUDIO_TADA();
 #endif
 
@@ -1182,10 +1216,7 @@ void doSplash()
     lcdSetRefVolt(contrast);
 #endif
 
-#if !defined(SIMU)
-    for (uint8_t i=0; i<32; i++)
-      getADC_filt(); // init ADC array
-#endif
+    getADC(); // init ADC array
 
     uint16_t inacSum = stickMoveValue();
 
@@ -1193,21 +1224,21 @@ void doSplash()
     while (tgtime != get_tmr10ms())
     {
 #if defined(SIMU)
-      if (!main_thread_running) return;
-      sleep(1/*ms*/);
-#elif defined(PCBSKY9X)
+      SIMU_SLEEP(1);
+#elif defined(CPUARM)
       CoTickDelay(1);
 #endif
-      getADC_filt();
+
+      getADC();
 
       uint16_t tsum = stickMoveValue();
 
 #if defined(FSPLASH) || defined(XSPLASH)
       if (!(g_eeGeneral.splashMode & 0x04))
 #endif
-      if (keyDown() || (tsum!=inacSum)) return;  // wait for key release
+      if (keyDown() || tsum!=inacSum) return;  // wait for key release
 
-      if (check_soft_power() > e_power_trainer) return; // usb and power off
+      if (check_soft_power()==e_power_off) return;
 
 #if !defined(PCBSTD)
       if (curTime < get_tmr10ms()) {
@@ -1229,7 +1260,7 @@ void doSplash()
 
 void checkAll()
 {
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
   checkLowEEPROM();
 #endif
 
@@ -1237,7 +1268,7 @@ void checkAll()
   checkSwitches();
 }
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
 void checkLowEEPROM()
 {
   if (g_eeGeneral.disableMemoryWarning) return;
@@ -1256,7 +1287,7 @@ void checkTHR()
 #ifdef SIMU
   int16_t lowLim = THRCHK_DEADBAND - 1024 ;
 #else
-  getADC_single();   // if thr is down - do not display warning at all
+  getADC();   // if thr is down - do not display warning at all
   int16_t lowLim = g_eeGeneral.calibMid[thrchn];
   lowLim = (g_eeGeneral.throttleReversed ? - lowLim - g_eeGeneral.calibSpanPos[thrchn] : lowLim - g_eeGeneral.calibSpanNeg[thrchn]);
   lowLim += THRCHK_DEADBAND;
@@ -1270,15 +1301,13 @@ void checkTHR()
 
   while (1)
   {
-#ifdef SIMU
-      if (!main_thread_running) return;
-      sleep(1/*ms*/);
-#else
-      getADC_single();
-#endif
+      SIMU_SLEEP(1);
+
+      getADC();
+
       int16_t v = thrAnaIn(thrchn);
 
-      if (check_soft_power() > e_power_trainer || v<=lowLim || keyDown())
+      if (check_soft_power()==e_power_off || keyDown() || v<=lowLim)
         break;
 
       checkBacklight();
@@ -1322,16 +1351,13 @@ void checkSwitches()
       last_bad_switches = switches_states;
     }
 
-    if (keyDown() || check_soft_power() > e_power_trainer) return; // Usb on or power off
+    if (check_soft_power()==e_power_off || keyDown()) return; // Usb on or power off
 
     checkBacklight();
 
     wdt_reset();
 
-#ifdef SIMU
-    if (!main_thread_running) return;
-    sleep(1/*ms*/);
-#endif
+    SIMU_SLEEP(1);
   }
 }
 
@@ -1341,13 +1367,9 @@ void alert(const pm_char * t, const pm_char *s MESSAGE_SOUND_ARG)
 
   while(1)
   {
-#ifdef SIMU
-    if (!main_thread_running) return;
-    sleep(1/*ms*/);
-#endif
+    SIMU_SLEEP(1);
 
-
-    if (check_soft_power() >= e_power_usb) return; // Usb on or power off
+    if (check_soft_power() == e_power_off) return;
 
     if (keyDown()) return;  // wait for key release
 
@@ -1364,7 +1386,7 @@ void message(const pm_char *title, const pm_char *t, const char *last MESSAGE_SO
 #if defined(LCD212)
   lcd_img(DISPLAY_W-29, 0, asterisk_lbm, 0, 0);
 #endif
-#if !defined(M64) || defined(EXTSTD)
+#if !defined(CPUM64) || defined(EXTSTD)
   lcd_img(2, 0, asterisk_lbm, 0, 0);
 #else
   lcd_putsAtt(0, 0, PSTR("(!)"), DBLSIZE);
@@ -1391,7 +1413,7 @@ void message(const pm_char *title, const pm_char *t, const char *last MESSAGE_SO
 int8_t trimGvar[NUM_STICKS] = { -1, -1, -1, -1 };
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 void checkTrims()
 {
   uint8_t event = getEvent(true);
@@ -1414,7 +1436,7 @@ uint8_t checkTrim(uint8_t event)
 #if defined(GVARS)
 #define TRIM_REUSED() trimGvar[idx] >= 0
     if (TRIM_REUSED()) {
-#if defined(M64)
+#if defined(CPUM64)
       phase = 0;
 #else
       phase = getGVarFlightPhase(s_perout_flight_phase, trimGvar[idx]);
@@ -1436,7 +1458,7 @@ uint8_t checkTrim(uint8_t event)
     int8_t  v = (s==0) ? min(32, abs(before)/4+1) : 1 << (s-1); // 1=>1  2=>2  3=>4  4=>8
     if (thro) v = 4; // if throttle trim and trim trottle then step=4
     int16_t after = (k&1) ? before + v : before - v;   // positive = k&1
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
     uint8_t beepTrim = 0;
 #else
     bool beepTrim = false;
@@ -1497,16 +1519,16 @@ uint8_t checkTrim(uint8_t event)
     else {
       AUDIO_TRIM(event, after);
     }
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
     return 0;
 #endif
   }
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
   return event;
 #endif
 }
 
-#if defined(PCBSKY9X) && defined(REVB)
+#if defined(CPUARM) && !defined(REVA)
 uint16_t Current_analogue;
 uint16_t Current_max;
 uint32_t Current_accumulator;
@@ -1545,9 +1567,9 @@ uint16_t anaIn(uint8_t chan)
   //                     ana-in:   3 1 2 0 4 5 6 7
   //static pm_char crossAna[] PROGMEM ={4,2,3,1,5,6,7,0}; // wenn schon Tabelle, dann muss sich auch lohnen
   //                        Google Translate (German): // if table already, then it must also be worthwhile
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   static const uint8_t crossAna[]={1,5,7,0,4,6,2,3,8};
-#if defined(REVB)
+#if !defined(REVA)
   if ( chan == 8 ) {
     return Current_analogue ;
   }
@@ -1560,113 +1582,43 @@ uint16_t anaIn(uint8_t chan)
   return *p;
 }
 
-#if defined(PCBSKY9X)
-void getADC_filt()
-{
-        register uint32_t x ;
-        static uint16_t t_ana[2][NUMBER_ANALOG] ;
-
-        read_9_adc() ;
-        for( x = 0 ; x < NUMBER_ANALOG ; x += 1 )
-        {
-                s_anaFilt[x] = s_anaFilt[x]/2 + (t_ana[1][x] >> 2 ) ;
-                t_ana[1][x] = ( t_ana[1][x] + t_ana[0][x] ) >> 1 ;
-                t_ana[0][x] = ( t_ana[0][x] + Analog_values[x] ) >> 1 ;
-        }
-}
-
-void getADC_osmp()
+#if defined(CPUARM)
+void getADC()
 {
   register uint32_t x;
   register uint32_t y;
-  uint16_t temp[NUMBER_ANALOG];
+  uint16_t temp[NUMBER_ANALOG] = { 0 };
 
-  for( x = 0; x < NUMBER_ANALOG; x += 1 )
-  {
-    temp[x] = 0;
-  }
-  for( y = 0; y < 4; y += 1 )
-  {
+  for( y = 0; y < 4; y += 1 ) {
     read_9_adc();
     for( x = 0; x < NUMBER_ANALOG; x += 1 )
     {
       temp[x] += Analog_values[x];
     }
   }
+
   for( x = 0; x < NUMBER_ANALOG; x += 1 )
   {
     s_anaFilt[x] = temp[x] >> 3;
   }
 }
-
-void getADC_single()
-{
-  register uint32_t x ;
-
-  read_9_adc() ;
-
-  for( x = 0 ; x < NUMBER_ANALOG ; x += 1 )
-  {
-    s_anaFilt[x] = Analog_values[x] >> 1 ;
-  }
-}
-
 #else
-
-void getADC_filt()
-{
-  static uint16_t t_ana[2][8];
-  for (uint8_t adc_input=0; adc_input<8; adc_input++) {
-      ADMUX=adc_input|ADC_VREF_TYPE;
-      // Start the AD conversion
-      ADCSRA|=0x40;
-
-    // Do this while waiting
-    s_anaFilt[adc_input] = (s_anaFilt[adc_input]/2 + t_ana[1][adc_input]) & 0xFFFE; //gain of 2 on last conversion - clear last bit
-    t_ana[1][adc_input]  = (t_ana[1][adc_input] + t_ana[0][adc_input]) >> 1;
-
-      // Wait for the AD conversion to complete
-      while ((ADCSRA & 0x10)==0);
-      ADCSRA|=0x10;
-
-      t_ana[0][adc_input]  = (t_ana[0][adc_input]  + ADC) >> 1;
-  }
-}
-
-void getADC_osmp()
+void getADC()
 {
   uint16_t temp_ana;
-
   for (uint8_t adc_input=0; adc_input<8; adc_input++) {
-    temp_ana = 0;
     ADMUX = adc_input|ADC_VREF_TYPE;
-    for (uint8_t i=0; i<4;i++) {  // Going from 10bits to 11 bits.  Addition = n.  Loop 4^n times
-      // Start the AD conversion
-      ADCSRA|=0x40;
-      // Wait for the AD conversion to complete
-      while ((ADCSRA & 0x10)==0);
-      ADCSRA|=0x10;
-      temp_ana += ADC;
-    }
-    s_anaFilt[adc_input] = temp_ana / 2; // divide by 2^n to normalize result.
+    ADCSRA|=0x40; // Start the AD conversion
+    while (ADCSRA & 0x40); // Wait for the AD conversion to complete
+    temp_ana = ADC;
+    ADCSRA|=0x40; // Start the second AD conversion
+    while (ADCSRA & 0x40); // Wait for the AD conversion to complete
+    s_anaFilt[adc_input] = temp_ana + ADC;
   }
-}
-
-void getADC_single()
-{
-  for (uint8_t adc_input=0; adc_input<8; adc_input++) {
-      ADMUX=adc_input|ADC_VREF_TYPE;
-      // Start the AD conversion
-      ADCSRA|=0x40;
-      // Wait for the AD conversion to complete
-      while ((ADCSRA & 0x10)==0);
-      ADCSRA|=0x10;
-      s_anaFilt[adc_input]= ADC * 2; // use 11 bit numbers
-    }
 }
 #endif
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
 void getADC_bandgap()
 {
 #if defined (PCBGRUVIN9X)
@@ -1697,7 +1649,7 @@ void getADC_bandgap()
 #endif // SIMU
 
 uint8_t g_vbat100mV = 0;
-uint16_t g_LightOffCounter;
+uint16_t lightOffCounter;
 
 uint16_t s_timeCumTot;
 uint16_t s_timeCumThr;    // THR in 1/16 sec
@@ -1900,8 +1852,6 @@ void testFunc()
 #ifdef SIMU
   printf("testFunc\n"); fflush(stdout);
 #endif
-
-  while (1);
 }
 #endif
 
@@ -2024,7 +1974,7 @@ PLAY_FUNCTION(playValue, uint8_t idx)
 }
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 static uint8_t currentSpeakerVolume = 255;
 uint8_t requiredSpeakerVolume;
 uint8_t fnSwitchDuration[NUM_FSW] = { 0 };
@@ -2057,7 +2007,7 @@ void evalFunctions()
       MASK_FUNC_TYPE function_mask = (sd->func >= FUNC_TRAINER ? ((MASK_FUNC_TYPE)1 << (sd->func-FUNC_TRAINER)) : 0);
       MASK_FSW_TYPE switch_mask = ((MASK_FSW_TYPE)1 << i);
       uint8_t momentary = 0;
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
       uint8_t shrt=0, lng=0;
       if (swtch > MAX_SWITCH+1+MAX_SWITCH+1+MAX_PSWITCH) {
         lng = 1;
@@ -2077,7 +2027,7 @@ void evalFunctions()
         momentary = 1;
         swtch += MAX_SWITCH+1;
       }
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
       bool sw;
       if ((sw=getSwitch(swtch, 0)) || (shrt&&fnSwitchDuration[i]>0&&fnSwitchDuration[i]<FSW_PRESSLONG_DURATION) || (lng&&fnSwitchDuration[i]>=(uint8_t)FSW_PRESSLONG_DURATION)) {
         if (shrt || lng) {
@@ -2099,7 +2049,7 @@ void evalFunctions()
             safetyCh[sd->func] = FSW_PARAM(sd);
           }
 
-          if (~activeFunctions & function_mask) {
+          if (!(activeFunctions & function_mask)) {
             if (sd->func == FUNC_INSTANT_TRIM) {
               if (g_menuStack[0] == menuMainView
 #if defined(FRSKY)
@@ -2120,7 +2070,7 @@ void evalFunctions()
         }
 #endif
 
-        if (~activeFunctionSwitches & switch_mask) {
+        if (!(activeFunctionSwitches & switch_mask)) {
           if (sd->func == FUNC_RESET) {
             switch (FSW_PARAM(sd)) {
               case 0:
@@ -2139,7 +2089,7 @@ void evalFunctions()
           }
         }
 
-#if defined(PCBSKY9X) && defined(SDCARD)
+#if defined(CPUARM) && defined(SDCARD)
         if ((shrt || lng) && (activeFunctions & function_mask)) {
           if (sd->func == FUNC_BACKGND_MUSIC) {
             STOP_PLAY(i+1);
@@ -2148,7 +2098,7 @@ void evalFunctions()
         else
 #endif
 
-        if (!COMPLEX_SWITCH || (~activeFunctionSwitches & switch_mask)) {
+        if (!COMPLEX_SWITCH || !(activeFunctionSwitches & switch_mask)) {
           if (sd->func == FUNC_PLAY_SOUND) {
             AUDIO_PLAY(AU_FRSKY_FIRST+FSW_PARAM(sd));
           }
@@ -2159,7 +2109,7 @@ void evalFunctions()
           }
 #endif
 
-#if defined(PCBSKY9X) && defined(SDCARD)
+#if defined(CPUARM) && defined(SDCARD)
           else if (sd->func == FUNC_PLAY_TRACK || sd->func == FUNC_BACKGND_MUSIC) {
             if (IS_PLAYING(i+1)) {
               switch_mask = 0;
@@ -2229,8 +2179,8 @@ void evalFunctions()
         }
 
         if (COMPLEX_SWITCH) {
-          if (~activeFunctionSwitches & switch_mask) {
-            if (~activeFunctions & function_mask) {
+          if (!(activeFunctionSwitches & switch_mask)) {
+            if (!(activeFunctions & function_mask)) {
               newActiveFunctions |= function_mask;
             }
           }
@@ -2245,10 +2195,10 @@ void evalFunctions()
         activeFunctionSwitches |= switch_mask;
       }
       else {
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
         fnSwitchDuration[i] = 0;
 #endif
-#if defined(PCBSKY9X) && defined(SDCARD)
+#if defined(CPUARM) && defined(SDCARD)
         if (!COMPLEX_SWITCH && sd->func == FUNC_BACKGND_MUSIC) {
           STOP_PLAY(i+1);
         }
@@ -2346,197 +2296,228 @@ void perOut(uint8_t mode, uint8_t tick10ms)
 #endif
 
   memclear(chans, sizeof(chans));        // All outputs to 0
-
+  
   //========== MIXER LOOP ===============
   uint8_t lv_mixWarning = 0;
 
-  for (uint8_t i=0; i<MAX_MIXERS; i++) {
+  uint8_t pass = 0;
 
-    MixData *md = mixaddress( i ) ;
+  bitfield_channels_t dirtyChannels = (bitfield_channels_t)-1; // all dirty when mixer starts
 
-    if (md->srcRaw==0) break;
+  do {
 
-    if (md->phases & (1<<s_perout_flight_phase)) continue;
+    // printf("[pass %d]\n", pass); fflush(stdout);
 
-    //========== SWITCH ===============
-    bool sw = getSwitch(md->swtch, 1);
+    bitfield_channels_t passDirtyChannels = 0;
 
-    //========== VALUE ===============
-    //Notice 0 = NC switch means not used -> always on line
-    uint8_t k = md->srcRaw-1;
-    int16_t v = 0;
-    if (mode != e_perout_mode_normal) {
-      if (!sw || k >= NUM_STICKS || (k == THR_STICK && g_model.thrTrim)) {
-        continue;
+    for (uint8_t i = 0; i < MAX_MIXERS; i++) {
+
+      MixData *md = mixaddress(i);
+
+      if (md->srcRaw == 0) break;
+
+      uint8_t k = md->srcRaw - 1;
+
+      if (!(dirtyChannels & ((bitfield_channels_t) 1 << md->destCh))) continue;
+
+      if (md->phases & (1 << s_perout_flight_phase)) continue;
+
+      //========== SWITCH ===============
+      bool sw = getSwitch(md->swtch, 1);
+
+      //========== VALUE ===============
+      int16_t v = 0;
+      if (mode != e_perout_mode_normal) {
+        if (!sw || k >= NUM_STICKS || (k == THR_STICK && g_model.thrTrim)) {
+          continue;
+        }
+        else {
+          if (!(mode & e_perout_mode_nosticks)) v = anas[k];
+        }
       }
       else {
-        if (!(mode & e_perout_mode_nosticks))
-          v = anas[k];
+        if (k < NUM_STICKS)
+          v = md->noExpo ? rawAnas[k] : anas[k]; //Switch is on. MAX=FULL=512 or value.
+#if defined(PCBX9D)
+              // TODO
+#else
+        else if (k >= MIXSRC_THR-1 && k <= MIXSRC_SWC-1) {
+          v = getSwitch(k-MIXSRC_THR+1+1, 0) ? +1024 : -1024;
+          if (v < 0 && !md->swtch) sw = false;
+        }
+        else {
+          v = getValue(k <= MIXSRC_3POS ? k : k - MAX_SWITCH);
+          if (k >= MIXSRC_CH1 - 1 && k <= MIXSRC_CHMAX - 1
+              && md->destCh != k - MIXSRC_CH1 + 1) {
+            if (dirtyChannels & ((bitfield_channels_t) 1 << (k-MIXSRC_CH1+1)) & (passDirtyChannels|~(((bitfield_channels_t) 1 << md->destCh)-1)))
+              passDirtyChannels |= (bitfield_channels_t) 1 << md->destCh;
+            if (k - MIXSRC_CH1 + 1 < md->destCh || pass > 0) v = chans[k-MIXSRC_CH1+1] / 100;
+          }
+        }
+#endif
       }
-    }
-    else {
-      if (k < NUM_STICKS)
-        v = md->noExpo ? rawAnas[k] : anas[k]; //Switch is on. MAX=FULL=512 or value.
-      else if (k>=MIXSRC_CH1-1 && k<=MIXSRC_CH16-1 && k-MIXSRC_CH1+1<md->destCh) // if we've already calculated the value - take it instead
-        v = chans[k-MIXSRC_CH1+1] / 100;
-      else if (k>=MIXSRC_THR-1 && k<=MIXSRC_SWC-1) {
-        v = getSwitch(k-MIXSRC_THR+1+1, 0) ? +1024 : -1024;
-        if (v<0 && !md->swtch)
-          sw = false;
+
+      //========== DELAYS ===============
+      uint8_t swTog;
+      bool apply_offset = true;
+      if (sw) { // switch on?  (if no switch selected => on)
+        swTog = !swOn[i];
+        if (mode == e_perout_mode_normal) {
+          swOn[i] = true;
+          if (md->delayUp) {
+            if (swTog) {
+              if (sDelay[i])
+                sDelay[i] = 0;
+              else
+                sDelay[i] = md->delayUp * 50;
+            }
+            if (sDelay[i] > 0) { // perform delay
+              sDelay[i] = max(0, sDelay[i] - tick10ms);
+              if (!md->swtch) {
+                v = -1024;
+              }
+              else {
+                continue;
+              }
+            }
+          }
+          if (md->mixWarn) lv_mixWarning |= 1 << (md->mixWarn - 1); // Mix warning
+        }
       }
       else {
-        v = getValue(k <= MIXSRC_3POS ? k : k-MAX_SWITCH);
-      }
-    }
-
-    //========== DELAYS ===============
-    uint8_t swTog;
-    bool apply_offset = true;
-    if (sw) { // switch on?  (if no switch selected => on)
-      swTog = !swOn[i];
-      if (mode == e_perout_mode_normal) {
-        swOn[i] = true;
-        if (md->delayUp) {
+        bool has_delay = false;
+        swTog = swOn[i];
+        swOn[i] = false;
+        if (md->delayDown) {
           if (swTog) {
             if (sDelay[i])
               sDelay[i] = 0;
             else
-              sDelay[i] = md->delayUp * 50;
+              sDelay[i] = md->delayDown * 50;
           }
           if (sDelay[i] > 0) { // perform delay
-            sDelay[i] = max(0, sDelay[i]-tick10ms);
-            if (!md->swtch) {
-              v = -1024;
-            }
-            else {
-              continue;
-            }
+            sDelay[i] = max(0, sDelay[i] - tick10ms);
+            if (!md->swtch) v = +1024;
+            has_delay = true;
+          }
+          else if (!md->swtch) {
+            v = -1024;
           }
         }
-        if (md->mixWarn) lv_mixWarning |= 1<<(md->mixWarn-1); // Mix warning
-      }
-    }
-    else {
-      bool has_delay = false;
-      swTog = swOn[i];
-      swOn[i] = false;
-      if (md->delayDown) {
-        if (swTog) {
-          if (sDelay[i])
-            sDelay[i] = 0;
-          else
-            sDelay[i] = md->delayDown * 50;
-        }
-        if (sDelay[i] > 0) { // perform delay
-          sDelay[i] = max(0, sDelay[i]-tick10ms);
-          if (!md->swtch) v = +1024;
-          has_delay = true;
-        }
-        else if (!md->swtch) {
-          v = -1024;
+        if (!has_delay) {
+          if (md->speedDown) {
+            if (md->mltpx == MLTPX_REP) continue;
+            if (md->swtch) {
+              v = 0;
+              apply_offset = false;
+            }
+          }
+          else if (md->swtch) {
+            continue;
+          }
         }
       }
-      if (!has_delay) {
-        if (md->speedDown) {
-          if (md->mltpx==MLTPX_REP) continue;
-          if (md->swtch) { v = 0; apply_offset = false; }
-        }
-        else if (md->swtch) {
-          continue;
-        }
-      }
-    }
 
 #ifdef BOLD_FONT
-    activeMixes |= ((ACTIVE_MIXES_TYPE)1 << i);
+      activeMixes |= ((ACTIVE_MIXES_TYPE) 1 << i);
 #endif
 
-    //========== OFFSET ===============
-    if (apply_offset) {
-      int8_t offset = GET_GVAR(md->offset, -125, 125, s_perout_flight_phase);
-      if (offset) v += calc100toRESX(offset);
-    }
+      //========== OFFSET ===============
+      if (apply_offset) {
+        int8_t offset = GET_GVAR(md->offset, -125, 125, s_perout_flight_phase);
+        if (offset) v += calc100toRESX(offset);
+      }
 
-    //========== TRIMS ===============
-    if (!(mode & e_perout_mode_notrims)) {
-      int8_t mix_trim = md->carryTrim;
-      if (mix_trim < TRIM_ON)
-        mix_trim = -mix_trim-1;
-      else if (mix_trim == TRIM_ON && k < NUM_STICKS)
-        mix_trim = k;
-      else
-        mix_trim = -1;
-      if (mix_trim >= 0)
-        v += trims[mix_trim];
-    }
+      //========== TRIMS ===============
+      if (!(mode & e_perout_mode_notrims)) {
+        int8_t mix_trim = md->carryTrim;
+        if (mix_trim < TRIM_ON)
+          mix_trim = -mix_trim - 1;
+        else if (mix_trim == TRIM_ON && k < NUM_STICKS)
+          mix_trim = k;
+        else
+          mix_trim = -1;
+        if (mix_trim >= 0) v += trims[mix_trim];
+      }
 
-    int16_t weight = GET_GVAR(md->weight, -500, 500, s_perout_flight_phase);
+      int16_t weight = GET_GVAR(md->weight, -500, 500, s_perout_flight_phase);
 
-    //========== SPEED ===============
-    if (mode == e_perout_mode_normal && (md->speedUp || md->speedDown))  // there are delay values
-    {
+      //========== SPEED ===============
+      if (mode == e_perout_mode_normal && (md->speedUp || md->speedDown)) { // there are delay values
+      
 #define DEL_MULT 256
 
-      int16_t diff = v-act[i]/DEL_MULT;
+        int16_t diff = v - act[i] / DEL_MULT;
 
-      if (diff) {
-        //rate = steps/sec => 32*1024/100*md->speedUp/Down
-        //act[i] += diff>0 ? (32768)/((int16_t)100*md->speedUp) : -(32768)/((int16_t)100*md->speedDown);
-        //-100..100 => 32768 ->  100*83886/256 = 32768,   For MAX we divide by 2 since it's asymmetrical
-        if (tick10ms) {
-            int32_t rate = (int32_t)DEL_MULT*2048*100*tick10ms;
+        if (diff) {
+          //rate = steps/sec => 32*1024/100*md->speedUp/Down
+          //act[i] += diff>0 ? (32768)/((int16_t)100*md->speedUp) : -(32768)/((int16_t)100*md->speedDown);
+          //-100..100 => 32768 ->  100*83886/256 = 32768,   For MAX we divide by 2 since it's asymmetrical
+          if (tick10ms) {
+            int32_t rate = (int32_t) DEL_MULT * 2048 * 100 * tick10ms;
             if (weight) rate /= abs(weight);
 
             act[i] = (diff>0) ? ((md->speedUp>0)   ? act[i]+(rate)/((int16_t)50*md->speedUp)   :  (int32_t)v*DEL_MULT) :
                                 ((md->speedDown>0) ? act[i]-(rate)/((int16_t)50*md->speedDown) :  (int32_t)v*DEL_MULT) ;
-        }
+          }
 
-        {
-          int32_t tmp = act[i]/DEL_MULT ;
-          if(((diff>0) && (v<tmp)) || ((diff<0) && (v>tmp))) act[i]=(int32_t)v*DEL_MULT; //deal with overflow
-        }
+          {
+            int32_t tmp = act[i] / DEL_MULT;
+            if (((diff > 0) && (v < tmp)) || ((diff < 0) && (v > tmp))) act[i] = (int32_t) v * DEL_MULT; //deal with overflow
+          }
 
-        v = act[i]/DEL_MULT;
+          v = act[i] / DEL_MULT;
+        }
       }
-    }
 
-    //========== CURVES ===============
-    if (md->curveParam && md->curveMode == MODE_CURVE) {
-      v = applyCurve(v, md->curveParam);
-    }
+      //========== CURVES ===============
+      if (md->curveParam && md->curveMode == MODE_CURVE) {
+        v = applyCurve(v, md->curveParam);
+      }
 
-    //========== WEIGHT ===============
-    int32_t dv = (int32_t)v*weight;
+      //========== WEIGHT ===============
+      int32_t dv = (int32_t) v * weight;
 
-    //========== DIFFERENTIAL =========
-    if (md->curveMode == MODE_DIFFERENTIAL) {
-      int8_t curveParam = GET_GVAR(md->curveParam, -100, 100, s_perout_flight_phase);
-      if (curveParam>0 && dv<0)
-        dv = (dv * (100-curveParam)) / 100;
-      else if (curveParam<0 && dv>0)
-        dv = (dv * (100+curveParam)) / 100;
-    }
+      //========== DIFFERENTIAL =========
+      if (md->curveMode == MODE_DIFFERENTIAL) {
+        int8_t curveParam =
+            GET_GVAR(md->curveParam, -100, 100, s_perout_flight_phase);
+        if (curveParam > 0 && dv < 0)
+          dv = (dv * (100 - curveParam)) / 100;
+        else if (curveParam < 0 && dv > 0) dv = (dv * (100 + curveParam)) / 100;
+      }
 
-    int32_t *ptr = &chans[md->destCh]; // Save calculating address several times
-    switch(md->mltpx){
-      case MLTPX_REP:
-        *ptr = dv;
+      int32_t *ptr = &chans[md->destCh]; // Save calculating address several times
+
+      if (i == 0 || md->destCh != (md - 1)->destCh) {
+        *ptr = 0;
+      }
+
+      switch (md->mltpx) {
+        case MLTPX_REP:
+          *ptr = dv;
 #ifdef BOLD_FONT
-        for (uint8_t m=i-1; m<MAX_MIXERS && mixaddress(m)->destCh == md->destCh; m--)
-          activeMixes &= ~((ACTIVE_MIXES_TYPE)1 << m);
+          for (uint8_t m = i - 1;
+              m < MAX_MIXERS && mixaddress(m)->destCh == md->destCh; m--)
+            activeMixes &= ~((ACTIVE_MIXES_TYPE) 1 << m);
 #endif
-        break;
-      case MLTPX_MUL:
-        dv /= 100;
-        dv *= *ptr;
-        dv /= RESXl;
-        *ptr = dv;
-        break;
-      default:  // MLTPX_ADD
-        *ptr += dv; //Mixer output add up to the line (dv + (dv>0 ? 100/2 : -100/2))/(100);
-        break;
+          break;
+        case MLTPX_MUL:
+          dv /= 100;
+          dv *= *ptr;
+          dv /= RESXl;
+          *ptr = dv;
+          break;
+        default: // MLTPX_ADD
+          *ptr += dv; //Mixer output add up to the line (dv + (dv>0 ? 100/2 : -100/2))/(100);
+          break;
       }
-  }
+    }
+
+    tick10ms = 0;
+    dirtyChannels &= passDirtyChannels;
+
+  } while (++pass < 5 && dirtyChannels);
 
   mixWarning = lv_mixWarning;
 }
@@ -2552,10 +2533,10 @@ ACTIVE_MIXES_TYPE activeMixes;
 #endif
 int32_t sum_chans512[NUM_CHNOUT] = {0};
 
-#if defined(PCBSKY9X)
-inline bool doMixerCalculations()
+#if defined(CPUARM)
+FORCEINLINE bool doMixerCalculations()
 #else
-inline void doMixerCalculations()
+FORCEINLINE void doMixerCalculations()
 #endif
 {
 #if defined(PCBGRUVIN9X) && defined(DEBUG) && !defined(VOICE)
@@ -2572,17 +2553,9 @@ inline void doMixerCalculations()
   activeMixes = 0;
 #endif
 
-  if (g_eeGeneral.filterInput == 1) {
-    getADC_filt() ;
-  }
-  else if ( g_eeGeneral.filterInput == 2) {
-    getADC_osmp() ;
-  }
-  else {
-    getADC_single() ;
-  }
+  getADC();
 
-#if defined(PCBSKY9X) && defined(REVB) && !defined(SIMU)
+#if defined(CPUARM) && !defined(REVA) && !defined(SIMU)
   Current_analogue = ( Current_analogue * 31 + s_anaFilt[8] ) >> 5 ;
   if (Current_analogue > Current_max)
     Current_max = Current_analogue ;
@@ -2608,14 +2581,16 @@ inline void doMixerCalculations()
     }
     else {
       uint8_t fadeTime = max(g_model.phaseData[s_last_phase].fadeOut, g_model.phaseData[phase].fadeIn);
+      uint8_t transitionMask = (1<<s_last_phase) + (1<<phase);
       if (fadeTime) {
-        s_fade_flight_phases |= (1<<s_last_phase) + (1<<phase);
+        s_fade_flight_phases |= transitionMask;
         delta = (MAX_ACT / 50) / fadeTime;
+        delta *= tick10ms;
       }
       else {
+        s_fade_flight_phases &= ~transitionMask;
         fp_act[s_last_phase] = 0;
         fp_act[phase] = MAX_ACT;
-        s_fade_flight_phases &= ~((1<<s_last_phase) + (1<<phase));
       }
     }
     s_last_phase = phase;
@@ -2642,7 +2617,7 @@ inline void doMixerCalculations()
   }
 
   //========== LIMITS ===============
-  for (uint8_t i=0;i<NUM_CHNOUT;i++) {
+  for (uint8_t i=0; i<NUM_CHNOUT; i++) {
     // chans[i] holds data from mixer.   chans[i] = v*weight => 1024*100
     // later we multiply by the limit (up to 100) and then we need to normalize
     // at the end chans[i] = chans[i]/100 =>  -1024..1024
@@ -2663,11 +2638,11 @@ inline void doMixerCalculations()
 #endif
 
   // Bandgap has had plenty of time to settle...
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
   getADC_bandgap();
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   if (!tick10ms) return false; //make sure the rest happen only every 10ms.
 #else
   if (!tick10ms) return; //make sure the rest happen only every 10ms.
@@ -2841,28 +2816,31 @@ inline void doMixerCalculations()
 
   if (s_fade_flight_phases) {
     for (uint8_t p=0; p<MAX_PHASES; p++) {
-      if (s_fade_flight_phases & (1<<p)) {
+      uint8_t phaseMask = (1<<p);
+      if (s_fade_flight_phases & phaseMask) {
+
+
         if (p == phase) {
-          if (MAX_ACT - fp_act[p] > delta * tick10ms)
-            fp_act[p] += delta * tick10ms;
+          if (MAX_ACT - fp_act[p] > delta)
+            fp_act[p] += delta;
           else {
             fp_act[p] = MAX_ACT;
-            s_fade_flight_phases -= (1<<p);
+            s_fade_flight_phases -= phaseMask;
           }
         }
         else {
-          if (fp_act[p] > delta * tick10ms)
-            fp_act[p] -= delta * tick10ms;
+          if (fp_act[p] > delta)
+            fp_act[p] -= delta;
           else {
             fp_act[p] = 0;
-            s_fade_flight_phases -= (1<<p);
+            s_fade_flight_phases -= phaseMask;
           }
         }
       }
     }
   }
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   requiredSpeakerVolume = g_eeGeneral.speakerVolume;
 #endif
 
@@ -2872,7 +2850,7 @@ inline void doMixerCalculations()
   if (s_rangecheck_mode) AUDIO_PLAY(AU_FRSKY_CHEEP);
 #endif
       
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   if (currentSpeakerVolume != requiredSpeakerVolume) {
     setVolume(requiredSpeakerVolume);
     currentSpeakerVolume = requiredSpeakerVolume;
@@ -2886,7 +2864,7 @@ void perMain()
 {
 #if defined(SIMU)
   doMixerCalculations();
-#elif !defined(PCBSKY9X)
+#elif !defined(CPUARM)
   uint16_t t0 = getTmr16KHz();
   int16_t delta = (nextMixerEndTime - lastMixerDuration) - t0;
   if (delta > 0 && delta < MAX_MIXER_DELTA) return;
@@ -2901,7 +2879,7 @@ void perMain()
 #endif
 
 // TODO same code here + integrate the timer which could be common
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   if (!Tenms) return;
   Tenms = 0 ;
 
@@ -2915,7 +2893,7 @@ void perMain()
   }
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   if (Eeprom32_process_state != E32_IDLE)
     ee32_process();
   else if (TIME_TO_WRITE)
@@ -2934,23 +2912,22 @@ void perMain()
   writeLogs();
 #endif
 
-#if defined(PCBSKY9X) && defined(SIMU)
+#if defined(CPUARM) && defined(SIMU)
   checkTrims();
 #endif
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   uint8_t evt = getEvent(false);
 #else
   uint8_t evt = getEvent();
   evt = checkTrim(evt);
 #endif
 
-  if (g_LightOffCounter) g_LightOffCounter--;
   if (evt && (g_eeGeneral.backlightMode & e_backlight_mode_keys)) backlightOn(); // on keypress turn the light on
 
   checkBacklight();
 
-#if defined(PCBSKY9X) && defined(FRSKY)
+#if defined(CPUARM) && defined(FRSKY)
   check_frsky();
 #endif
 
@@ -2975,8 +2952,11 @@ void perMain()
   }
   if (counter-- == 0) {
     counter = 10;
-
-#if defined(PCBSKY9X)
+#if defined(PCBX9D)
+    int32_t instant_vbat = anaIn(8);
+    instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * 4191 ;
+    instant_vbat /= 55296  ;
+#elif defined(PCBSKY9X)
     int32_t instant_vbat = anaIn(7);
     instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * 4191 ;
     instant_vbat /= 55296  ;
@@ -3005,7 +2985,7 @@ void perMain()
       if (g_vbat100mV <= g_eeGeneral.vBatWarn && g_vbat100mV>50) {
         AUDIO_TX_BATTERY_LOW();
       }
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
       else if (g_eeGeneral.temperatureWarn && getTemperature() >= g_eeGeneral.temperatureWarn) {
         AUDIO_TX_TEMP_HIGH();
       }
@@ -3020,7 +3000,7 @@ void perMain()
 int16_t g_ppmIns[8];
 uint8_t ppmInState = 0; //0=unsync 1..8= wait for value i-1
 
-#if !defined(SIMU) && !defined(PCBSKY9X)
+#if !defined(SIMU) && !defined(CPUARM)
 
 volatile uint8_t g_tmr16KHz; //continuous timer 16ms (16MHz/1024/256) -- 8-bit counter overflow
 ISR(TIMER_16KHZ_VECT, ISR_NOBLOCK)
@@ -3072,7 +3052,12 @@ ISR(TIMER_10MS_VECT, ISR_NOBLOCK) // 10ms timer
 
 #if defined(FRSKY)
   if (cnt10ms == 30) {
+#if defined(DSM2_SERIAL)
+    if (s_current_protocol != PROTO_DSM2)
+      check_frsky();
+#else
     check_frsky();
+#endif
   }
 #endif
 
@@ -3182,7 +3167,7 @@ ISR(TIMER3_CAPT_vect) // G: High frequency noise can cause stack overflo with IS
 
 // TODO serial_arm and serial_avr
 
-#if defined (FRSKY) && !defined(PCBSKY9X)
+#if defined(FRSKY) && !defined(CPUARM)
 FORCEINLINE void FRSKY_USART0_vect()
 {
   if (frskyTxBufferCount > 0) {
@@ -3194,7 +3179,7 @@ FORCEINLINE void FRSKY_USART0_vect()
 }
 #endif
 
-#if defined (DSM2_SERIAL) && !defined(PCBSKY9X)
+#if defined(DSM2_SERIAL) && !defined(CPUARM)
 FORCEINLINE void DSM2_USART0_vect()
 {
   UDR0 = *((uint16_t*)pulses2MHzRPtr); // transmit next byte
@@ -3207,11 +3192,11 @@ FORCEINLINE void DSM2_USART0_vect()
 }
 #endif
 
-#if !defined(SIMU) && !defined(PCBSKY9X)
-#if defined (FRSKY) or defined(DSM2_SERIAL)
+#if !defined(SIMU) && !defined(CPUARM)
+#if defined (FRSKY) || defined(DSM2_SERIAL)
 ISR(USART0_UDRE_vect)
 {
-#if defined (FRSKY) and defined (DSM2_SERIAL)
+#if defined(FRSKY) && defined(DSM2_SERIAL)
   if (g_model.protocol == PROTO_DSM2) {
     DSM2_USART0_vect();
   }
@@ -3284,7 +3269,7 @@ void moveTrimsToOffsets() // copy state of 3 primary to subtrim
   AUDIO_WARNING2();
 }
 
-#if defined(PCBSKY9X) || defined(PCBGRUVIN9X)
+#if defined(CPUARM) || defined(PCBGRUVIN9X)
 void saveTimers()
 {
   for (uint8_t i=0; i<MAX_TIMERS; i++) {
@@ -3304,34 +3289,7 @@ volatile rotenc_t g_rotenc[ROTARY_ENCODERS] = {0};
 
 #ifndef SIMU
 
-#if defined(PCBGRUVIN9X) && defined(ROTARY_ENCODERS)
-
-#if !defined(EXTRA_ROTARY_ENCODERS)
-ISR(INT2_vect)
-{
-  uint8_t input = PIND & 0b00001100;
-  if (input == 0 || input == 0b00001100) incRotaryEncoder(0, -1);
-}
-ISR(INT3_vect)
-{
-  uint8_t input = PIND & 0b00001100;
-  if (input == 0 || input == 0b00001100) incRotaryEncoder(0, +1);
-}
-#endif //!EXTRA_ROTARY_ENCODERS
-
-ISR(INT5_vect)
-{
-  uint8_t input = PINE & 0b01100000;
-  if (input == 0 || input == 0b01100000) incRotaryEncoder(1, +1);
-}
-ISR(INT6_vect)
-{
-  uint8_t input = PINE & 0b01100000;
-  if (input == 0 || input == 0b01100000) incRotaryEncoder(1, -1);
-}
-#endif //PCBGRUVIN9X+ROTARY_ENCODERS
-
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 void stack_paint()
 {
   for (uint16_t i=0; i<MENUS_STACK_SIZE; i++)
@@ -3421,14 +3379,14 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
 {
   eeReadAll();
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   setVolume(g_eeGeneral.speakerVolume);
   PWM->PWM_CH_NUM[0].PWM_CDTYUPD = g_eeGeneral.backlightBright;
 #elif defined(VOICE)
   SET_VOLUME(g_eeGeneral.speakerVolume+7);
 #endif
 
-#if defined(PCBSKY9X) && defined(BLUETOOTH)
+#if defined(BLUETOOTH)
   btInit();
 #endif
 
@@ -3444,7 +3402,7 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
   else {
     doSplash();
 
-#if defined(PCBSKY9X) && defined(SDCARD)
+#if defined(CPUARM) && defined(SDCARD)
     for (int i=0; i<500 && !Card_initialized; i++) {
       CoTickDelay(1);  // 2ms
     }
@@ -3454,7 +3412,7 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
     checkAlarm();
   }
 
-#if defined(PCBSKY9X) || defined(PCBGRUVIN9X)
+#if defined(CPUARM) || defined(PCBGRUVIN9X)
   if (!g_eeGeneral.unexpectedShutdown) {
     g_eeGeneral.unexpectedShutdown = 1;
     eeDirty(EE_GENERAL);
@@ -3464,7 +3422,7 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
   lcdSetContrast();
   backlightOn();
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
   start_ppm_capture();
   // TODO inside startPulses?
   s_pulses_paused = false;
@@ -3473,12 +3431,10 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
 
   startPulses();
 
-  if (check_soft_power() <= e_power_trainer) {
-    wdt_enable(WDTO_500MS);
-  }
+  wdt_enable(WDTO_500MS);
 }
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 void mixerTask(void * pdata)
 {
   s_pulses_paused = true;
@@ -3591,11 +3547,11 @@ int main(void)
 
   sei(); // interrupts needed for FRSKY_Init and eeReadAll.
 
-#if defined(FRSKY) and !defined(DSM2_SERIAL)
+#if defined(FRSKY) && !defined(DSM2_SERIAL)
   FRSKY_Init();
 #endif
 
-#if defined(DSM2_SERIAL) and !defined(FRSKY)
+#if defined(DSM2_SERIAL) && !defined(FRSKY)
   DSM2_Init();
 #endif
 
@@ -3619,12 +3575,12 @@ int main(void)
   init_rotary_sw();
 #endif
 
-#if !defined(PCBSKY9X)
+#if !defined(CPUARM)
   open9xInit(mcusr);
 #endif
 
-#if defined(PCBSKY9X)
-  if (check_soft_power() == e_power_usb) {
+#if defined(CPUARM)
+  if (BOOTLOADER_REQUEST()) {
     soft_power_off(); // Only turn power off if necessary
 
 #if defined(HAPTIC)
@@ -3647,7 +3603,7 @@ int main(void)
     lcd_putcAtt( 72, 24, 'B', DBLSIZE ) ;
     refreshDisplay() ;
 
-    usb_mode();
+    usbBootloader();
   }
 
   CoInitOS();
@@ -3684,14 +3640,12 @@ int main(void)
 
     perMain();
 
-#if !defined(PCBSKY9X)
-    if(heartbeat == HEART_TIMER_PULSES+HEART_TIMER10ms) {
+    if (heartbeat == HEART_TIMER_PULSES+HEART_TIMER10ms) {
       wdt_reset();
       heartbeat = 0;
     }
-#endif
   }
-#endif // PCBSKY9X
+#endif
 
 #if defined(PCBGRUVIN9X)
   // Time to switch off

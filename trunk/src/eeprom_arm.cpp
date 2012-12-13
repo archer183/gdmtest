@@ -14,7 +14,6 @@
  *
  */
 
-
 #include <stdint.h>
 #include "open9x.h"
 #include "inttypes.h"
@@ -486,7 +485,7 @@ void eeLoadModel(uint8_t id)
       eeCheck(true);
     }
     else {
-      read32_eeprom_data( ( File_system[id+1].block_no << 12) + sizeof( struct t_eeprom_header), ( uint8_t *)&g_model, size) ;
+      read32_eeprom_data((File_system[id+1].block_no << 12) + sizeof(struct t_eeprom_header), (uint8_t *)&g_model, size) ;
     }
 
     resetAll();
@@ -501,8 +500,6 @@ void eeLoadModel(uint8_t id)
     activeFunctions = 0;
     activeFunctionSwitches = 0;
 
-    resetProto();
-
     for (uint8_t i=0; i<MAX_TIMERS; i++) {
       if (g_model.timers[i].remanent) {
         s_timerVal[i] = g_model.timers[i].value;
@@ -511,6 +508,12 @@ void eeLoadModel(uint8_t id)
 
     resumeMixerCalculations();
     // TODO pulses should be started after mixer calculations ...
+
+#if defined(FRSKY)
+    FRSKY_setModelAlarms();
+#endif
+
+    LOAD_MODEL_BITMAP();
   }
 }
 
@@ -541,17 +544,17 @@ void eeReadAll()
 
     modelDefault(0);
 
-    if (check_soft_power() < e_power_usb) { // Usb on or power off
+    if (check_soft_power()==e_power_off) {
+      // we don't want to store anything
+      s_eeDirtyMsk = 0;
+    }
+    else {
       /* we remove all models */
       for (uint32_t i=0; i<MAX_MODELS; i++)
         eeDeleteModel(i);
 
       STORE_GENERALVARS;
       STORE_MODELVARS;
-    }
-    else {
-      // we don't want to store anything
-      s_eeDirtyMsk = 0;
     }
   }
   else

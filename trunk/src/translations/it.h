@@ -16,9 +16,6 @@
 #define LEN_VRENAVIG     "\003"
 #define TR_VRENAVIG      "No REaREb"
 
-#define LEN_VFILTERADC   "\004"
-#define TR_VFILTERADC    "SING""OSMP""FILT"
-
 #define LEN_VBLMODE      "\004"
 #define TR_VBLMODE       "OFF ""Tast""Stks""Tutt""ON\0"
 
@@ -233,7 +230,7 @@
 
 #define TR_POPUPS              "[Men\200]\004[Exit]"
 #define OFS_EXIT               7
-#define TR_MENUWHENDONE        "[Men\200] Conferma"
+#define TR_MENUWHENDONE        CENTER"\006[Men\200] Conferma"
 #define TR_FREE                " Disp."
 #define TR_DELETEMODEL         "Elimina modello?"
 #define TR_COPYINGMODEL        "Copia in corso.."
@@ -253,6 +250,7 @@
 #define TR_SWITCH              "Switch"
 #define TR_TRIMS               "Trim"
 #define TR_FADEIN              "Diss.In"
+#define TR_BITMAP              "Bitmap"
 #define TR_FADEOUT             "Diss.Out"
 #define TR_DEFAULT             "(default)"
 #define TR_CHECKTRIMS          "\003Contr.\004Trim"
@@ -307,7 +305,6 @@
 #define TR_MEMORYWARNING       INDENT"Avviso memoria"
 #define TR_ALARMWARNING        INDENT"Spento"
 #define TR_RENAVIG             "Navig RotEnc "
-#define TR_FILTERADC           "Filtro ADC"
 #define TR_THROTTLEREVERSE     "Thr inverso"
 #define TR_BEEP_LABEL          "Timer events"
 #define TR_MINUTEBEEP          INDENT"Minuto"
@@ -325,9 +322,9 @@
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-#define TR_MENUTOSTART         "[Men\200] per Cal."
-#define TR_SETMIDPOINT         "SETTA CENTRO"
-#define TR_MOVESTICKSPOTS      "MUOVI STICK/POT"
+#define TR_MENUTOSTART         CENTER"\006[Men\200] per Cal."
+#define TR_SETMIDPOINT         CENTER"SETTA CENTRO"
+#define TR_MOVESTICKSPOTS      CENTER"MUOVI STICK/POT"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -450,6 +447,7 @@
 #define TR_TEMP_CALIB          "Temp. Calib"
 #define TR_TIME                "Ora"
 #define TR_BAUDRATE            "BT Baudrate"
+#define TR_NO_BITMAPS_ON_SD    "No Bitmaps on SD"
 #define TR_SD_INFO_TITLE       "SD INFO"
 #define TR_SD_TYPE             "Tipo:"
 #define TR_SD_SPEED            "Veloc.:"
@@ -460,3 +458,4 @@
 #define TR_OWN                 "Own"
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "R.Encs"
+#define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"

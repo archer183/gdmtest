@@ -44,13 +44,14 @@ extern bool warbleC;
 extern uint8_t hapticTick;
 #endif
 
-#if defined(PCBSKY9X)
-#include "sky9x/sound.h"
-inline void _beep(uint8_t b) {
+#if defined(CPUARM)
+inline void _beep(uint8_t b)
+{
   buzzer_sound(b);
 }
 #else
-inline void _beep(uint8_t b) {
+inline void _beep(uint8_t b)
+{
   g_beepCnt = b;
 }
 #endif
@@ -69,7 +70,7 @@ extern void beep(uint8_t val);
 #define AUDIO_TIMER_30()      { beepAgain=2; beep(2); }
 #define AUDIO_TIMER_20()      { beepAgain=1; beep(2); }
 #define AUDIO_TIMER_10()      beep(2)
-#define AUDIO_TIMER_LT3(x)     beep(2)
+#define AUDIO_TIMER_LT3(x)    beep(2)
 #define AUDIO_MINUTE_BEEP()   beep(2)
 #define AUDIO_INACTIVITY()    beep(3)
 #define AUDIO_MIX_WARNING_1() beep(1)
@@ -80,14 +81,14 @@ extern void beep(uint8_t val);
 #define AUDIO_VARIO_DOWN()    _beep(1)
 #define AUDIO_TRIM(event, f)  { if (!IS_KEY_FIRST(event)) warble = true; beep(1); }
 #define AUDIO_TRIM_MIDDLE(f)  beep(2)
-#define AUDIO_TRIM_END(f)  beep(2)
+#define AUDIO_TRIM_END(f)     beep(2)
 #define AUDIO_PLAY(p)         beep(3)
 
 #define IS_AUDIO_BUSY() (g_beepCnt || beepAgain || beepOn)
 #define AUDIO_RESET()
 
-#if !defined(PCBSKY9X)
-FORCEINLINE void AUDIO_HEARTBEAT()
+#if !defined(CPUARM)
+inline void AUDIO_HEARTBEAT()
 {
     if(g_beepCnt) {
         if(!beepAgainOrig) {

@@ -93,10 +93,18 @@
 /* telemetry flags */
 #define NO_UNIT       0x40
 
-#if defined(PCBSKY9X)
+#if defined(PCBX9D)
+#define MIDSIZE       0x0100
+#define SMLSIZE       0x0200
+#define TINSIZE       0x0400
+#else
+#define MIDSIZE       DBLSIZE
+#define SMLSIZE       0x00
+#define TINSIZE       0x00
+#endif
+
+#if defined(CPUARM)
 #define LcdFlags uint32_t
-#elif defined(PCBGRUVIN9X)
-#define LcdFlags uint16_t
 #else
 #define LcdFlags uint8_t
 #endif
@@ -109,53 +117,51 @@ extern volatile uint8_t LcdLock ;
 #endif
 
 #if defined(PCBSKY9X)
-extern uint8_t lcdLock ;
-extern uint32_t lcdInputs ;
+extern volatile uint8_t lcdLock ;
+extern volatile uint32_t lcdInputs ;
 #endif
 
-extern void lcd_putc(xcoord_t x,uint8_t y,const unsigned char c);
-extern void lcd_putcAtt(xcoord_t x,uint8_t y,const unsigned char c,uint8_t mode);
-
-extern void lcd_putsAtt(xcoord_t x,uint8_t y,const pm_char * s,uint8_t mode);
-extern void lcd_putsiAtt(xcoord_t x,uint8_t y,const pm_char * s,uint8_t idx, uint8_t mode);
-extern void lcd_putsnAtt(xcoord_t x,uint8_t y,const pm_char * s,unsigned char len,uint8_t mode);
-extern void lcd_puts(xcoord_t x,uint8_t y,const pm_char * s);
+extern void lcd_putc(xcoord_t x, uint8_t y, const unsigned char c);
+extern void lcd_putcAtt(xcoord_t x, uint8_t y, const unsigned char c, LcdFlags mode);
+extern void lcd_putsAtt(xcoord_t x, uint8_t y, const pm_char * s, LcdFlags mode);
+extern void lcd_putsiAtt(xcoord_t x, uint8_t y, const pm_char * s,uint8_t idx, LcdFlags mode);
+extern void lcd_putsnAtt(xcoord_t x, uint8_t y, const pm_char * s,unsigned char len, LcdFlags mode);
+extern void lcd_puts(xcoord_t x, uint8_t y, const pm_char * s);
+extern void lcd_putsn(xcoord_t x, uint8_t y, const pm_char * s, unsigned char len);
 extern void lcd_putsLeft(uint8_t y, const pm_char * s);
-extern void lcd_putsn(xcoord_t x,uint8_t y,const pm_char * s,unsigned char len);
+#define lcd_putsCenter(y, s) lcd_puts((DISPLAY_W-sizeof(TR_##s)*FW+FW-2)/2, y, STR_##s)
 
-extern void lcd_outhex4(xcoord_t x,uint8_t y,uint16_t val);
-
+extern void lcd_outhex4(xcoord_t x, uint8_t y, uint16_t val);
 extern void lcd_outdezAtt(xcoord_t x, uint8_t y, int16_t val, LcdFlags mode=0);
 extern void lcd_outdezNAtt(xcoord_t x, uint8_t y, int16_t val, LcdFlags mode=0, uint8_t len=0);
 extern void lcd_outdez8(xcoord_t x, uint8_t y, int8_t val);
 
-extern void putsStrIdx(xcoord_t x, uint8_t y, const pm_char *str, uint8_t idx, uint8_t att=0);
-
-extern void putsModelName(xcoord_t x, uint8_t y, char *name, uint8_t id, uint8_t att);
-extern void putsSwitches(xcoord_t x, uint8_t y, int8_t swtch, uint8_t att=0);
-extern void putsMixerSource(xcoord_t x, uint8_t y, uint8_t idx, uint8_t att=0);
-extern void putsFlightPhase(xcoord_t x, uint8_t y, int8_t idx, uint8_t att=0);
-extern void putsCurve(xcoord_t x, uint8_t y, int8_t idx, uint8_t att=0);
-extern void putsTmrMode(xcoord_t x, uint8_t y, int8_t mode, uint8_t att);
-extern void putsTrimMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, uint8_t att);
+extern void putsStrIdx(xcoord_t x, uint8_t y, const pm_char *str, uint8_t idx, LcdFlags att=0);
+extern void putsModelName(xcoord_t x, uint8_t y, char *name, uint8_t id, LcdFlags att);
+extern void putsSwitches(xcoord_t x, uint8_t y, int8_t swtch, LcdFlags att=0);
+extern void putsMixerSource(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags att=0);
+extern void putsFlightPhase(xcoord_t x, uint8_t y, int8_t idx, LcdFlags att=0);
+extern void putsCurve(xcoord_t x, uint8_t y, int8_t idx, LcdFlags att=0);
+extern void putsTmrMode(xcoord_t x, uint8_t y, int8_t mode, LcdFlags att);
+extern void putsTrimMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdFlags att);
 #if defined(ROTARY_ENCODERS)
-void putsRotaryEncoderMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, uint8_t att);
+void putsRotaryEncoderMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdFlags att);
 #endif
 
-extern void putsChnRaw(xcoord_t x,uint8_t y,uint8_t idx1,uint8_t att);
-#define putsChn(x, y, idx, att) putsChnRaw(x, y, (idx)+(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+2+NUM_CYC+NUM_PPM), att)
-extern void putsChnLetter(xcoord_t x, uint8_t y, uint8_t idx, uint8_t attr);
+extern void putsChnRaw(xcoord_t x, uint8_t y, uint8_t idx1, LcdFlags att);
+#define putsChn(x, y, idx, att) putsChnRaw(x, y, (idx)+(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM), att)
+extern void putsChnLetter(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags attr);
 
-extern void putsVolts(xcoord_t x, uint8_t y, uint16_t volts, uint8_t att);
-extern void putsVBat(xcoord_t x, uint8_t y, uint8_t att);
+extern void putsVolts(xcoord_t x, uint8_t y, uint16_t volts, LcdFlags att);
+extern void putsVBat(xcoord_t x, uint8_t y, LcdFlags att);
 
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 #define putstime_t int32_t
 #else
 #define putstime_t int16_t
 #endif
 
-extern void putsTime(xcoord_t x, uint8_t y, putstime_t tme, uint8_t att, uint8_t att2);
+extern void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2);
 
 #define SOLID  0xff
 #define DOTTED 0x55
@@ -180,11 +186,17 @@ inline void lcd_square(xcoord_t x, uint8_t y, xcoord_t w, uint8_t att=0) { lcd_r
     lcd_vline(xx,yy-ww/2,ww);  \
     lcd_hline(xx-ww/2,yy,ww);
 
-// TODO optimization here!!!
 #define V_BAR(xx,yy,ll)       \
     lcd_vline(xx-1,yy-ll,ll); \
     lcd_vline(xx  ,yy-ll,ll); \
     lcd_vline(xx+1,yy-ll,ll);
+
+#define LCD_2DOTS(x, y, att)     \
+    lcd_putcAtt(x, y, ' ', att); \
+    lcd_vline(x+4, y+3, 2);      \
+    lcd_vline(x+5, y+3, 2);      \
+    lcd_vline(x+4, y+8, 2);      \
+    lcd_vline(x+5, y+8, 2);
 
 extern void lcd_img(xcoord_t x, uint8_t y, const pm_uchar * img, uint8_t idx, uint8_t mode);
 extern void lcdSetRefVolt(unsigned char val);
@@ -194,8 +206,11 @@ extern void lcdSetContrast();
 
 extern void refreshDisplay();
 
+#if defined(PCBX9D)
+const pm_char * bmpLoad(uint8_t *dest, const char *filename);
+#endif
+
 #define BLINK_ON_PHASE (g_blinkTmr10ms & (1<<6))
-#define BLINK_SYNC      g_blinkTmr10ms = (3<<5)
 
 #ifdef SIMU
 extern bool lcd_refresh;
