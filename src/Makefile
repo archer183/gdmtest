@@ -768,13 +768,13 @@ stamp_header:
 	@echo "//Automatically generated file (Makefile) - do not edit" > stamp-open9x.h
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" >> stamp-open9x.h
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x.h
-	@echo "#define SVN_STR  \"Combat9x148$(SVNREV)\"" >> stamp-open9x.h
+	@echo "#define SVN_STR  \"Combat9x$(SVNREV)\"" >> stamp-open9x.h
 	@cat stamp-open9x.h
 
 stock-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock.txt
-	@echo "#define SVN_VERS \"Combat9x148$(SVNREV)\"" >> stamp-open9x-stock.txt
+	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-stock.txt
 	@cat stamp-open9x-stock.txt
 
 stock128-stamp:
