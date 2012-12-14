@@ -418,7 +418,7 @@ void TargetRange(){
 	R1 = GVAR_VALUE(2,0);  // gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on
 	R1 = R1/10;
 	R1max = (int8_t)R1;
-	Lst = 2048/((int16_t)R1max);
+	Lst = 2048/((int16_t)R1max);  //dist between turrets relative to R1max in 0-2048 domain
 	if (R1max < 1){
 		R1max = 1;
 	}
@@ -456,7 +456,7 @@ void TargetRange(){
 
 	//recall inputs...  for function Ra = L = 2048/R1max, Rb = R1 shifted to 0-2048, Alpha = BetaV in range of +/-1024
 
-	R2 = LawOfCosAmp(2048/((int16_t)R1max),R1,BetaV);
+	R2 = LawOfCosAmp(Lst,R1,BetaV);
 			//			//  -2*R1*L*cos(betav)  properly scaled.  
 			//			//cos returns +/-1020. -4 = -2*2048/1020
 			//R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
