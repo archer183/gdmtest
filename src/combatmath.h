@@ -368,8 +368,14 @@ int16_t LawOfCosAmp(int16_t Ra, int16_t Rb, int16_t Alpha){
 
 	RI =INTCOS(Alpha); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
-	//cos returns +/-1024. -4 = -2*2048/1020
-	RI = ((int32_t)RI*(int32_t)(-2)*(int32_t)Ra*(int32_t)Rb)/((int32_t)1024);
+	//cos returns +/-1024. -4 = -2*2048/1024
+	if( Ra > Rb) {
+	RI = ((int32_t)RI*(int32_t)(-2)*(int32_t)Ra/((int32_t)1024))*(int32_t)Rb;
+	}
+	else {
+
+	RI = ((int32_t)RI*(int32_t)(-2)*(int32_t)Rb/((int32_t)1024))*(int32_t)Ra;
+	}
 	//R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
 	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
 	RI = (int32_t)Ra*(int32_t)Ra+(int32_t)Rb*(int32_t)Rb+(int32_t)RI;
@@ -405,13 +411,14 @@ void TargetRange(){
 	*/
 
 	int8_t R1max,i;
-	int16_t R1,Alpha,BetaV;
+	int16_t R1,Alpha,BetaV,Lst;
 	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
 
 	R1 = GVAR_VALUE(2,0);  // gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on
 	R1 = R1/10;
 	R1max = (int8_t)R1;
+	Lst = 2048/((int16_t)R1max);
 	if (R1max < 1){
 		R1max = 1;
 	}
@@ -449,20 +456,21 @@ void TargetRange(){
 
 	//recall inputs...  for function Ra = L = 2048/R1max, Rb = R1 shifted to 0-2048, Alpha = BetaV in range of +/-1024
 
-	//R2 = LawOfCosAmp(2048/R1max,R1,BetaV);
-						//  -2*R1*L*cos(betav)  properly scaled.  
-						//cos returns +/-1020. -4 = -2*2048/1020
-						R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
-						// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-						R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
-						R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
-							
-						//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-						// R2 = sqrt of previous
-						//R2 = R2/int32_t(2);
+	R2 = LawOfCosAmp(2048/((int16_t)R1max),R1,BetaV);
+			//			//  -2*R1*L*cos(betav)  properly scaled.  
+			//			//cos returns +/-1020. -4 = -2*2048/1020
+			//R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
+			//
+			//			// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
+			//			R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
+			//			R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
+			//				
+			//			//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+			//			// R2 = sqrt of previous
+			//			//R2 = R2/int32_t(2);
 
-						////R2 = INTSQRT(R2);
-						R2=isqrt32b((uint32_t)R2);
+			//			////R2 = INTSQRT(R2);
+			//			R2=isqrt32b((uint32_t)R2);
 	// this should output 0 to 2048*(R1max+1)/R1max
 	//now for the proper scaling
 
