@@ -361,6 +361,34 @@ int16_t Comb_input_fcn(int16_t x){
 	return x;
 }
 
+int16_t LawOfCosAmp(int16_t Ra, int16_t Rb, int16_t Alpha){
+// returns length of side Rc of triangle where alpha is included angle between legs Ra and Rb
+	int32_t RI  //RI is internal variable
+	int16_t RO //RO is return variable
+
+	RI =INTCOS(Alpha); 
+	//  -2*R1*L*cos(betav)  properly scaled.  
+	//cos returns +/-1024. -4 = -2*2048/1020
+	RI = ((int32_t)RI*(-2)*(int32_t)Ra*(int32_t)Rb)/((int32_t)1024);
+	//R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
+	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
+	RI = (int32_t)Ra*(int32_t)Ra+(int32_t)Rb*(int32_t)Rb+(int32_t)RI;
+	//R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
+	//R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
+		
+	//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+	// R2 = sqrt of previous
+	//R2 = R2/int32_t(2);
+
+	////R2 = INTSQRT(R2);
+	RI=isqrt32b((uint32_t)RI);
+	RO = (int16_t)RI;
+		return RO;
+
+
+
+}
+
 
 void TargetRange(){
 	/*  this function calculates range to target.  it takes no direct inputs, however it uses values set in global variables (TBD) to select sources
@@ -407,7 +435,7 @@ void TargetRange(){
 
 	//Alpha = 0;
 	BetaV = BETAVfcn(Alpha);  //converts from alpha to beta function.  alpha goes to beta virtual, alpha virtual goes to beta
-	//shift from +/-1024 to 0->2048
+	//shift R1 from +/-1024 to 0->2048
 	R1 = R1 + 1024;
 	
 	if (R1 > 2048) {
@@ -418,19 +446,23 @@ void TargetRange(){
 	}
 
 	CosBV =INTCOS(BetaV); 
-	//  -2*R1*L*cos(betav)  properly scaled.  
-	//cos returns +/-1020. -4 = -2*2048/1020
-	R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
-	// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
-	R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
-	R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
-		
-	//R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
-	// R2 = sqrt of previous
-	//R2 = R2/int32_t(2);
 
-	////R2 = INTSQRT(R2);
-	R2=isqrt32b((uint32_t)R2);
+	//recall inputs...  for function Ra = L = 2048/R1max, Rb = R1 shifted to 0-2048, Alpha = BetaV in range of +/-1024
+
+	R2 = LawOfCosAmp(2048/R1max,R1,BetaV);
+						////  -2*R1*L*cos(betav)  properly scaled.  
+						////cos returns +/-1020. -4 = -2*2048/1020
+						//R2 = ((-4)*(int32_t)CosBV*((int32_t)R1))/((int32_t)R1max);
+						//// R1^2+L^2 -2*L*R1*cos(betav)  properly scaled
+						//R2 = (int32_t)R1*(int32_t)R1 + (int32_t)R2;
+						//R2 = (int32_t)R2 + ((int32_t)2048)*((int32_t)2048)/((int32_t)R1max*(int32_t)R1max);
+						//	
+						////R2 = R2	+ (int32_t)2250000;//+int32_t(R2);//+(2048*2048)/((int32_t)R1max*(int32_t)R1max);
+						//// R2 = sqrt of previous
+						////R2 = R2/int32_t(2);
+
+						//////R2 = INTSQRT(R2);
+						//R2=isqrt32b((uint32_t)R2);
 	// this should output 0 to 2048*(R1max+1)/R1max
 	//now for the proper scaling
 
