@@ -363,8 +363,8 @@ int16_t Comb_input_fcn(int16_t x){
 
 int16_t LawOfCosAmp(int16_t Ra, int16_t Rb, int16_t Alpha){
 // returns length of side Rc of triangle where alpha is included angle between legs Ra and Rb
-	int32_t RI  //RI is internal variable
-	int16_t RO //RO is return variable
+	int32_t RI;  //RI is internal variable
+	int16_t RO; //RO is return variable
 
 	RI =INTCOS(Alpha); 
 	//  -2*R1*L*cos(betav)  properly scaled.  
