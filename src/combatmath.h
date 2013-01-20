@@ -418,13 +418,14 @@ void TargetRange(){
 	R1 = GVAR_VALUE(2,0);  // gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on
 	R1 = R1/10;
 	R1max = (int8_t)R1;
-	Lst = 2048/((int16_t)R1max);  //dist between turrets relative to R1max in 0-2048 domain
+	
 	if (R1max < 1){
 		R1max = 1;
 	}
 	if (R1max >5){
 		R1max = 5;
 	}
+	Lst = 2048/((int16_t)R1max);  //dist between turrets relative to R1max in 0-2048 domain
 	//gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on thru 150 =15 for mixes 0-15 (1-16 in display)
 	// 200 = 20 thru 260 = 26  correlates to input pots 0-6 (0,1,2,3 = sticks, 4,5,6 = pots)
 	R1 = Comb_input_fcn(GVAR_VALUE(1,0));
