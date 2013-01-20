@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -42,12 +43,17 @@
 #include <stddef.h>
 #include <stdlib.h>
 
+#if defined(PCBX9D) || defined(PCBACT)
+#define IF_9X(x)
+#else
+#define IF_9X(x) x,
+#endif
+
 #if defined(PCBSKY9X)
 #define IF_PCBSKY9X(x) x,
 #else
 #define IF_PCBSKY9X(x)
 #endif
-
 
 #if defined(PCBX9D)
 #define IF_PCBX9D(x) x,
@@ -121,20 +127,17 @@
 #define IF_HELI(x)
 #endif
 
-
 #if defined(TEMPLATES)
 #define IF_TEMPLATES(x) x,
 #else
 #define IF_TEMPLATES(x)
 #endif
 
-
 #if defined(FLIGHT_PHASES)
 #define IF_FLIGHT_PHASES(x) x,
 #else
 #define IF_FLIGHT_PHASES(x)
 #endif
-
 
 #if defined(CURVES)
 #define IF_CURVES(x) x,
@@ -148,6 +151,25 @@
 #define IF_GVARS(x)
 #endif
 
+#if defined(PCBX9D) || defined(PCBACT) || ROTARY_ENCODERS > 0
+#define ROTARY_ENCODER_NAVIGATION
+#endif
+
+#if defined(SIMU)
+#ifndef FORCEINLINE
+#define FORCEINLINE
+#endif
+#ifndef NOINLINE
+#define NOINLINE
+#endif
+#define CONVERT_PTR(x) ((uint32_t)(uint64_t)(x))
+#else
+#define FORCEINLINE inline __attribute__ ((always_inline))
+#define NOINLINE __attribute__ ((noinline))
+#define SIMU_SLEEP(x)
+#define CONVERT_PTR(x) ((uint32_t)(x))
+#endif
+
 /*
 #define HELI_VARIANT   0x0004
 #define VOICE_VARIANT  0x0008
@@ -157,14 +179,20 @@
 #define VARIO_VARIANT  0x0080
 #define HAPTIC_VARIANT 0x0100 */
 
-#if defined(PCBX9D)
-#include "board_x9d.h"
+#if defined(PCBACT)
+#include "act/board_act.h"
+#elif defined(PCBX9D)
+#include "x9d/board_x9d.h"
 #elif defined(PCBSKY9X)
-#include "board_sky9x.h"
+#include "sky9x/board_sky9x.h"
 #elif defined(PCBGRUVIN9X)
-#include "board_gruvin9x.h"
+#include "gruvin9x/board_gruvin9x.h"
 #else
-#include "board_stock.h"
+#include "stock/board_stock.h"
+#endif
+
+#if defined(CPUARM)
+#include "debug.h"
 #endif
 
 #if defined(SIMU)
@@ -182,10 +210,7 @@ typedef const int8_t pm_int8_t;
 #define pgm_read_adr(x) *(x)
 #define cli()
 #define sei()
-#define wdt_disable()
-#define wdt_enable(x) WDT->WDT_MR = 0x3FFF217F;
-#define wdt_reset()   WDT->WDT_CR = 0xA5000001
-extern void board_init();
+extern void boardInit();
 #else
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -202,7 +227,7 @@ extern void board_init();
 
 #include "myeeprom.h"
 
-#if defined(ROTARY_ENCODERS) && NUM_ROTARY_ENCODERS > 0
+#if ROTARY_ENCODERS > 0
 #define IF_ROTARY_ENCODERS(x) x,
 #else
 #define IF_ROTARY_ENCODERS(x)
@@ -210,16 +235,52 @@ extern void board_init();
 
 #define PPM_CENTER 1500
 
+#if defined(PPM_CENTER_ADJUSTABLE)
+#define PPM_CH_CENTER(ch) (PPM_CENTER+limitaddress(ch)->ppmCenter)
+#else
+#define PPM_CH_CENTER(ch) (PPM_CENTER)
+#endif
+
 #if defined(CPUARM)
+extern char modelNames[MAX_MODELS][sizeof(g_model.name)];
+#endif
+
+#if defined(CPUARM)
+// This doesn't need protection on this processor
+#define tmr10ms_t uint32_t
+extern volatile tmr10ms_t g_tmr10ms;
+#define get_tmr10ms() g_tmr10ms
+#else
+#define tmr10ms_t uint16_t
+extern volatile tmr10ms_t g_tmr10ms;
+extern inline uint16_t get_tmr10ms()
+{
+  uint16_t time  ;
+  cli();
+  time = g_tmr10ms ;
+  sei();
+  return time ;
+}
+#endif
+
+// TODO try to merge the 2 include files
+#if defined(PCBSKY9X)
 #include "eeprom_arm.h"
-#include "pulses_arm.h"
 #else
 #include "eeprom_avr.h"
+#endif
+
+#if defined(CPUARM)
+#include "pulses_arm.h"
+#else
 #include "pulses_avr.h"
 #endif
 
 #if defined(PCBX9D)
-extern uint8_t modelBitmap[64*32/8];
+#define MODEL_BITMAP_WIDTH  64
+#define MODEL_BITMAP_HEIGHT 32
+#define MODEL_BITMAP_SIZE   (2+4*(MODEL_BITMAP_WIDTH*MODEL_BITMAP_HEIGHT/8))
+extern uint8_t modelBitmap[MODEL_BITMAP_SIZE];
 void loadModelBitmap();
 #define LOAD_MODEL_BITMAP() loadModelBitmap()
 #else
@@ -373,7 +434,6 @@ extern uint8_t s_bind_allowed;
 #define DBLKEYS_PRESSED_LFT_DWN(i) ((in & ((1<<INP_L_KEY_LFT) + (1<<INP_L_KEY_DWN))) == ((1<<INP_L_KEY_LFT) + (1<<INP_L_KEY_DWN)))
 
 
-
 #elif defined(PCBSTD) // stock board ...
 
 #define OUT_B_LIGHT   7
@@ -443,7 +503,12 @@ extern uint8_t channel_order(uint8_t x);
 enum EnumKeys {
   KEY_MENU,
   KEY_EXIT,
-#if defined(PCBX9D)
+#if defined(PCBACT)
+  KEY_CLR,
+  KEY_PAGE,
+  KEY_PLUS,  /* Fake, used for rotary encoder */
+  KEY_MINUS, /* Fake, used for rotary encoder */
+#elif defined(PCBX9D)
   KEY_ENTER,
   KEY_PAGE,
   KEY_PLUS,
@@ -462,8 +527,11 @@ enum EnumKeys {
   TRM_RV_UP,
   TRM_RH_DWN,
   TRM_RH_UP,
-#if defined(ROTARY_ENCODERS)
+
+#if ROTARY_ENCODERS > 0 || defined(ROTARY_ENCODER_NAVIGATION)
   BTN_REa,
+#endif
+#if ROTARY_ENCODERS > 0
   BTN_REb,
 #endif
 
@@ -472,8 +540,9 @@ enum EnumKeys {
 
   //SW_NC,
   //SW_ON,
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
   SW_SA0=SW_BASE,
+  SW_SA1,
   SW_SA2,
   SW_SB0,
   SW_SB1,
@@ -488,7 +557,6 @@ enum EnumKeys {
   SW_SE1,
   SW_SE2,
   SW_SF0,
-  SW_SF1,
   SW_SF2,
   SW_SG0,
   SW_SG1,
@@ -523,11 +591,24 @@ enum EnumKeys {
 
 #define DSW(x)   (1+(x)-SW_BASE)
 
-#if defined(PCBX9D)
+#if defined(PCBACT)
+#define KEY_ENTER  BTN_REa
 #define KEY_RIGHT  KEY_PLUS
-#define KEY_UP     KEY_PLUS
 #define KEY_LEFT   KEY_MINUS
+#define KEY_UP     KEY_MINUS
+#define KEY_DOWN   KEY_PLUS
+#elif defined(PCBX9D)
+#define KEY_RIGHT  KEY_PLUS
+#define KEY_LEFT   KEY_MINUS
+#define KEY_UP     KEY_PLUS
 #define KEY_DOWN   KEY_MINUS
+#else
+#define KEY_ENTER  KEY_MENU
+#define KEY_PLUS   KEY_RIGHT
+#define KEY_MINUS  KEY_LEFT
+#endif
+
+#if defined(PCBX9D) || defined(PCBACT)
 /* mapping of 9x switches */
 #define SW_THR     SW_SA2
 #define SW_RUD     SW_SB2
@@ -538,10 +619,6 @@ enum EnumKeys {
 #define SW_AIL     SW_SF2
 #define SW_GEA     SW_SG2
 #define SW_TRN     SW_SH2
-#else
-#define KEY_ENTER  KEY_MENU
-#define KEY_PLUS   KEY_RIGHT
-#define KEY_MINUS  KEY_LEFT
 #endif
 
 class Key
@@ -634,23 +711,26 @@ enum CswFunctions {
 
 #define NUM_STICKS    4
 
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
+#define NUM_SWITCHES  8
+#define IS_3POS(sw)   ((sw) != 5 && (sw) != 7)
 #define MAX_PSWITCH   (SW_SH2-SW_SA0+1)
 #define NUM_POTS      4
 #define NUM_SW_SRCRAW 8
 #else
+#define NUM_SWITCHES  7
+#define IS_3POS(sw)   ((sw) == 3)
 #define MAX_PSWITCH   (SW_TRN-SW_THR+1)  // 9 physical switches
 #define NUM_POTS      3
 #define NUM_SW_SRCRAW 1
 #endif
-
 
 #define MAX_SWITCH    (MAX_PSWITCH+NUM_CSW)
 #define SWITCH_ON     (1+MAX_SWITCH)
 #define SWITCH_OFF    (-SWITCH_ON)
 
 #define NUM_CYC         3
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
 #define CSW_PPM_BASE    24 // TODO garbage to compile ...
 #else
 #define CSW_PPM_BASE    (MIXSRC_3POS+NUM_CYC) // because srcRaw is shifted +1!
@@ -679,7 +759,7 @@ enum CswFunctions {
 
 #define NUM_XCHNRAW  (NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1/*MAX*/+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM+NUM_CHNOUT)
 
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
 #define NUM_XCHNMIX  (NUM_XCHNRAW+NUM_CSW)
 #define NUM_XCHNCSW  (NUM_XCHNRAW+NUM_CSW+NUM_TELEMETRY)
 #define NUM_XCHNPLAY (NUM_XCHNRAW+NUM_CSW+TELEM_DISPLAY_MAX)
@@ -709,7 +789,7 @@ enum CswFunctions {
 #define EVT_KEY_LONG(key)  ((key)|_MSK_KEY_LONG)
 #define EVT_ENTRY          (0xff - _MSK_KEY_REPT)
 #define EVT_ENTRY_UP       (0xfe - _MSK_KEY_REPT)
-#define EVT_KEY_MASK       (0x0f)
+#define EVT_KEY_MASK(e)    ((e) & 0x0f)
 
 #define HEART_TIMER_PULSES  1
 #define HEART_TIMER10ms     2
@@ -751,16 +831,14 @@ enum PowerState {
   e_power_off
 };
 
-
 #if defined(CPUARM)
-uint32_t keyState(EnumKeys enuk);
-uint32_t check_soft_power();
+uint32_t switchState(EnumKeys enuk);
 #else
-bool keyState(EnumKeys enuk);
+bool switchState(EnumKeys enuk);
 #if defined(PCBGRUVIN9X)
-uint8_t check_soft_power();
+uint8_t pwrCheck();
 #else
-#define check_soft_power() (e_power_on)
+#define pwrCheck() (e_power_on)
 #endif
 #endif
 
@@ -789,25 +867,10 @@ enum PerOutMode {
   e_perout_mode_noinput = e_perout_mode_notrainer+e_perout_mode_notrims+e_perout_mode_nosticks
 };
 
-#ifdef SIMU
-#ifndef FORCEINLINE
-#define FORCEINLINE
-#endif
-#ifndef NOINLINE
-#define NOINLINE
-#endif
-#else
-#define FORCEINLINE inline __attribute__ ((always_inline))
-#define NOINLINE __attribute__ ((noinline))
-#define SIMU_SLEEP(x)
-#endif
-
 // Fiddle to force compiler to use a pointer
 #define FORCE_INDIRECT(ptr) __asm__ __volatile__ ("" : "=e" (ptr) : "0" (ptr))
 
-
 extern uint8_t s_perout_flight_phase;
-
 
 #if defined(CPUARM)
 #define bitfield_channels_t uint32_t
@@ -822,7 +885,7 @@ NOINLINE void per10ms();
 int16_t getValue(uint8_t i);
 bool    getSwitch(int8_t swtch, bool nc);
 
-extern uint8_t switches_states;
+extern swstate_t switches_states;
 int8_t  getMovedSwitch();
 
 #ifdef FLIGHT_PHASES
@@ -841,13 +904,14 @@ int16_t getRotaryEncoder(uint8_t idx);
 void incRotaryEncoder(uint8_t idx, int8_t inc);
 inline bool navigationRotaryEncoder(uint8_t event)
 {
-  return g_eeGeneral.reNavigation == ((event & EVT_KEY_MASK) - BTN_REa + 1);
+  return g_eeGeneral.reNavigation == (EVT_KEY_MASK(event) - BTN_REa + 1);
 }
+#endif
+
 #if defined(PCBSKY9X)
 #define ROTARY_ENCODER_GRANULARITY 4
 #else
 #define ROTARY_ENCODER_GRANULARITY 1
-#endif
 #endif
 
 #if defined(GVARS)
@@ -900,7 +964,9 @@ extern uint8_t s_traceWr;
 extern int8_t s_traceCnt;
 #endif
 
-#if defined(CPUARM)
+#if defined(PCBX9D) || defined(PCBACT)
+static inline uint16_t getTmr2MHz() { return 0; }
+#elif defined(PCBSKY9X)
 static inline uint16_t getTmr2MHz() { return TC1->TC_CHANNEL[0].TC_CV; }
 #else
 uint16_t getTmr16KHz();
@@ -917,7 +983,6 @@ void memclear(void *ptr, uint8_t size);
 #else
 #define memclear(p, s) memset(p, 0, s)
 #endif
-
 
 #if defined(SPLASH)
 void doSplash();
@@ -939,35 +1004,32 @@ void checkAll();
 void getADC();
 #endif
 
-extern uint8_t  s_eeDirtyMsk;
-
 #define STORE_MODELVARS eeDirty(EE_MODEL)
 #define STORE_GENERALVARS eeDirty(EE_GENERAL)
 
 extern void backlightOn();
 
-#if defined (CPUARM)
-#define __BACKLIGHT_ON    (PWM->PWM_CH_NUM[0].PWM_CDTY = g_eeGeneral.backlightBright)
-#define __BACKLIGHT_OFF   (PWM->PWM_CH_NUM[0].PWM_CDTY = 100)
-#if defined(REVA)
-#define NUMBER_ANALOG   8
+enum Analogs {
+  STICK1,
+  STICK2,
+  STICK3,
+  STICK4,
+#if defined(PCBX9D)
+  POT1,
+  POT2,
+  SLIDER1,
+  SLIDER2,
 #else
-#define NUMBER_ANALOG   9
+  POT1,
+  POT2,
+  POT3,
 #endif
-extern uint16_t Analog_values[NUMBER_ANALOG] ;
-void read_9_adc(void ) ;
-#elif defined (PCBGRUVIN9X)
-#define SPEAKER_ON   TCCR0A |=  (1 << COM0A0)
-#define SPEAKER_OFF  TCCR0A &= ~(1 << COM0A0)
-#define __BACKLIGHT_ON  PORTC |=  (1 << OUT_C_LIGHT)
-#define __BACKLIGHT_OFF PORTC &= ~(1 << OUT_C_LIGHT)
-#elif defined(SP22)
-#define __BACKLIGHT_ON  PORTB &= ~(1 << OUT_B_LIGHT)
-#define __BACKLIGHT_OFF PORTB |=  (1 << OUT_B_LIGHT)
-#else
-#define __BACKLIGHT_ON  PORTB |=  (1 << OUT_B_LIGHT)
-#define __BACKLIGHT_OFF PORTB &= ~(1 << OUT_B_LIGHT)
+  TX_VOLTAGE,
+#if defined(PCBSKY9X) && !defined(REVA)
+  TX_CURRENT,
 #endif
+  NUMBER_ANALOG
+};
 
 #if defined(PCBSTD) && defined(VOICE) && !defined(SIMU)
 #define BACKLIGHT_ON()    (Voice.Backlight = 1)
@@ -1041,16 +1103,14 @@ void saveTimers();
 #define saveTimers()
 #endif
 
-void eeWriteBlockCmp(const void *i_pointer_ram, uint16_t i_pointer_eeprom, size_t size);
 void eeDirty(uint8_t msk);
 void eeCheck(bool immediately=false);
 void eeReadAll();
 bool eeModelExists(uint8_t id);
-uint16_t eeLoadModelName(uint8_t id, char *name);
+void eeLoadModelName(uint8_t id, char *name);
 void eeLoadModel(uint8_t id);
 void generalDefault();
 void modelDefault(uint8_t id);
-
 
 #if defined(CPUARM)
 inline int32_t calc100toRESX(register int8_t x)
@@ -1077,24 +1137,6 @@ inline int16_t calcRESXto100(register int32_t x)
 extern int16_t calc100toRESX(int8_t x);
 extern int16_t calc1000toRESX(int16_t x);
 extern int16_t calcRESXto1000(int16_t x);
-#endif
-
-#if defined(CPUARM)
-// This doesn't need protection on this processor
-#define tmr10ms_t uint32_t
-extern volatile tmr10ms_t g_tmr10ms;
-#define get_tmr10ms() g_tmr10ms
-#else
-#define tmr10ms_t uint16_t
-extern volatile tmr10ms_t g_tmr10ms;
-extern inline uint16_t get_tmr10ms()
-{
-  uint16_t time  ;
-  cli();
-  time = g_tmr10ms ;
-  sei();
-  return time ;
-}
 #endif
 
 #define TMR_VAROFS  5
@@ -1156,9 +1198,11 @@ extern void moveTrimsToOffsets();
 #if defined(CPUARM)
 #define ACTIVE_EXPOS_TYPE uint32_t
 #define ACTIVE_MIXES_TYPE uint64_t
+#define ACTIVE_PHASES_TYPE uint16_t
 #else
 #define ACTIVE_EXPOS_TYPE uint16_t
 #define ACTIVE_MIXES_TYPE uint32_t
+#define ACTIVE_PHASES_TYPE uint8_t
 #endif
 
 #ifdef BOLD_FONT
@@ -1193,13 +1237,16 @@ inline bool isFunctionActive(uint8_t func)
   return activeFunctions & ((MASK_FUNC_TYPE)1 << (func-FUNC_TRAINER));
 }
 
-#if defined(ROTARY_ENCODERS)
-// Global rotary encoder registers
-#if defined(PCBSKY9X)
+#if defined(CPUARM)
 typedef uint32_t rotenc_t;
 #else
 typedef uint8_t rotenc_t;
 #endif
+
+#if defined(PCBACT)
+extern volatile rotenc_t g_rotenc[1];
+#elif defined(ROTARY_ENCODERS)
+// Global rotary encoder registers
 extern volatile rotenc_t g_rotenc[ROTARY_ENCODERS];
 #endif
 
@@ -1291,9 +1338,9 @@ enum AUDIO_SOUNDS {
 
 #if defined(AUDIO)
 #if defined(CPUARM)
-#include "sky9x/audio.h"
+#include "audio_arm.h"
 #else
-#include "stock/audio.h"
+#include "audio_avr.h"
 #endif
 #else
 #include "beeper.h"
@@ -1327,15 +1374,14 @@ union ReusableBuffer
 {
     /* 128 bytes on stock */
 
-#if !defined(CPUARM)
+#if !defined(PCBSKY9X)
     uint8_t eefs_buffer[BLOCKS];           // 128bytes used by EeFsck
 #endif
 
     struct
     {
         char mainname[42];
-        char listnames[7][LEN_MODEL_NAME];
-        uint16_t listsizes[7];
+        char listnames[LCD_LINES-1][LEN_MODEL_NAME];
         uint16_t eepromfree;
 
 #if defined(SDCARD)
@@ -1354,7 +1400,7 @@ union ReusableBuffer
 #if defined(SDCARD)
     struct
     {
-        char lines[7][SD_SCREEN_FILE_LENGTH+1+1]; // the last char is used to store the flags (directory) of the line
+        char lines[LCD_LINES-1][SD_SCREEN_FILE_LENGTH+1+1]; // the last char is used to store the flags (directory) of the line
         uint32_t available;
         uint16_t offset;
         uint16_t count;
@@ -1372,17 +1418,21 @@ void putsTelemetryValue(uint8_t x, uint8_t y, int16_t val, uint8_t unit, uint8_t
 
 #if defined(CPUARM)
 uint8_t zlen(const char *str, uint8_t size);
+char * strcat_zchar(char * dest, char * name, uint8_t size, const char *defaultName, uint8_t defaultNameSize, uint8_t defaultIdx);
+#define strcat_modelname(dest, idx) strcat_zchar(dest, modelNames[idx], LEN_MODEL_NAME, STR_MODEL, PSIZE(TR_MODEL), idx+1)
+#define strcat_phasename_default(dest, idx) strcat_zchar(dest, NULL, 0, STR_FP, PSIZE(TR_FP), idx)
+#define strcat_phasename_nodefault(dest, idx) strcat_zchar(dest, g_model.phaseData[idx].name, LEN_FP_NAME, NULL, 0, 0)
+#define strcat_mixername_nodefault(dest, idx) strcat_zchar(dest, g_model.mixData[idx].name, LEN_EXPOMIX_NAME, NULL, 0, 0)
 #define ZLEN(s) zlen(s, sizeof(s))
 #endif
 
-#if defined(PCBX9D)
-#define KEY_MOVE_UP    KEY_MINUS
-#define KEY_MOVE_DOWN  KEY_PLUS
+#if defined(PCBX9D) || defined(PCBACT)
+#define KEY_MOVE_UP    KEY_PLUS
+#define KEY_MOVE_DOWN  KEY_MINUS
 #else
 #define KEY_MOVE_UP    KEY_UP
 #define KEY_MOVE_DOWN  KEY_DOWN
 #endif
 
 #endif
-
 

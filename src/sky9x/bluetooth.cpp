@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -32,7 +33,7 @@
  */
 
 #include "../open9x.h"
-#include "fifo.h"
+#include "../fifo.h"
 
 void btSetBaudrate(uint32_t index)
 {

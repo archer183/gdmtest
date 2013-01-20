@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -95,12 +96,30 @@ typedef const uint8_t pm_uint8_t;
 typedef const int16_t pm_int16_t;
 typedef const int8_t pm_int8_t;
 
-extern sem_t *eeprom_write_sem;
-#if defined(CPUARM)
+#if defined(PCBX9D) || defined(PCBACT)
+extern GPIO_TypeDef gpioa;
+#undef GPIOA
+#define GPIOA (&gpioa)
+extern GPIO_TypeDef gpiob;
+#undef GPIOB
+#define GPIOB (&gpiob)
+extern GPIO_TypeDef gpioc;
+#undef GPIOC
+#define GPIOC (&gpioc)
+extern GPIO_TypeDef gpiod;
+#undef GPIOD
+#define GPIOD (&gpiod)
+extern GPIO_TypeDef gpioe;
+#undef GPIOE
+#define GPIOE (&gpioe)
+#elif defined(PCBSKY9X)
 extern Pio Pioa, Piob, Pioc;
 extern Twi Twio;
 extern Dacc dacc;
 extern Usart Usart0;
+extern Adc Adc0;
+#undef ADC
+#define ADC (&Adc0)
 #undef USART0
 #define USART0 (&Usart0)
 #undef PIOA
@@ -116,11 +135,19 @@ extern Usart Usart0;
 extern Pwm pwm;
 #undef PWM
 #define PWM (&pwm)
+#endif
+
+extern sem_t *eeprom_write_sem;
+
+#if defined(PCBSKY9X)
 extern uint32_t eeprom_pointer;
 extern char* eeprom_buffer_data;
 extern volatile int32_t eeprom_buffer_size;
 extern bool eeprom_read_operation;
 extern volatile uint32_t Spi_complete;
+#endif
+
+#if defined(CPUARM)
 extern void startPdcUsartReceive() ;
 extern uint32_t txPdcUsart( uint8_t *buffer, uint32_t size );
 extern uint32_t txPdcPending();
@@ -285,18 +312,21 @@ extern uint8_t main_thread_running;
 
 #define SIMU_SLEEP(x) do { if (!main_thread_running) return; sleep(x/*ms*/); } while (0)
 
-extern void setSwitch(int8_t swtch);
+void simuSetKey(uint8_t key, bool state);
+void simuSetSwitch(int8_t swtch);
 
 void StartMainThread(bool tests=true);
 void StartEepromThread(const char *filename="eeprom.bin");
 
 extern const char *eepromFile;
-void eeprom_read_block (void *pointer_ram,
-                   const void *pointer_eeprom,
-                        size_t size);
+#if defined(PCBX9D) || defined(PCBACT)
+void eeprom_read_block (void *pointer_ram, uint16_t pointer_eeprom, size_t size);
+#else
+void eeprom_read_block (void *pointer_ram, const void *pointer_eeprom, size_t size);
+#endif
 
 #define wdt_reset() sleep(1/*ms*/)
-#define board_init()
+#define boardInit()
 
 #define OS_MutexID int
 #define OS_FlagID int
@@ -320,5 +350,16 @@ void eeprom_read_block (void *pointer_ram,
 #define UART3_Configure(...)
 #define UART_Stop(...)
 #define UART3_Stop(...)
+
+#if defined(PCBX9D) || defined(PCBACT)
+inline void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct) { }
+#define GPIO_SetBits(GPIOx, pin) GPIOx->BSRRL |= pin
+#define GPIO_ResetBits(GPIOx, pin) GPIOx->BSRRL &= ~pin
+#define GPIO_IsSet(GPIOx, pin) (GPIOx->BSRRL & pin)
+#define RCC_AHB1PeriphClockCmd(...)
+#define GPIO_ReadInputDataBit(...) true
+#endif
+
+#define configure_pins(...)
 
 #endif

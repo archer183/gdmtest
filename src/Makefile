@@ -27,6 +27,7 @@ BACKUP_FLASH = YES
 
 # Backup the old EEPROM (YES, NO)
 BACKUP_EEPROM = NO
+
 # Restore EEPROM to 9x (YES, NO) (will set BACKUP_EEPROM to YES).
 RESTORE_EEPROM = NO
 
@@ -49,7 +50,7 @@ DELAY = 5
 #----------- BUILD OPTIONS ---------------------------
 
 # PCB version
-# Values: STD, STD128, GRUVIN9X, SKY9X, X9D
+# Values: STD, STD128, GRUVIN9X, SKY9X, X9D, ACT
 PCB = STD
 
 # PCB revision
@@ -125,13 +126,9 @@ PPM_CENTER_ADJUSTABLE = YES
 # Values = YES, NO
 PPM_LIMITS_SYMETRICAL = NO
 
-# Limits display in the LIMITS
-# Values = PERCENT, US
-PPM_LIMITS_UNIT = PERCENT
-
-# Decimals display in the main view / PPM calibration, 
-# Values = YES, NO
-DECIMALS = YES
+# PPM display unit
+# Values = PERCENT_PREC1, PERCENT_PREC0, US
+PPM_UNIT = PERCENT_PREC1
 
 # FrSky Hub 
 # Values = YES, NO
@@ -145,9 +142,10 @@ WS_HOW_HIGH = YES
 # Values = YES, NO
 VARIO = YES
 
-# SDCARD
+# RTCLOCK
 # Values = YES, NO
-SDCARD = NO
+# default = YES (means enabled when available)
+RTCLOCK = YES
 
 # BLUETOOTH
 # Values = YES, NO
@@ -159,6 +157,11 @@ PXX = NO
 # DSM2 (Spektrum) protocol
 # Values = NO, SERIAL, PPM
 DSM2 = NO
+
+# DSM/PPM TX caddy PCB (Gruvin)
+# For auto-switching switching between DSM2/X and Fr-Sky transmitter modules
+# Values = YES, NO
+TX_CADDY = NO
 
 #IR protocols (SILV / TRAC09 / PICZ / SWIFT)
 IRPROTOS = NO
@@ -178,10 +181,6 @@ UNITS = METRIC
 # EEPROM_PROGRESS_BAR
 # Values = YES, NO
 EEPROM_PROGRESS_BAR = NO
-
-# Enable extra rotary encoders (Gruvin9x board only)
-# Values = YES, NO
-EXTRA_ROTARY_ENCODERS = NO
 
 # Activates the DEBUG Mode (all boards)
 # On G9X V4 board, when VOICE=NO:
@@ -220,19 +219,24 @@ CPPDEFS =
 
 # MCU name
 ifeq ($(PCB), STD)
+  ARCH = AVR
   TRGT = avr-
   MCU = atmega64  
   CPPDEFS += -DF_CPU=$(F_CPU)UL
   XCURVES = NO
+  SDCARD = NO
 endif
 
 ifeq ($(PCB), STD128)
+  ARCH = AVR
   TRGT = avr-
   MCU = atmega128
   CPPDEFS += -DF_CPU=$(F_CPU)UL
+  SDCARD = NO
 endif
 
 ifeq ($(PCB), GRUVIN9X)
+  ARCH = AVR
   ifeq ($(PCBREV), REV0)
     CPPDEFS += -DREV0
   else
@@ -241,9 +245,11 @@ ifeq ($(PCB), GRUVIN9X)
   TRGT = avr-
   MCU = atmega2560
   CPPDEFS += -DF_CPU=$(F_CPU)UL
+  SDCARD = NO
 endif
 
 ifeq ($(PCB), SKY9X)
+  ARCH = ARM
   ifeq ($(PCBREV), REVA)
     CPPDEFS += -DREVA
     LDSCRIPT = sky9x/sam3s2c_flash.ld
@@ -256,12 +262,25 @@ ifeq ($(PCB), SKY9X)
   endif
   TRGT = arm-none-eabi-
   MCU  = cortex-m3
+  CPPDEFS += -Dat91sam3s4 
+  SDCARD = YES
 endif
 
 ifeq ($(PCB), X9D)
-  LDSCRIPT = sky9x/sam3s4c_flash.ld
+  ARCH = ARM
+  LDSCRIPT = x9d/stm32_flash.ld
   TRGT = arm-none-eabi-
-  MCU  = cortex-m4
+  MCU  = cortex-m3
+  CPPDEFS += -DHSE_VALUE=12000000
+  SDCARD = YES
+endif
+
+ifeq ($(PCB), ACT)
+  ARCH = ARM
+  LDSCRIPT = x9d/stm32_flash.ld
+  TRGT = arm-none-eabi-
+  MCU  = cortex-m3
+  SDCARD = NO
 endif
 
 CC      = $(TRGT)gcc
@@ -452,48 +471,69 @@ endif
 
 RUN_FROM_FLASH = 1
 
-ifeq ($(PCB), X9D)
-  # X9D, so ...
+ifeq ($(PCB), ACT)
+  # ACT radio
   OPT = 2
-  CPPDEFS += -DPCBX9D -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1 -DLCD212
+  CPPDEFS += -DPCBACT -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DPXX -DDSM2 -DDSM2_PPM -DSTM32F10X_HD
   EXTRAINCDIRS += sky9x CoOS/kernel CoOS/portable
-  BOARDSRC = board_x9d.cpp 
+  EXTRAINCDIRS += act/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/STM32F10x_StdPeriph_Driver/inc act/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x
+  BOARDSRC = act/board_act.cpp 
   EXTRABOARDSRC += x9d/lcd_driver.cpp
-  SRC += sky9x/core_cm3.c sky9x/board_lowlevel.c sky9x/crt.c sky9x/vectors_sam3s.c
   SRC += CoOS/kernel/core.c CoOS/kernel/hook.c CoOS/kernel/task.c CoOS/kernel/event.c CoOS/kernel/time.c CoOS/kernel/timer.c CoOS/kernel/flag.c CoOS/kernel/mutex.c CoOS/kernel/serviceReq.c CoOS/portable/GCC/port.c CoOS/portable/arch.c
-  SRC += sky9x/usb/device/core/USBD_UDP.c sky9x/usb/device/core/USBDDriver.c
-  SRC += sky9x/usb/device/massstorage/MSDDriver.c sky9x/usb/device/massstorage/MSDDStateMachine.c sky9x/usb/device/massstorage/MSDLun.c sky9x/usb/device/massstorage/MSDDriverDescriptors.c sky9x/usb/device/massstorage/SBCMethods.c  
-  SRC += sky9x/usb/common/core/USBEndpointDescriptor.c sky9x/usb/common/core/USBGenericRequest.c sky9x/usb/common/core/USBFeatureRequest.c sky9x/usb/common/core/USBInterfaceRequest.c sky9x/usb/common/core/USBGetDescriptorRequest.c sky9x/usb/common/core/USBSetAddressRequest.c sky9x/usb/common/core/USBSetConfigurationRequest.c sky9x/usb/common/core/USBConfigurationDescriptor.c sky9x/usb/common/core/USBGenericDescriptor.c 
-  SRC += sky9x/MEDSdcard.c
-  EEPROMSRC = eeprom_arm.cpp eeprom_conversions.cpp
+  EEPROMSRC = eeprom_avr.cpp # TODO later eeprom_conversions.cpp
+  CPPSRC += x9d/pulses_driver.cpp act/keys_driver.cpp act/audio_driver.cpp
+  CPPSRC += audio_arm.cpp
   PULSESSRC = pulses_arm.cpp
-  CPPSRC += sky9x/audio.cpp haptic.cpp
-  CPPSRC += sky9x/sound_driver.cpp sky9x/sdcard_driver.cpp
+  CPPSRC += monitors_views.cpp
+endif
+
+ifeq ($(PCB), X9D)
+  # X9D radio
+  OPT = 2
+  CPPDEFS += -DPCBX9D -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DPXX -DDSM2 -DDSM2_PPM
+  EXTRAINCDIRS += CoOS/kernel CoOS/portable
+  EXTRAINCDIRS += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Include
+  BOARDSRC = x9d/board_x9d.cpp
+  EXTRABOARDSRC += x9d/lcd_driver.cpp x9d/aspi.cpp x9d/i2c.c
+  SRC += CoOS/kernel/core.c CoOS/kernel/hook.c CoOS/kernel/task.c CoOS/kernel/event.c CoOS/kernel/time.c CoOS/kernel/timer.c CoOS/kernel/flag.c CoOS/kernel/mutex.c CoOS/kernel/serviceReq.c CoOS/portable/GCC/port.c CoOS/portable/arch.c
+  EEPROMSRC = eeprom_avr.cpp # TODO later eeprom_conversions.cpp
+  PULSESSRC = pulses_arm.cpp
+  CPPSRC += audio_arm.cpp
+  CPPSRC += x9d/pwr_driver.cpp x9d/pulses_driver.cpp x9d/keys_driver.cpp x9d/adc_driver.cpp x9d/trainer_driver.cpp x9d/audio_driver.cpp x9d/delays.cpp
   CPPSRC += bmp.cpp monitors_views.cpp
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Source/Templates/system_stm32f2xx.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_gpio.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_rcc.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_spi.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_rtc.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_pwr.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_usart.c
+  SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Source/Templates/gcc_ride7/startup_stm32f2xx.s
   
   ifeq ($(SDCARD), YES)
-    EXTRABOARDSRC += FatFs/ff.c FatFs/fattime.c FatFs/option/ccsbcs.c sky9x/diskio.cpp
+    EXTRABOARDSRC += FatFs/ff.c FatFs/fattime.c FatFs/option/ccsbcs.c x9d/diskio.cpp
     CPPDEFS += -DVOICE
     EXTRAINCDIRS += FatFs FatFs/option
   endif
-  
-  ifeq ($(BLUETOOTH), YES)
-  	CPPDEFS += -DBLUETOOTH
-  	CPPSRC += sky9x/bluetooth.cpp 
+    
+  ifeq ($(RTCLOCK), YES)
+    CPPDEFS += -DRTCLOCK
+    CPPSRC += rtc.cpp x9d/rtc_driver.cpp
   endif
-  
+
   ifeq ($(DEBUG), YES)
-  	CPPSRC += sky9x/debug.cpp
+    CPPSRC += debug.cpp
+  	CPPSRC += x9d/debug_driver.cpp
   	SRC += sky9x/syscalls.c
   endif
 endif
 
 ifeq ($(PCB), SKY9X)
-  # SKY9X, so ...
+  # 9x radio with a sky9x replacement board
   OPT = 2
-  CPPDEFS += -DPCBSKY9X -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DRTCLOCK -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1
+  CPPDEFS += -DPCBSKY9X -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DPXX -DDSM2 -DDSM2_PPM -DROTARY_ENCODERS=1
   EXTRAINCDIRS += sky9x CoOS/kernel CoOS/portable
-  BOARDSRC = board_sky9x.cpp
+  BOARDSRC = sky9x/board_sky9x.cpp
   EXTRABOARDSRC += sky9x/lcd_driver.cpp
   SRC += sky9x/core_cm3.c sky9x/board_lowlevel.c sky9x/crt.c sky9x/vectors_sam3s.c
   SRC += CoOS/kernel/core.c CoOS/kernel/hook.c CoOS/kernel/task.c CoOS/kernel/event.c CoOS/kernel/time.c CoOS/kernel/timer.c CoOS/kernel/flag.c CoOS/kernel/mutex.c CoOS/kernel/serviceReq.c CoOS/portable/GCC/port.c CoOS/portable/arch.c
@@ -503,14 +543,18 @@ ifeq ($(PCB), SKY9X)
   SRC += sky9x/MEDSdcard.c
   EEPROMSRC = eeprom_arm.cpp eeprom_conversions.cpp
   PULSESSRC = pulses_arm.cpp
-  CPPSRC += rtc.cpp sky9x/rtc_driver.cpp
-  CPPSRC += sky9x/audio.cpp haptic.cpp
-  CPPSRC += sky9x/sound_driver.cpp sky9x/haptic_driver.cpp sky9x/sdcard_driver.cpp sky9x/massstorage.cpp
+  CPPSRC += audio_arm.cpp haptic.cpp
+  CPPSRC += sky9x/pwr_driver.cpp sky9x/adc_driver.cpp sky9x/coproc_driver.cpp sky9x/rotenc_driver.cpp sky9x/eeprom_driver.cpp sky9x/pulses_driver.cpp sky9x/keys_driver.cpp sky9x/audio_driver.cpp sky9x/buzzer_driver.cpp sky9x/haptic_driver.cpp sky9x/sdcard_driver.cpp sky9x/massstorage.cpp
   
   ifeq ($(SDCARD), YES)
     EXTRAINCDIRS += FatFs FatFs/option
     EXTRABOARDSRC += FatFs/ff.c FatFs/fattime.c FatFs/option/ccsbcs.c sky9x/diskio.cpp
     CPPDEFS += -DVOICE
+  endif
+  
+  ifeq ($(RTCLOCK), YES)
+    CPPDEFS += -DRTCLOCK
+    CPPSRC += rtc.cpp sky9x/rtc_driver.cpp
   endif
   
   ifeq ($(BLUETOOTH), YES)
@@ -519,21 +563,22 @@ ifeq ($(PCB), SKY9X)
   endif
   
   ifeq ($(DEBUG), YES)
-  	CPPSRC += sky9x/debug.cpp
+    CPPSRC += debug.cpp
+  	CPPSRC += sky9x/debug_driver.cpp
   	SRC += sky9x/syscalls.c
   endif
 endif
 
 ifeq ($(PCB), GRUVIN9X)
-  # Gruvin9x PCB, so ...
+  # 9x radio with a gruvin9x replacement board
   OPT = 2
-  CPPDEFS += -DPCBGRUVIN9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC -DROTARY_ENCODERS=2 
+  CPPDEFS += -DPCBGRUVIN9X -DEEPROM_VARIANT=0 -DAUDIO -DHAPTIC
   EXTRAINCDIRS += gruvin9x stock FatFs FatFs/option
-  BOARDSRC += board_gruvin9x.cpp
+  BOARDSRC += gruvin9x/board_gruvin9x.cpp
   EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp  
-  CPPSRC += stock/audio.cpp haptic.cpp
+  CPPSRC += audio_avr.cpp haptic.cpp
 
   ifeq ($(SDCARD), YES)
     CPPDEFS += -DRTCLOCK
@@ -546,24 +591,25 @@ ifeq ($(PCB), GRUVIN9X)
     CPPDEFS += -DVOICE
   endif
   
-  ifeq ($(EXTRA_ROTARY_ENCODERS), YES)
-    CPPDEFS += -DEXTRA_ROTARY_ENCODERS
-  endif
+  # Enable extra rotary encoders (Gruvin9x board only)
+  # Values = YES, NO
+  ROTARY_ENCODERS = 2
+  CPPDEFS += -DROTARY_ENCODERS=${ROTARY_ENCODERS}
 endif
 
 ifeq ($(PCB), STD128)
-  # STD PCB with Atmega 128, so ...
+  # 9x radio with Atmega 64 replace by Atmega 128
   OPT = 2
   CPPDEFS += -DPCBSTD -DCPUM128 -DEEPROM_VARIANT=0x8000
   EXTRAINCDIRS += stock
-  BOARDSRC = board_stock.cpp
+  BOARDSRC = stock/board_stock.cpp
   EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp
     
   ifeq ($(AUDIO), YES)
     CPPDEFS += -DAUDIO
-    CPPSRC += stock/audio.cpp
+    CPPSRC += audio_avr.cpp
   else
     CPPSRC += beeper.cpp 
   endif
@@ -588,18 +634,18 @@ ifeq ($(PCB), STD128)
 endif
 
 ifeq ($(PCB), STD)
-  # STD PCB, so ...
+  # 9x radio
   OPT = s
   EXTRAINCDIRS += stock
   CPPDEFS += -DPCBSTD -DCPUM64 -DEEPROM_VARIANT=$(shell echo ${EEPROM_VARIANT} | bc)
-  BOARDSRC = board_stock.cpp
+  BOARDSRC = stock/board_stock.cpp
   EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp
    
   ifeq ($(AUDIO), YES)
     CPPDEFS += -DAUDIO
-    CPPSRC += stock/audio.cpp
+    CPPSRC += audio_avr.cpp
   else
     CPPSRC += beeper.cpp 
   endif
@@ -634,12 +680,16 @@ ifeq ($(PPM_LIMITS_SYMETRICAL), YES)
   CPPDEFS += -DPPM_LIMITS_SYMETRICAL
 endif
 
-ifeq ($(PPM_LIMITS_UNIT), US)
-  CPPDEFS += -DPPM_LIMITS_UNIT_US
+ifeq ($(PPM_UNIT), US)
+  CPPDEFS += -DPPM_UNIT_US
 endif
 
-ifeq ($(DECIMALS), YES)
-  CPPDEFS += -DDECIMALS_DISPLAYED
+ifeq ($(PPM_UNIT), PERCENT_PREC1)
+  CPPDEFS += -DPPM_UNIT_PERCENT_PREC1
+endif
+
+ifeq ($(PPM_UNIT), PERCENT_PREC0)
+  CPPDEFS += -DPPM_UNIT_PERCENT_PREC0
 endif
 
 ifeq ($(HELI), YES)
@@ -661,6 +711,10 @@ endif
 
 ifeq ($(DSM2), PPM)
   CPPDEFS += -DDSM2 -DDSM2_PPM
+endif
+
+ifeq ($(TX_CADDY), YES)
+  CPPDEFS += -DTX_CADDY
 endif
 
 ifeq ($(IRPROTOS), YES)
@@ -722,10 +776,10 @@ MSG_CLEANING = Cleaning project:
 # Combine all necessary flags and optional flags.
 # Add target processor to flags.
 
-ARMCPPFLAGS = -c -mcpu=$(MCU) -mthumb -fomit-frame-pointer -fverbose-asm -Wa,-ahlms=open9x.lst -Dat91sam3s4 -DRUN_FROM_FLASH=1 -O$(OPT) $(CPPFLAGS) $(GENDEPFLAGS)
+ARMCPPFLAGS = -c -mcpu=$(MCU) -mthumb -fomit-frame-pointer -fverbose-asm -Wa,-ahlms=open9x.lst -DRUN_FROM_FLASH=1 -O$(OPT) $(CPPFLAGS) $(GENDEPFLAGS)
 AVRCPPFLAGS = -mmcu=$(MCU) -I. -x c++ -O$(OPT) $(CPPFLAGS) $(GENDEPFLAGS) -fwhole-program
 
-ifneq ($(PCB), SKY9X)
+ifeq ($(ARCH), AVR)
   GCCVERSIONGTE462 := $(shell expr 4.6.2 \<= `$(CC) -dumpversion`)
   ifeq ($(GCCVERSIONGTE462),1)
     CPPFLAGS += -flto
@@ -746,10 +800,10 @@ MIN_VER = ${shell sh -c "grep \"MIN_VERS\" open9x.h | cut -d\  -f3"}
 all: begin gccversion sizebefore build sizeafter end
 
 # Change the build target to build a HEX file or a library.
-ifeq ($(PCB), SKY9X)
-  build: stamp_header lbm allsrc.cpp elf remallsrc bin lss
-else
+ifeq ($(ARCH), AVR)
   build: stamp_header lbm allsrc.cpp elf remallsrc hex eep lss sym
+else
+  build: stamp_header lbm allsrc.cpp elf remallsrc bin lss
 endif
 
 elf: $(TARGET).elf
@@ -759,7 +813,7 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm asterisk.lbm
+lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm splash_ACT.lbm asterisk.lbm
 
 # Build stamp-file
 stamp_header:
@@ -768,13 +822,13 @@ stamp_header:
 	@echo "//Automatically generated file (Makefile) - do not edit" > stamp-open9x.h
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" >> stamp-open9x.h
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x.h
-	@echo "#define SVN_STR  \"Combat9x$(SVNREV)\"" >> stamp-open9x.h
+	@echo "#define SVN_STR  \"open9x-r$(SVNREV)\"" >> stamp-open9x.h
 	@cat stamp-open9x.h
 
 stock-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-stock.txt
+	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock.txt
 	@cat stamp-open9x-stock.txt
 
 stock128-stamp:
@@ -848,6 +902,11 @@ splash_X9D.lbm: splash_X9D.xbm
 	@echo "Convert X9D splash from xbm to lbm:"
 	$(IMG2LBM) $< $@ img
 
+splash_ACT.lbm: splash_ACT.xbm
+	@echo
+	@echo "Convert ACT splash from xbm to lbm:"
+	$(IMG2LBM) $< $@ largimg
+
 asterisk.lbm: asterisk.xbm
 	@echo
 	@echo "Convert asterisk from xbm to lbm:"
@@ -866,12 +925,12 @@ end:
 	@echo
 
 # Display size of file.
-ifeq ($(PCB), SKY9X)
-  ELFSIZE = $(SIZE) $(TARGET).elf
-else
+ifeq ($(ARCH), AVR)
   MCU_FLAG = $(shell $(SIZE) --help | grep -- --mcu > /dev/null && echo --mcu=$(MCU) )
   FORMAT_FLAG = $(shell $(SIZE) --help | grep -- --format=.*avr > /dev/null && echo --format=avr )
   ELFSIZE = $(SIZE) $(MCU_FLAG) $(FORMAT_FLAG) $(TARGET).elf
+else
+  ELFSIZE = $(SIZE) $(TARGET).elf
 endif
 
 sizebefore:
@@ -902,16 +961,16 @@ eeprom.bin:
 
 
 # Create final output files (.hex, .eep) from ELF output file.
-ifeq ($(PCB), SKY9X)
-%.hex: %.elf
-	@echo
-	@echo $(MSG_FLASH) $@
-	 $(OBJCOPY) -O ihex open9x.elf open9x.hex
-else
+ifeq ($(ARCH), AVR)
 %.hex: %.elf
 	@echo
 	@echo $(MSG_FLASH) $@
 	$(OBJCOPY) -O $(FORMAT) -R .eeprom $< $@
+else
+%.hex: %.elf
+	@echo
+	@echo $(MSG_FLASH) $@
+	 $(OBJCOPY) -O ihex open9x.elf open9x.hex
 endif
 
 %.bin: %.elf
@@ -946,20 +1005,23 @@ remallsrc:
 	$(REMOVE) allsrc.cpp
 
 # Link: create ELF output file from object files.
-ifeq ($(PCB), SKY9X)
+ifeq ($(ARCH), AVR)
+%.elf: allsrc.cpp
+	@echo
+	@echo $(MSG_COMPILING) $@
+	$(CC) $(AVRCPPFLAGS) $< --output $@ $(LDFLAGS)
+else
 %.o: %.c
 	$(CC) $(ARMCPPFLAGS) $< -o $@
-OBJS = $(SRC:.c=.o)
+%.o: %.s
+	$(AS) $< -o $@
+TMP = $(SRC:.c=.o)
+OBJS =  $(TMP:.s=.o)
 %.elf: allsrc.cpp $(OBJS)
 	@echo
 	@echo $(MSG_COMPILING) $@
 	$(CC) $(ARMCPPFLAGS) $< -o allsrc.o
 	$(CC) $(OBJS) allsrc.o -mcpu=cortex-m3 -mthumb -nostartfiles -T$(LDSCRIPT) -Wl,-Map=$(TARGET).map,--cref,--no-warn-mismatch -o $@
-else
-%.elf: allsrc.cpp
-	@echo
-	@echo $(MSG_COMPILING) $@
-	$(CC) $(AVRCPPFLAGS) $< --output $@ $(LDFLAGS)
 endif
 
 # Target: clean project.

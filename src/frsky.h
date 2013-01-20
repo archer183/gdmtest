@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -74,7 +75,7 @@ class FrskyValueWithMinMax: public FrskyValueWithMin {
 #define VARIO_SPEED_LIMIT_MUL       10 //to get 0.1m/s steps
 #define VARIO_SPEED_LIMIT_DOWN_OFF  (100+1) //100 steps + OFF
 #define VARIO_SPEED_LIMIT_UP_CENTER 10
-#define VARIO_SPEED_LIMIT_UP_MAX    30
+#define VARIO_SPEED_LIMIT_UP_MAX    (10+30)
 
 #if defined(FRSKY_HUB)
 PACK(struct FrskyHubData {
@@ -211,6 +212,7 @@ bool FRSKY_alarmRaised(uint8_t idx);
 void resetTelemetry();
 uint8_t maxTelemValue(uint8_t channel);
 int16_t convertTelemValue(uint8_t channel, uint8_t value);
+int16_t convertCswTelemValue(CustomSwData * cs);
 NOINLINE uint8_t getRssiAlarmValue(uint8_t alarm);
 
 extern const pm_uint8_t bchunit_ar[];

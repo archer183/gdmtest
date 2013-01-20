@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -186,7 +187,7 @@ void usbMassStorage()
   if (usbPlugged() && sd_card_ready()) {
     TRACE_DEBUG("usbMassStorage\n\r");
 
-    if (sd_card_mounted()) {
+    if (sdMounted()) {
       Card_state = SD_ST_DATA;
       audioQueue.stopSD();
       closeLogs();

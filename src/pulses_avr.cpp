@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -80,7 +81,6 @@ void startPulses()
   s_current_protocol = g_model.protocol;
 #else
   setupPulses();
-
 #endif // SIMU
 }
 
@@ -173,11 +173,7 @@ void setupPulsesPPM(uint8_t proto)
 
     rest += (int32_t(g_model.ppmFrameLength))*1000;
     for (uint8_t i=(proto==PROTO_PPM16) ? p-8 : 0; i<p; i++) {
-#ifdef PPM_CENTER_ADJUSTABLE
-      int16_t v = limit((int16_t)-PPM_range, g_chans512[i], (int16_t)PPM_range) + 2*(PPM_CENTER+limitaddress(i)->ppmCenter);
-#else
-      int16_t v = limit((int16_t)-PPM_range, g_chans512[i], (int16_t)PPM_range) + 2*PPM_CENTER;
-#endif
+      int16_t v = limit((int16_t)-PPM_range, g_chans512[i], (int16_t)PPM_range) + 2*PPM_CH_CENTER(i);
       rest -= v;
       *ptr++ = q;
       *ptr++ = v - q; // total pulse width includes stop phase
@@ -396,7 +392,7 @@ FORCEINLINE void setupPulsesDsm2()
       break;
   }
   if (s_bind_allowed) s_bind_allowed--;
-  if (s_bind_allowed && keyState(SW_TRN)) 
+  if (s_bind_allowed && switchState(SW_TRN)) 
   {
     s_bind_mode = true;
     *ptr |= BIND_BIT;
@@ -525,7 +521,7 @@ void setupPulsesDsm2()
   }
 
   if (s_bind_allowed) s_bind_allowed--;
-  if (s_bind_allowed && keyState(SW_TRN)) 
+  if (s_bind_allowed && switchState(SW_TRN)) 
   {
     s_bind_mode = true;
     dsmDat[0] |= BIND_BIT;
@@ -738,6 +734,17 @@ void setupPulses()
 
   if (s_pulses_paused)
     required_protocol = PROTO_NONE;
+
+#if defined(PCBGRUVIN9X) && defined(DSM2_PPM) && defined(TX_CADDY)
+// This should be here, executed on every loop, to ensure re-setting of the 
+// TX moudle power control output register, in case of electrical glitch.
+// (Following advice of Atmel for MCU's used  in industrial / mission cricital 
+// applications.)
+    if (required_protocol == PROTO_DSM2)
+      PORTH &= ~0x80;
+    else
+      PORTH |= 0x80;
+#endif
 
   if (s_current_protocol != required_protocol) {
 

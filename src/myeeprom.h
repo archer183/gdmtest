@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -48,7 +49,9 @@
 #define WARN_MEM     (!(g_eeGeneral.warnOpts & WARN_MEM_BIT))
 #define BEEP_VAL     ( (g_eeGeneral.warnOpts & WARN_BVAL_BIT) >>3 )
 
-#if defined(PCBX9D)
+#if defined(PCBACT)
+#define EEPROM_VER       213
+#elif defined(PCBX9D)
 #define EEPROM_VER       213
 #elif defined(PCBSKY9X)
 #define EEPROM_VER       213
@@ -78,7 +81,7 @@ PACK(typedef struct t_FrSkyRSSIAlarm {
   int8_t    value:6;
 }) FrSkyRSSIAlarm;
 
-#if defined(LCD212)
+#if defined(PCBX9D) || defined(PCBACT)
 enum MainViews {
   VIEW_INPUTS,
   VIEW_SWITCHES,
@@ -112,7 +115,8 @@ enum BeeperMode {
   uint32_t globalTimer; \
   int8_t   temperatureCalib; \
   uint8_t  btBaudrate; \
-  uint8_t  optrexDisplay;
+  uint8_t  optrexDisplay; \
+  uint8_t  sticksGain;
 #else
 #define EXTRA_GENERAL_FIELDS \
   int8_t   speakerVolume
@@ -143,9 +147,15 @@ uint8_t spare4:2
 PACK(typedef struct t_EEGeneral {
   uint8_t   version;
   uint16_t  variant;
+#if defined(PCBX9D)
+  int16_t   calibMid[8];
+  int16_t   calibSpanNeg[8];
+  int16_t   calibSpanPos[8];
+#else
   int16_t   calibMid[7];
   int16_t   calibSpanNeg[7];
   int16_t   calibSpanPos[7];
+#endif
   uint16_t  chkSum;
   int8_t    currModel;
   uint8_t   contrast;
@@ -184,7 +194,7 @@ PACK(typedef struct t_EEGeneral {
 
 }) EEGeneral;
 
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
 #define LEN_MODEL_NAME     12
 #define LEN_EXPOMIX_NAME   10
 #define LEN_FP_NAME        10
@@ -246,8 +256,10 @@ PACK(typedef struct t_LimitData {
 #define MODE_CURVE         1
 
 #if defined(CPUARM)
-#define MAX_DELAY   60 /* 30 seconds */
-#define MAX_SLOW    60 /* 30 seconds */
+#define DELAY_STEP  10
+#define SLOW_STEP   10
+#define DELAY_MAX   (25*DELAY_STEP) /* 25 seconds */
+#define SLOW_MAX    (25*SLOW_STEP)  /* 25 seconds */
 PACK(typedef struct t_MixData {
   uint8_t  destCh;
   uint16_t phases;
@@ -269,8 +281,10 @@ PACK(typedef struct t_MixData {
   char    name[LEN_EXPOMIX_NAME];
 }) MixData;
 #else
-#define MAX_DELAY   15 /* 7.5 seconds */
-#define MAX_SLOW    15 /* 7.5 seconds */
+#define DELAY_STEP  2
+#define SLOW_STEP   2
+#define DELAY_MAX   15 /* 7.5 seconds */
+#define SLOW_MAX    15 /* 7.5 seconds */
 PACK(typedef struct t_MixData {
   uint8_t destCh:4;          // 0, 1..NUM_CHNOUT
   uint8_t curveMode:1;       // O=curve, 1=differential
@@ -354,7 +368,8 @@ PACK(typedef struct t_FuncSwData { // Function Switches data
   uint8_t active;
   uint8_t spare;
 }) FuncSwData;
-#define FSW_PARAM(p) (*((uint32_t*)(p)->param))
+#define FSW_PARAM(p)       (*((uint32_t*)(p)->param))
+#define FSW_RESET_PARAM(p) memset(p->param, 0, sizeof(p->param))
 #else
 PACK(typedef struct t_FuncSwData { // Function Switches data
   int8_t  swtch; //input
@@ -362,7 +377,8 @@ PACK(typedef struct t_FuncSwData { // Function Switches data
   uint8_t active:1;
   uint8_t param;
 }) FuncSwData;
-#define FSW_PARAM(p) ((p)->param)
+#define FSW_PARAM(p)       ((p)->param)
+#define FSW_RESET_PARAM(p) FSW_PARAM(p) = 0
 #endif
 
 enum TelemetryUnit {
@@ -548,9 +564,13 @@ PACK(typedef struct t_SwashRingData { // Swash Ring data
 
 #define ROTARY_ENCODER_MAX  1024
 
-#if defined(PCBX9D)
-#define NUM_ROTARY_ENCODERS_EXTRA 0
+#if defined(PCBACT)
 #define NUM_ROTARY_ENCODERS 0
+#define ROTARY_ENCODER_ARRAY_EXTRA
+#define ROTARY_ENCODER_ARRAY int16_t rotaryEncoders[1];
+#elif defined(PCBX9D)
+#define NUM_ROTARY_ENCODERS 0
+#define NUM_ROTARY_ENCODERS_EXTRA 0
 #define ROTARY_ENCODER_ARRAY_EXTRA
 #define ROTARY_ENCODER_ARRAY int16_t rotaryEncoders[1];
 #elif defined(PCBSKY9X)
@@ -558,12 +578,12 @@ PACK(typedef struct t_SwashRingData { // Swash Ring data
 #define NUM_ROTARY_ENCODERS 1
 #define ROTARY_ENCODER_ARRAY int16_t rotaryEncoders[1];
 #define ROTARY_ENCODER_ARRAY_EXTRA
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define NUM_ROTARY_ENCODERS_EXTRA 2
 #define NUM_ROTARY_ENCODERS (2+NUM_ROTARY_ENCODERS_EXTRA)
 #define ROTARY_ENCODER_ARRAY int16_t rotaryEncoders[2];
 #define ROTARY_ENCODER_ARRAY_EXTRA int16_t rotaryEncodersExtra[MAX_PHASES][NUM_ROTARY_ENCODERS_EXTRA];
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define NUM_ROTARY_ENCODERS_EXTRA 0
 #define NUM_ROTARY_ENCODERS 2
 #define ROTARY_ENCODER_ARRAY int16_t rotaryEncoders[2];
@@ -661,13 +681,14 @@ enum MixSources {
     MIXSRC_Ele,
     MIXSRC_Thr,
     MIXSRC_Ail,
-#if defined(PCBX9D)
-    MIXSRC_S1,
+    MIXSRC_Pot1,
+#if defined(PCBX9D) || defined(PCBACT)
+    MIXSRC_S1 = MIXSRC_Pot1,
     MIXSRC_S2,
     MIXSRC_S3,
     MIXSRC_S4,
 #else
-    MIXSRC_P1,
+    MIXSRC_P1 = MIXSRC_Pot1,
     MIXSRC_P2,
     MIXSRC_P3,
 #endif
@@ -676,7 +697,7 @@ enum MixSources {
 #elif defined(PCBGRUVIN9X)
     MIXSRC_REa,
     MIXSRC_REb,
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
     MIXSRC_REc,
     MIXSRC_REd,
 #endif
@@ -686,7 +707,7 @@ enum MixSources {
     MIXSRC_TrimThr,
     MIXSRC_TrimAil,
     MIXSRC_MAX ,
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
     MIXSRC_SA,
     MIXSRC_SB,
     MIXSRC_SC,
@@ -712,6 +733,9 @@ enum MixSources {
     MIXSRC_SWA,
     MIXSRC_SWB,
     MIXSRC_SWC,
+#if defined(CPUARM)
+    MIXSRC_SWW=MIXSRC_SWC+'W'-'C',
+#endif
     MIXSRC_CYC1,
     MIXSRC_CYC2,
     MIXSRC_CYC3,
@@ -799,10 +823,12 @@ enum Dsm2Variants {
 #define BeepANACenter uint8_t
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
 #define MODELDATA_EXTRA char bitmap[10]
+#define swstate_t uint16_t
 #else
 #define MODELDATA_EXTRA
+#define swstate_t uint8_t
 #endif
 
 PACK(typedef struct t_ModelData {
@@ -835,7 +861,7 @@ PACK(typedef struct t_ModelData {
   uint8_t   thrTraceSrc;
   uint8_t   modelId;
   
-  uint8_t   switchWarningStates;
+  swstate_t switchWarningStates;
 
   MODEL_GVARS_DATA;
 

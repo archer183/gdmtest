@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -66,7 +67,7 @@ volatile uint8_t LcdLock ;
 #define LCD_UNLOCK()
 #endif
 
-inline void lcd_init()
+inline void lcdInit()
 {
   // /home/thus/txt/datasheets/lcd/KS0713.pdf
   // ~/txt/flieger/ST7565RV17.pdf  from http://www.glyn.de/content.asp?wdid=132&sid=
@@ -101,7 +102,7 @@ void lcdSetRefVolt(uint8_t val)
   LCD_UNLOCK();
 }
 
-void refreshDisplay()
+void lcdRefresh()
 {
   LCD_LOCK();
   uint8_t *p=displayBuf;
@@ -115,7 +116,7 @@ void refreshDisplay()
 #endif
     PORTC_LCD_CTRL |=  (1<<OUT_C_LCD_A0);
     PORTC_LCD_CTRL &= ~(1<<OUT_C_LCD_RnW);
-    for (xcoord_t x=DISPLAY_W; x>0; --x) {
+    for (xcoord_t x=LCD_W; x>0; --x) {
       PORTA_LCD_DAT = *p++;
       PORTC_LCD_CTRL |= (1<<OUT_C_LCD_E);
       PORTC_LCD_CTRL &= ~(1<<OUT_C_LCD_E);

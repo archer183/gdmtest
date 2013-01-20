@@ -8,11 +8,8 @@
   * *
   ******************************************************************************
 */
-#include <stdint.h>
-#include "lcd.h"
-#include "spi.h"
-#include "hal.h"
-#include "Macro_define.h" 
+
+#include "../open9x.h"
 
 #define	WriteData(x)	 AspiData(x)
 #define	WriteCommand(x)	 AspiCmd(x)
@@ -26,27 +23,30 @@ void Set_Address(u8 x, u8 y)
   WriteCommand(((y>>4)&0x0F)|0x70);    //Set Row Address MSB RA [7:4]
 }
 
-/**6 ponits in one line share the same address,3 bytes in the buffer.
-3 bytes wrote in one time */
-void refreshDisplay()
-{  
-  u8 _x1,_x0,temp_x0,temp_x00;
-    
-  _x1 =( DISPLAY_W>>1) + 1;
-	
-  temp_x0 = 0;
-  temp_x00 = temp_x0/3;
+#define PALETTE_IDX(p, x, mask) (((p[x] & mask) ? 0x1 : 0) + ((p[DISPLAY_PLAN_SIZE+x] & mask) ? 0x2 : 0) + ((p[2*DISPLAY_PLAN_SIZE+x] & mask) ? 0x4 : 0) + ((p[3*DISPLAY_PLAN_SIZE+x] & mask) ? 0x8 : 0))
+const uint8_t lcdPalette[4] = { 0, 0x03, 0x06, 0x0F };
 
-  for(uint32_t y0=0; y0<=y1; y0++)
-  {
-    Set_Address(0, y0);//change the address every column
+void lcdRefresh()
+{  
+  for (uint8_t y=0; y<LCD_H; y++) {
+    uint8_t *p = &displayBuf[(y>>3)*LCD_W];
+    uint8_t mask = (1 << (y%8));
+    Set_Address(0, y);
     AspiCmd(0xAF);
-    for(uint_32_t x=0; x_x0<=_x1; _x0++)
-    {
-      WriteData(lcd_buffer[_x0][y0]);
-      //WriteData(lcd_buffer[_x0][y0]);
-      //WriteData(lcd_buffer[_x0][y0]);
+    for (uint8_t x=0; x<LCD_W; x+=2) {
+#if 0
+      uint8_t data = (p[x] & mask ? 0x80 : 0) + (p[x+1] & mask ? 0x08 : 0) + (p[DISPLAY_PLAN_SIZE+x] & mask ? 0x40 : 0) + (p[DISPLAY_PLAN_SIZE+x+1] & mask ? 0x04 : 0);
+#elif 1
+      uint8_t data = (PALETTE_IDX(p, x, mask) << 4) + (PALETTE_IDX(p, x+1, mask));
+      //uint8_t data = (lcdPalette(PALETTE_IDX(p, x, mask)) << 4) + lcdPalette(PALETTE_IDX(p, x+1, mask));
+#else
+      // this code shows the 16 grey tones...
+      uint8_t data = (x * 16) / 212;
+      data += (data << 4);
+#endif
+      WriteData(data);
     }
+    WriteData(0);
   }
 }
 
@@ -89,11 +89,6 @@ static void LCD_Hardware_Init()
   GPIO_Init(GPIO_LCD, &GPIO_InitStructure);
 }
 
-#if 0
-void Delay(uint32_t ms);
-/* Initialize the LCD */
-#endif
-
 static void LCD_Init()
 {
   /*Hardware Reset need delay*/
@@ -128,70 +123,16 @@ static void LCD_Init()
   AspiCmd(0xF7);   //ending row address of RAM program window.
   AspiCmd(0x9F);
 
-  AspiCmd(0xAF);	//dc2=1,IC into exit SLEEP MODE,	 dc3=1  gray=ON 开灰阶	,dc4=1  Green Enhanc mode disabled	  绿色增强模式关
-	
+  AspiCmd(0xAF);	//dc2=1, IC into exit SLEEP MODE, dc3=1 gray=ON, dc4=1 Green Enhanc mode disabled
 }
 
-void lcd_init()
+void lcdInit()
 {
   LCD_BL_Config();
   LCD_Hardware_Init();
   LCD_Init();
 }
 
-#if 0
-/***************************************************************
-***********FOR Test
-**********************************************************************/
-void Delay(uint32_t ms)
+void lcdSetRefVolt(uint8_t val)
 {
-  u8 i;
-  while(ms != 0)
-  {
-    for(i=0;i<250;i++) {}
-    for(i=0;i<75;i++) {}
-    ms--;
-  }
 }
-
-
-void TEST_LCD()
-{
-        //static u32 cnt;
-        //CC中断
-        GPIO_SetBits(GPIOB,GPIO_Pin_8);//BACKLIGHT
-        
-        //Delay(3000);
-        //paintScreen();
-        clearScreen();
-        drawPoint(0,0,1);
-        paintRect(0,0,0,0);
-        reversePoint(0,0);
-        paintRect(0,0,0,0);
-        Delay(3000);
-        drawPoint(1,0,1);
-        paintRect(0,0,1,0);
-        Delay(3000);
-        reversePoint(1,0);
-        paintRect(0,0,1,0);
-        Delay(3000);
-        drawPoint(0,1,1);
-        paintRect(0,1,0,1);
-        Delay(3000);
-        reversePoint(0,1);
-        paintRect(0,1,0,1);
-        
-        drawPoint(211,0,1);
-        paintRect(0,0,211,0);
-        Delay(3000);
-        reversePoint(211,0);
-        paintRect(0,0,211,0);   
-                
-        drawPoint(211,63,1);
-        paintRect(211,63,211,63);
-        Delay(3000);
-        reversePoint(211,63);
-        paintRect(211,63,211,63);
-        
-}
-#endif

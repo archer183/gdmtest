@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -117,7 +118,7 @@ void lcdSendCtl(uint8_t val)
   pioptr->PIO_SODR = LCD_CS1 ;                    // Deselect LCD
 }
 
-void lcd_init()
+void lcdInit()
 {
   register Pio *pioptr ;
   // /home/thus/txt/datasheets/lcd/KS0713.pdf
@@ -207,7 +208,7 @@ void lcdSetRefVolt(uint8_t val)
   lcdLock = 0 ;
 }
 
-void refreshDisplay()
+void lcdRefresh()
 {
   register Pio *pioptr;
   register uint8_t *p = displayBuf;
@@ -252,7 +253,7 @@ void refreshDisplay()
 #else
     x = *p;
 #endif
-    for (z = 0; z < DISPLAY_W; z += 1) {
+    for (z = 0; z < LCD_W; z += 1) {
 
 // The following 7 lines replaces by a lookup table
 //                      x = __RBIT( *p++ ) ;

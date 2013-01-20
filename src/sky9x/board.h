@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -39,17 +40,14 @@
 #include <stdint.h>
 #include "chip.h"
 
-#ifdef REVA
+#if defined(REVA)
 #include "AT91SAM3S2.h"
 #else
 #include "AT91SAM3S4.h"
 #endif
 
-#ifdef SIMU
-#define CONVERT_PTR(x) ((uint32_t)(uint64_t)(x))
-#else
+#if !defined(SIMU)
 #include "core_cm3.h"
-#define CONVERT_PTR(x) ((uint32_t)(x))
 #endif
 
 //------------------------------------------------------------------------------
@@ -541,9 +539,9 @@ extern uint32_t transSpeed;
 
 #define SD_CSD_READ_BL_LEN(pSd)        SD_CSD(pSd, 80,  4) ///< Max. read data block length
 
-#define SD_CSD_BLOCK_LEN(pSd)          (1 << SD_CSD_READ_BL_LEN(pSd))
+#define SD_CSD_BLKLEN(pSd)             (1 << (SD_CSD_READ_BL_LEN(pSd) - 9))
 
-#define SD_CSD_BLOCKNR(pSd)            ((SD_CSD_C_SIZE(pSd) + 1) * SD_CSD_MULT(pSd))
+#define SD_CSD_BLOCKNR(pSd)            ((SD_CSD_C_SIZE(pSd) + 1) * SD_CSD_MULT(pSd)) * SD_CSD_BLKLEN(pSd)
 
 #define SD_CSD_BLOCKNR_HC(pSd)         ((SD_CSD_C_SIZE_HC(pSd) + 1) * 1024)
 

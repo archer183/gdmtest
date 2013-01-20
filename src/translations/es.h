@@ -37,11 +37,11 @@
 
 #define LEN_RETA123      "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123       "RETA123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123       "RETA123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
 #else
 #define TR_RETA123       "RETA123"
 #endif
@@ -71,7 +71,7 @@
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|"
 
 #define LEN_VMLTPX       "\010"
-#define TR_VMLTPX        "Agregar ""Multipl.""Cambiar "
+#define TR_VMLTPX        "A\201adir  ""Multipl.""Cambiar "
 
 #define LEN_VMLTPX2      "\002"
 #define TR_VMLTPX2       "+=""*="":="
@@ -197,9 +197,9 @@
 #define LEN_VSRCRAW      "\004"
 #if defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa "
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb "
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -306,8 +306,8 @@
 #define TR_BLMODE              "Modo P.Luminoso"
 #define TR_BLDELAY             "Tiempo de Luz"
 #define TR_SPLASHSCREEN        "Pantalla Inicio"
-#define TR_THROTTLEWARNING     "Aviso Acelerdor"
-#define TR_SWITCHWARNING       "Aviso de Llaves"
+#define TR_THROTTLEWARNING     "A Acel"
+#define TR_SWITCHWARNING       "A Llaves"
 #define TR_MEMORYWARNING       "Aviso Memoria"
 #define TR_ALARMWARNING        "Aviso de alarma"
 #define TR_TIMEZONE            "Zona Horaria"
@@ -318,9 +318,9 @@
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Ajte- +"
 #define TR_BG                  "BG:"
-#define TR_MENUTOSTART         CENTER"\006[MENU] INICIAR"
-#define TR_SETMIDPOINT         CENTER"AJUSTAR CENTROS"
-#define TR_MOVESTICKSPOTS      CENTER"MOVER STICK/POT"
+#define TR_MENUTOSTART         CENTER"\007[MENU] INICIAR"
+#define TR_SETMIDPOINT         CENTER"\006AJUSTAR CENTROS"
+#define TR_MOVESTICKSPOTS      CENTER"\005MOVER STICK/POT"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -345,6 +345,7 @@
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODELO"
 #define TR_FP                  "FP"
+#define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM Baja mem"
 #define TR_ALERT               "\016ALERTA"
 #define TR_PRESSANYKEYTOSKIP   "Pulsa tecla x omitir"
@@ -361,7 +362,7 @@
 #define TR_MENUDIAG            "DIAGNOST."
 #define TR_MENUANA             "ANALOGICOS"
 #define TR_MENUCALIBRATION     "CALIBRACION"
-#define TR_TRIMS2OFFSETS       "Trims => Offsets"
+#define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
 #define TR_MENUMODELSEL        "MODELSEL"
 #define TR_MENUSETUP           "AJUSTE"
 #define TR_MENUFLIGHTPHASE     "FASE DE VUELO"
@@ -378,7 +379,7 @@
 #define TR_MENUCURVE           "CURVA"
 #define TR_MENUCUSTOMSWITCH    "AJUSTES PROPIOS"
 #define TR_MENUCUSTOMSWITCHES  "AJUSTE PROPIO"
-#define TR_MENUCUSTOMFUNC    "AJUSTAR FUNCIONES"
+#define TR_MENUCUSTOMFUNC      "AJUSTAR FUNCIONES"
 #define TR_MENUTELEMETRY       "TELEMETRIA"
 #define TR_MENUTEMPLATES       "PLANTILLAS"
 #define TR_MENUSTAT            "REGISTRO"

@@ -37,11 +37,11 @@
 
 #define LEN_RETA123            "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123             "SVPK123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123             "SVPK123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
 #else
 #define TR_RETA123             "SVPK123"
 #endif
@@ -204,9 +204,9 @@
 #define LEN_VSRCRAW            "\004"
 #if defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa "
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb "
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -244,7 +244,7 @@
 #define TR_TRIMINC             "KrokTrimu"
 #define TR_TTRACE              "StopaPlyn"
 #define TR_TTRIM               "TrimPlynu"
-#define TR_BEEPCTR             "P\204pSt\206ed"
+#define TR_BEEPCTR             "(!)St\206edy"
 #define TR_PROTO               INDENT"Protokol"
 #define TR_PPMFRAME            "PPM frame"
 #define TR_MS                  "ms"
@@ -313,8 +313,8 @@
 #define TR_BACKLIGHT_LABEL     "Podsv\203tlen\204"
 #define TR_BLDELAY             INDENT"Zhasnout po"
 #define TR_SPLASHSCREEN        "\210vodn\204Logo"
-#define TR_THROTTLEWARNING     "Upoz:Plyn"
-#define TR_SWITCHWARNING       "+=Sp\204na\201e"
+#define TR_THROTTLEWARNING     "(!)Plyn"
+#define TR_SWITCHWARNING       "(!)Sp\204na\201"
 #define TR_TIMEZONE            "\201asov\202 p\200smo"
 #define TR_RXCHANNELORD        "Po\206ad\204 Kan\200l\211"
 #define TR_SLAVE               "Pod\206\204zen\212"
@@ -324,8 +324,8 @@
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
 #define TR_MENUTOSTART         CENTER"\007[MENU] = START"
-#define TR_SETMIDPOINT         CENTER"NASTAV ST\215EDY"
-#define TR_MOVESTICKSPOTS      CENTER"H\216BEJ P\213KY/POTY"
+#define TR_SETMIDPOINT         CENTER"Nastav st\206edy p\200k/pot"
+#define TR_MOVESTICKSPOTS      CENTER"\004H\212bej p\200kami/poty"
 #define TR_RXBATT              "Rx Bat.:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -350,6 +350,7 @@
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODEL"
 #define TR_FP                  "FP"
+#define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "Doch\200z\204 EEPROM"
 #define TR_ALERT               "\006(!)POZOR"
 #define TR_PRESSANYKEYTOSKIP   "Kl\200vesa >>> p\206esko\201it"
@@ -366,7 +367,7 @@
 #define TR_MENUDIAG            "DIAG"
 #define TR_MENUANA             "ANALOGY"
 #define TR_MENUCALIBRATION     "KALIBRACE"
-#define TR_TRIMS2OFFSETS       "Trimy => Subtrimy"
+#define TR_TRIMS2OFFSETS       "\004Trimy => Subtrimy"
 #define TR_MENUMODELSEL        "MODEL"
 #define TR_MENUSETUP           "NASTAVEN\214"
 #define TR_MENUFLIGHTPHASE     "LETOV\213 F\213ZE"
@@ -451,7 +452,7 @@
 #define TR_SD_SIZE             "Velikost:"
 #define TR_CURVE_TYPE          TR_SD_TYPE
 #define TR_GLOBAL_VARS         "Glob\200ln\204 prom\203nn\202"
-#define TR_OWN                 "Sv\200"
+#define TR_OWN                 " * "
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "R.Encs"
 #define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"

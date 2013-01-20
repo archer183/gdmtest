@@ -20,14 +20,16 @@
 #include <inttypes.h>
 #include <stdint.h>
 
-#ifdef REV0
-#define WRITE_DELAY_10MS 100
+#if defined(SIMU)
+#define WRITE_DELAY_10MS 200
+#elif defined(PCBSKY9X) && defined(REV0)
+#define WRITE_DELAY_10MS 200
 #else
 #define WRITE_DELAY_10MS 500
 #endif
 
-extern uint8_t  s_eeDirtyMsk;
-extern uint16_t s_eeDirtyTime10ms;
+extern uint8_t   s_eeDirtyMsk;
+extern tmr10ms_t s_eeDirtyTime10ms;
 
 // States in Eeprom32_process_state
 #define E32_IDLE                                                        1
@@ -44,7 +46,6 @@ extern uint8_t *Eeprom32_source_address ;
 extern uint8_t Eeprom32_file_index ;
 extern uint32_t Eeprom32_data_size ;
 
-extern void eeprom_init( void ) ;
 extern void end_spi(); // TODO not public
 extern void ee32_process( void ) ;
 extern bool eeLoadGeneral( void ) ;
@@ -75,7 +76,6 @@ struct t_eeprom_header
 };
 
 extern struct t_file_entry File_system[] ;
-extern char ModelNames[][sizeof(g_model.name)] ;		// Allow for general
 
 extern EEGeneral  g_eeGeneral;
 extern ModelData  g_model;
@@ -83,7 +83,10 @@ extern ModelData  g_model;
 extern uint8_t Spi_tx_buf[] ;
 extern uint8_t Spi_rx_buf[] ;
 
+void eeprom_write_enable();
+uint32_t eeprom_read_status();
 void read32_eeprom_data(uint32_t eeAddress, register uint8_t *buffer, uint32_t size, uint32_t immediate=0);
+uint32_t spi_PDC_action( register uint8_t *command, register uint8_t *tx, register uint8_t *rx, register uint32_t comlen, register uint32_t count );
 
 #if defined(SDCARD)
 const pm_char * eeBackupModel(uint8_t i_fileSrc);

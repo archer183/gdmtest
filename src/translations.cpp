@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -223,6 +224,7 @@ const pm_char STR_PPM[] PROGMEM = TR_PPM;
 const pm_char STR_CH[] PROGMEM = TR_CH;
 const pm_char STR_MODEL[] PROGMEM = TR_MODEL;
 const pm_char STR_FP[] PROGMEM = TR_FP;
+const pm_char STR_MIX[] PROGMEM = TR_MIX;
 const pm_char STR_EEPROMLOWMEM[] PROGMEM = TR_EEPROMLOWMEM;
 const pm_char STR_ALERT[] PROGMEM = TR_ALERT;
 const pm_char STR_PRESSANYKEYTOSKIP[] PROGMEM = TR_PRESSANYKEYTOSKIP;
@@ -284,7 +286,7 @@ const pm_char STR_SYNCMENU[] PROGMEM = TR_SYNCMENU;
 
 const pm_char STR_INVERT_THR[] PROGMEM = TR_INVERT_THR;
 
-#if defined(ROTARY_ENCODERS)
+#if defined(ROTARY_ENCODER_NAVIGATION)
 const pm_char STR_BACK[] PROGMEM = TR_BACK;
 #endif
 
@@ -407,7 +409,7 @@ const pm_uchar font_10x14[] PROGMEM = {
 #endif
 };
 
-#if defined(PCBX9D)
+#if defined(CPUARM)
 const pm_uchar font_3x5[] PROGMEM = {
 #include "font_tiny.lbm"
 };
