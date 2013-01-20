@@ -37,11 +37,11 @@
 
 #define LEN_RETA123                     "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123                      "SHGQ123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123                      "SHGQ123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
 #else
 #define TR_RETA123                      "SHGQ123"
 #endif
@@ -205,9 +205,9 @@
 #define LEN_VSRCRAW                     "\004"
 #if defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW 			"DGa\0"
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "DGa ""DGb ""DGc ""DGd "
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "DGa ""DGb "
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -325,8 +325,8 @@
 #define TR_VTRIM                        "Trim- +"
 #define TR_BG                           "BG:"
 #define TR_MENUTOSTART                  CENTER"\006[MENU] > Starten"
-#define TR_SETMIDPOINT                  CENTER"NEUTRALSTELLUNG"
-#define TR_MOVESTICKSPOTS               CENTER"KNPL/POTIS BEWEGEN"
+#define TR_SETMIDPOINT                  CENTER"\006NEUTRALSTELLUNG"
+#define TR_MOVESTICKSPOTS               CENTER"\004KNPL/POTIS BEWEGEN"
 #define TR_RXBATT                       "Rx Batt:"
 #define TR_TXnRX                        "Tx:\0Rx:"
 #define OFS_RX                          4
@@ -351,6 +351,7 @@
 #define TR_CH                           "CH"
 #define TR_MODEL                        "MODELL"
 #define TR_FP                           "FP"
+#define TR_MIX                          "MIX"
 #define TR_EEPROMLOWMEM                 "EEPROM voll"
 #define TR_ALERT                        "WARNUNG"
 #define TR_PRESSANYKEYTOSKIP            "Taste dr\205cken"
@@ -367,7 +368,7 @@
 #define TR_MENUDIAG                     "SCHALT."
 #define TR_MENUANA                      "ANALOG TEST"
 #define TR_MENUCALIBRATION              "KALIBRIERUNG"
-#define TR_TRIMS2OFFSETS                "Trims => Ausgl."
+#define TR_TRIMS2OFFSETS                "\006Trims => Ausgl."
 #define TR_MENUMODELSEL                 "MODELLE"
 #define TR_MENUSETUP                    "KONF."
 #define TR_MENUFLIGHTPHASE              "FLUGPHASE"

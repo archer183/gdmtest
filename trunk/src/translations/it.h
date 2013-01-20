@@ -36,11 +36,11 @@
 
 #define LEN_RETA123      "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123       "RETA123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123       "RETA123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
 #else
 #define TR_RETA123       "RETA123"
 #endif
@@ -203,9 +203,9 @@
 #define LEN_VSRCRAW      "\004"
 #if defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa "
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb "
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -323,8 +323,8 @@
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
 #define TR_MENUTOSTART         CENTER"\006[Men\200] per Cal."
-#define TR_SETMIDPOINT         CENTER"SETTA CENTRO"
-#define TR_MOVESTICKSPOTS      CENTER"MUOVI STICK/POT"
+#define TR_SETMIDPOINT         CENTER"\011SETTA CENTRO"
+#define TR_MOVESTICKSPOTS      CENTER"\006MUOVI STICK/POT"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -349,6 +349,7 @@
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODELLO"
 #define TR_FP                  "FV"
+#define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM quasi piena!"
 #define TR_ALERT               "\016ALERT"
 #define TR_PRESSANYKEYTOSKIP   "\010Premi un tasto"
@@ -365,7 +366,7 @@
 #define TR_MENUDIAG            "DIAG"
 #define TR_MENUANA             "ANAS"
 #define TR_MENUCALIBRATION     "CALIBRAZIONE"
-#define TR_TRIMS2OFFSETS       "Trim  => Offset "
+#define TR_TRIMS2OFFSETS       "\006Trim  => Offset "
 #define TR_MENUMODELSEL        "MODELLI"
 #define TR_MENUSETUP           "SETUP"
 #define TR_MENUFLIGHTPHASE     "FASE DI VOLO"

@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -47,7 +48,7 @@ extern uint8_t hapticTick;
 #if defined(CPUARM)
 inline void _beep(uint8_t b)
 {
-  buzzer_sound(b);
+  buzzerSound(b);
 }
 #else
 inline void _beep(uint8_t b)
@@ -86,6 +87,9 @@ extern void beep(uint8_t val);
 
 #define IS_AUDIO_BUSY() (g_beepCnt || beepAgain || beepOn)
 #define AUDIO_RESET()
+
+#define PLAY_PHASE_OFF(phase)
+#define PLAY_PHASE_ON(phase)
 
 #if !defined(CPUARM)
 inline void AUDIO_HEARTBEAT()

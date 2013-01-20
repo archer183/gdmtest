@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -48,8 +49,8 @@
 #define MODELS_PATH         "/9XMODELS"
 #define LOGS_PATH           "/9XLOGS"   // no trailing slash = important
 #define SOUNDS_PATH         "/9XSOUNDS" // no trailing slash = important
-#define SYSTEM_SOUNDS_PATH  "/9XSOUNDS/SYSTEM" // no trailing slash = important
-#define BITMAPS_PATH        MODELS_PATH
+#define SYSTEM_SOUNDS_PATH  SOUNDS_PATH "/SYSTEM" // no trailing slash = important
+#define BITMAPS_PATH        "/9XBMP"
 #endif
 
 #define MODELS_EXT   ".bin"
@@ -74,21 +75,24 @@ inline const pm_char *SDCARD_ERROR(FRESULT result)
 
 #if defined(SIMU)
 #define sdMountPoll()
+#define sdPoll10ms()
 #else
 extern void sdMountPoll();
 #endif
 
-#if defined(CPUARM) && !(defined(SIMU))
+#if defined(CPUARM) && !defined(SIMU)
 extern "C" {
 extern uint32_t sd_card_ready();
-extern uint32_t sd_card_mounted();
+extern uint32_t sdMounted();
 }
 #else
-#define sd_card_ready() (true)
-#define sd_card_mounted() (true)
+#define sd_card_ready()   (true)
+#define sdMounted() (true)
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBACT)
+#define O9X_FOURCC 0x3478396F // o9x for ACT
+#elif defined(PCBX9D)
 #define O9X_FOURCC 0x3378396F // o9x for X9D
 #elif defined(PCBSKY9X)
 #define O9X_FOURCC 0x3278396F // o9x for sky9x

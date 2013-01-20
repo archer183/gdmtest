@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -43,7 +44,7 @@ void putEvent(uint8_t evt)
 uint8_t getEvent(bool trim)
 {
   uint8_t evt = s_evt;
-  int8_t k = (s_evt & EVT_KEY_MASK) - TRM_BASE;
+  int8_t k = EVT_KEY_MASK(s_evt) - TRM_BASE;
   bool trim_evt = (k>=0 && k<8);
 
   if (trim == trim_evt) {
@@ -136,13 +137,13 @@ void Key::input(bool val, EnumKeys enuk)
 
 void pauseEvents(uint8_t event)
 {
-  event = event & EVT_KEY_MASK;
+  event = EVT_KEY_MASK(event);
   if (event < (int)DIM(keys)) keys[event].pauseEvents();
 }
 
 void killEvents(uint8_t event)
 {
-  event = event & EVT_KEY_MASK;
+  event = EVT_KEY_MASK(event);
   if (event < (int)DIM(keys)) keys[event].killEvents();
 }
 

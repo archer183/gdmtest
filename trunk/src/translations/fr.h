@@ -37,11 +37,11 @@
 
 #define LEN_RETA123      "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123       "DPGA123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123       "DPGA123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
 #else
 #define TR_RETA123       "DPGA123"
 #endif
@@ -205,9 +205,9 @@
 #define LEN_VSRCRAW      "\004"
 #if defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa\0"
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa\0""REb\0""REc\0""REd\0"
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa\0""REb\0"
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -325,8 +325,8 @@
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
 #define TR_MENUTOSTART         CENTER"\006[MENU] POUR DEBUT"
-#define TR_SETMIDPOINT         CENTER"REGLER NEUTRES"
-#define TR_MOVESTICKSPOTS      CENTER"BOUGER STICKS/POTS"
+#define TR_SETMIDPOINT         CENTER"\010REGLER NEUTRES"
+#define TR_MOVESTICKSPOTS      CENTER"\004BOUGER STICKS/POTS"
 #define TR_RXBATT              "Batt.RX"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -351,6 +351,7 @@
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODELE"
 #define TR_FP                  "PV"
+#define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM pleine!"
 #define TR_ALERT               "\014ALERTE"
 #define TR_PRESSANYKEYTOSKIP   "Touche pour ignorer"
@@ -367,7 +368,7 @@
 #define TR_MENUDIAG            "DIAG"
 #define TR_MENUANA             "ANAS"
 #define TR_MENUCALIBRATION     "CALIBRATION"
-#define TR_TRIMS2OFFSETS       "Trims => Offsets"
+#define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
 #define TR_MENUMODELSEL        "MODELES"
 #define TR_MENUSETUP           "CONF."
 #define TR_MENUFLIGHTPHASE     "PHASE DE VOL"

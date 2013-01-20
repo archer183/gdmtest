@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -49,9 +50,7 @@ enum EnumTabDiag {
 };
 
 void menuGeneralSetup(uint8_t event);
-#if defined(SDCARD)
 void menuGeneralSdManager(uint8_t event);
-#endif
 void menuGeneralTrainer(uint8_t event);
 void menuGeneralVersion(uint8_t event);
 void menuGeneralDiagKeys(uint8_t event);
@@ -70,7 +69,15 @@ const MenuFuncP_PROGMEM menuTabDiag[] PROGMEM = {
   menuGeneralCalib
 };
 
-#define RADIO_SETUP_2ND_COLUMN  (DISPLAY_W-5*FW-MENUS_SCROLLBAR_WIDTH)
+#if LCD_W >= 212
+#define RADIO_SETUP_2ND_COLUMN  (LCD_W-10*FW-MENUS_SCROLLBAR_WIDTH)
+#define RADIO_SETUP_DATE_COLUMN RADIO_SETUP_2ND_COLUMN + 4*FWNUM
+#define RADIO_SETUP_TIME_COLUMN RADIO_SETUP_2ND_COLUMN + 2*FWNUM
+#else
+#define RADIO_SETUP_2ND_COLUMN  (LCD_W-5*FW-MENUS_SCROLLBAR_WIDTH)
+#define RADIO_SETUP_TIME_COLUMN (FW*15+5)
+#define RADIO_SETUP_DATE_COLUMN (FW*15+5)
+#endif
 
 #if defined(GRAPHICS)
 void displaySlider(uint8_t x, uint8_t y, uint8_t value, uint8_t attr)
@@ -102,7 +109,7 @@ enum menuGeneralSetupItems {
   IF_HAPTIC(ITEM_SETUP_HAPTIC_LENGTH)
   IF_HAPTIC(ITEM_SETUP_HAPTIC_STRENGTH)
   IF_PCBSKY9X(ITEM_SETUP_BRIGHTNESS)
-  ITEM_SETUP_CONTRAST,
+  IF_9X(ITEM_SETUP_CONTRAST)
   ITEM_SETUP_ALARMS_LABEL,
   ITEM_SETUP_BATTERY_WARNING,
   IF_PCBSKY9X(ITEM_SETUP_CAPACITY_WARNING)
@@ -133,18 +140,21 @@ enum menuGeneralSetupItems {
 void menuGeneralSetup(uint8_t event)
 {
 #if defined(RTCLOCK)
-  static struct gtm t;
-  if ((m_posVert!=ITEM_SETUP_DATE+1 && m_posVert!=ITEM_SETUP_TIME+1) || s_editMode<=0) {
-    gettime(&t);
+  struct gtm t;
+  gettime(&t);
+
+  if ((m_posVert==ITEM_SETUP_DATE+1 || m_posVert==ITEM_SETUP_TIME+1) && s_editMode>0 && event == EVT_KEY_FIRST(KEY_ENTER)) {
+    // set the date and time into RTC chip
+    rtcSetTime(&t);
   }
 #endif
 
-  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) (uint8_t)-1, 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC((uint8_t)-1) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) 0, (uint8_t)-1, 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, (uint8_t)-1, 0, 0, (uint8_t)-1, 0, 0, 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, (uint8_t)-1, IF_PCBX9D(0) 1/*to force edit mode*/});
+  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) LABEL(SOUND), 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, LABEL(TIMER_EVENTS), 0, 0, LABEL(BACKLIGHT), 0, 0, 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, LABEL(TX_MODE), IF_PCBX9D(0) 1/*to force edit mode*/});
 
   uint8_t sub = m_posVert - 1;
 
-  for (uint8_t i=0; i<7; i++) {
-    uint8_t y = 1*FH + i*FH;
+  for (uint8_t i=0; i<LCD_LINES-1; i++) {
+    uint8_t y = 1 + 1*FH + i*FH;
     uint8_t k = i+s_pgOfs;
     uint8_t blink = ((s_editMode>0) ? BLINK|INVERS : INVERS);
     uint8_t attr = (sub == k ? blink : 0);
@@ -153,62 +163,56 @@ void menuGeneralSetup(uint8_t event)
 #if defined(RTCLOCK)
       case ITEM_SETUP_DATE:
         lcd_putsLeft(y, STR_DATE);
-        lcd_putc(FW*15+5, y, '-'); lcd_putc(FW*18+3, y, '-');
+        lcd_putc(RADIO_SETUP_DATE_COLUMN, y, '-'); lcd_putc(RADIO_SETUP_DATE_COLUMN+3*FW-1, y, '-');
         for (uint8_t j=0; j<3; j++) {
           uint8_t rowattr = (m_posHorz==j) ? attr : 0;
           switch (j) {
             case 0:
-              lcd_outdezAtt(FW*15+5, y, t.tm_year+1900, rowattr);
+              lcd_outdezAtt(RADIO_SETUP_DATE_COLUMN, y, t.tm_year+1900, rowattr);
               if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_year = checkIncDec(event, t.tm_year, 112, 200, 0);
               break;
             case 1:
-              lcd_outdezNAtt(FW*18+3, y, t.tm_mon+1, rowattr|LEADING0, 2);
+              lcd_outdezNAtt(RADIO_SETUP_DATE_COLUMN+3*FW-1, y, t.tm_mon+1, rowattr|LEADING0, 2);
               if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_mon = checkIncDec(event, t.tm_mon, 0, 11, 0);
               break;
             case 2:
             {
               int16_t year = 1900 + t.tm_year;
-              int8_t dlim = (((((year%4==0) && (year %100!=0)) || (year%400==0)) && (t.tm_mon==1)) ? 1 : 0);
+              int8_t dlim = (((((year%4==0) && (year%100!=0)) || (year%400==0)) && (t.tm_mon==1)) ? 1 : 0);
               int8_t dmon[] = {31,28,31,30,31,30,31,31,30,31,30,31}; // TODO in flash
               dlim += dmon[t.tm_mon];
-              lcd_outdezNAtt(FW*21+2, y, t.tm_mday, rowattr|LEADING0, 2);
+              lcd_outdezNAtt(RADIO_SETUP_DATE_COLUMN+6*FW-2, y, t.tm_mday, rowattr|LEADING0, 2);
               if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_mday = checkIncDec(event, t.tm_mday, 1, dlim, 0);
               break;
             }
           }
         }
-
-        if (attr && s_editMode<=0 && event == EVT_KEY_FIRST(KEY_MENU)) {
-          // set the date and time into RTC chip
-          rtc_settime(&t);
-        }
+        if (attr && checkIncDec_Ret)
+          g_rtcTime = gmktime(&t); // update local timestamp and get wday calculated
         break;
 
       case ITEM_SETUP_TIME:
         lcd_putsLeft(y, STR_TIME);
-        lcd_putc(FW*15+5, y, ':'); lcd_putc(FW*18+3, y, ':');
+        lcd_putc(RADIO_SETUP_TIME_COLUMN-1, y, ':'); lcd_putc(RADIO_SETUP_TIME_COLUMN+3*FW-4, y, ':');
         for (uint8_t j=0; j<3; j++) {
           uint8_t rowattr = (m_posHorz==j) ? attr : 0;
           switch (j) {
             case 0:
-              lcd_outdezNAtt(FW*15+5, y, t.tm_hour, rowattr|LEADING0, 2);
-              if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_hour = checkIncDec( event, t.tm_hour, 0, 23, 0);
+              lcd_outdezNAtt(RADIO_SETUP_TIME_COLUMN, y, t.tm_hour, rowattr|LEADING0, 2);
+              if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_hour = checkIncDec(event, t.tm_hour, 0, 23, 0);
               break;
             case 1:
-              lcd_outdezNAtt(FW*18+3, y, t.tm_min, rowattr|LEADING0, 2);
-              if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_min = checkIncDec( event, t.tm_min, 0, 59, 0);
+              lcd_outdezNAtt(RADIO_SETUP_TIME_COLUMN+3*FWNUM, y, t.tm_min, rowattr|LEADING0, 2);
+              if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_min = checkIncDec(event, t.tm_min, 0, 59, 0);
               break;
             case 2:
-              lcd_outdezNAtt(FW*21+2, y, t.tm_sec, rowattr|LEADING0, 2);
-              if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_sec = checkIncDec( event, t.tm_sec, 0, 59, 0);
+              lcd_outdezNAtt(RADIO_SETUP_TIME_COLUMN+6*FWNUM, y, t.tm_sec, rowattr|LEADING0, 2);
+              if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_sec = checkIncDec(event, t.tm_sec, 0, 59, 0);
               break;
           }
         }
-
-        if (attr && s_editMode<=0 && event == EVT_KEY_FIRST(KEY_MENU)) {
-          // set the date and time into RTC chip
-          rtc_settime(&t);
-        }
+        if (attr && checkIncDec_Ret)
+          g_rtcTime = gmktime(&t); // update local timestamp and get wday calculated
         break;
 #endif
 
@@ -247,8 +251,7 @@ void menuGeneralSetup(uint8_t event)
           CHECK_INCDEC_GENVAR(event, g_eeGeneral.speakerVolume, 0, NUM_VOL_LEVELS-1);
         }
 #else
-        uint8_t b ;
-        b = g_eeGeneral.speakerVolume+7;
+        uint8_t b = g_eeGeneral.speakerVolume+7;
         lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, b, attr|LEFT);
         if (attr) {
           CHECK_INCDEC_GENVAR(event, b, 0, 7);
@@ -289,14 +292,14 @@ void menuGeneralSetup(uint8_t event)
         lcd_putsLeft(y, STR_BRIGHTNESS);
         lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, 100-g_eeGeneral.backlightBright, attr|LEFT) ;
         if(attr) {
-          uint8_t b ;
-          b = 100 - g_eeGeneral.backlightBright;
+          uint8_t b = 100 - g_eeGeneral.backlightBright;
           CHECK_INCDEC_GENVAR(event, b, 0, 100);
           g_eeGeneral.backlightBright = 100 - b;
         }
         break;
 #endif
 
+#if !defined(PCBX9D) && !defined(PCBACT)
       case ITEM_SETUP_CONTRAST:
         lcd_putsLeft( y, STR_CONTRAST);
         lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN,y,g_eeGeneral.contrast, attr|LEFT);
@@ -305,6 +308,7 @@ void menuGeneralSetup(uint8_t event)
           lcdSetContrast();
         }
         break;
+#endif
 
       case ITEM_SETUP_ALARMS_LABEL:
         lcd_putsLeft(y, STR_ALARMS_LABEL);
@@ -422,7 +426,7 @@ void menuGeneralSetup(uint8_t event)
 #endif
 
       case ITEM_SETUP_RX_CHANNEL_ORD:
-        lcd_putsLeft( y,STR_RXCHANNELORD);//   RAET->AETR
+        lcd_putsLeft(y, STR_RXCHANNELORD); // RAET->AETR
         for (uint8_t i=1; i<=4; i++)
           putsChnLetter(RADIO_SETUP_2ND_COLUMN - FW + i*FW, y, channel_order(i), attr);
         if (attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.templateSetup, 0, 23);
@@ -518,7 +522,7 @@ void menuGeneralSdManager(uint8_t event)
       // no break
 #endif
     case EVT_KEY_FIRST(KEY_RIGHT):
-    case EVT_KEY_FIRST(KEY_MENU):
+    case EVT_KEY_FIRST(KEY_ENTER):
     {
       if (m_posVert > 0) {
         uint8_t index = m_posVert-1-s_pgOfs;
@@ -538,7 +542,7 @@ void menuGeneralSdManager(uint8_t event)
         break;
       // no break
 #endif
-    case EVT_KEY_LONG(KEY_MENU):
+    case EVT_KEY_LONG(KEY_ENTER):
       killEvents(event);
       if (m_posVert == 0) {
         s_menu[s_menu_count++] = STR_SD_INFO;
@@ -602,7 +606,7 @@ void menuGeneralSdManager(uint8_t event)
         bool isfile = !(fno.fattrib & AM_DIR);
 
         if (s_pgOfs == 0) {
-          for (uint8_t i=0; i<7; i++) {
+          for (uint8_t i=0; i<LCD_LINES-1; i++) {
             char *line = reusableBuffer.sd.lines[i];
             if (line[0] == '\0' || isFilenameLower(isfile, fn, line)) {
               if (i < 6) memmove(reusableBuffer.sd.lines[i+1], line, sizeof(reusableBuffer.sd.lines[i]) * (6-i));
@@ -645,8 +649,8 @@ void menuGeneralSdManager(uint8_t event)
 
   reusableBuffer.sd.offset = s_pgOfs;
 
-  for (uint8_t i=0; i<7; i++) {
-    uint8_t y = FH+i*FH;
+  for (uint8_t i=0; i<LCD_LINES-1; i++) {
+    uint8_t y = 1 + FH + i*FH;
     uint8_t x = 0;
     uint8_t attr = (m_posVert-1-s_pgOfs == i ? BSS|INVERS : BSS);
     if (reusableBuffer.sd.lines[i][0]) {
@@ -666,8 +670,10 @@ void menuGeneralSdManager(uint8_t event)
       else if (result == STR_SD_FORMAT) {
         displayPopup(STR_FORMATTING);
         closeLogs();
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
         Card_state = SD_ST_DATA;
+#endif
+#if defined(CPUARM)
         audioQueue.stopSD();
 #endif
         if (f_mkfs(0, 1, 0) == FR_OK) {
@@ -722,9 +728,9 @@ void menuGeneralTrainer(uint8_t event)
     uint8_t attr;
     uint8_t blink = ((s_editMode>0) ? BLINK|INVERS : INVERS);
 
-    lcd_puts(3*FW, 1*FH, STR_MODESRC);
+    lcd_puts(3*FW, 1 + 1*FH, STR_MODESRC);
 
-    y = 2*FH;
+    y = 1 + 2*FH;
 
     for (uint8_t i=1; i<=NUM_STICKS; i++) {
       uint8_t chan = channel_order(i);
@@ -757,18 +763,18 @@ void menuGeneralTrainer(uint8_t event)
     }
 
     attr = (m_posVert==5) ? blink : 0;
-    lcd_putsLeft(6*FH, STR_MULTIPLIER);
-    lcd_outdezAtt(LEN_MULTIPLIER*FW+3*FW, 6*FH, g_eeGeneral.PPM_Multiplier+10, attr|PREC1);
+    lcd_putsLeft(6*FH+1, STR_MULTIPLIER);
+    lcd_outdezAtt(LEN_MULTIPLIER*FW+3*FW, 6*FH+1, g_eeGeneral.PPM_Multiplier+10, attr|PREC1);
     if (attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.PPM_Multiplier, -10, 40);
 
     attr = (m_posVert==6) ? blink : 0;
-    lcd_putsAtt(0*FW, 7*FH, STR_CAL, attr);
+    lcd_putsAtt(0*FW, 1+7*FH, STR_CAL, attr);
     for (uint8_t i=0; i<4; i++) {
       uint8_t x = (i*8+16)*FW/2;
-#if defined (DECIMALS_DISPLAYED)
-      lcd_outdezAtt(x, 7*FH, (g_ppmIns[i]-g_eeGeneral.trainer.calib[i])*2, PREC1);
+#if defined (PPM_UNIT_PERCENT_PREC1)
+      lcd_outdezAtt(x, 1+7*FH, (g_ppmIns[i]-g_eeGeneral.trainer.calib[i])*2, PREC1);
 #else
-      lcd_outdezAtt(x, 7*FH, (g_ppmIns[i]-g_eeGeneral.trainer.calib[i])/5, 0);
+      lcd_outdezAtt(x, 1+7*FH, (g_ppmIns[i]-g_eeGeneral.trainer.calib[i])/5, 0);
 #endif
     }
 
@@ -804,7 +810,7 @@ void menuGeneralVersion(uint8_t event)
 
 void displayKeyState(uint8_t x, uint8_t y, EnumKeys key)
 {
-  uint8_t t = keyState(key);
+  uint8_t t = switchState(key);
   lcd_putcAtt(x, y, t+'0', t ? INVERS : 0);
 }
 
@@ -839,7 +845,7 @@ void menuGeneralDiagKeys(uint8_t event)
   for(uint8_t i=0; i<ROTARY_ENCODERS; i++) {
     uint8_t y = i*FH + FH;
     lcd_putsiAtt(14*FW, y, STR_VRENCODERS, i, 0);
-    lcd_outdezNAtt(18*FW, y, g_rotenc[i], LEFT|(keyState((EnumKeys)(BTN_REa+i)) ? INVERS : 0));
+    lcd_outdezNAtt(18*FW, y, g_rotenc[i], LEFT|(switchState((EnumKeys)(BTN_REa+i)) ? INVERS : 0));
   }
 #endif
 
@@ -857,7 +863,7 @@ void menuGeneralDiagAna(uint8_t event)
 
   SIMPLE_MENU(STR_MENUANA, menuTabDiag, e_Ana, ANAS_ITEMS_COUNT);
 
-  for (uint8_t i=0; i<7; i++) {
+  for (uint8_t i=0; i<8; i++) {
     uint8_t y = 1+FH+(i/2)*FH;
     uint8_t x = i&1 ? 64+5 : 0;
     putsStrIdx(x, y, PSTR("A"), i+1);
@@ -872,13 +878,13 @@ void menuGeneralDiagAna(uint8_t event)
   lcd_outdezAtt(64+5+6*FW-3, 1+4*FH, BandGap, 0);
 #endif
 
-#if defined(CPUARM)
-  lcd_putsLeft(5*FH, STR_BATT_CALIB);
+#if defined(PCBSKY9X)
+  lcd_putsLeft(5*FH+1, STR_BATT_CALIB);
   static uint32_t adcBatt;
   adcBatt = ((adcBatt * 7) + anaIn(7)) / 8; // running average, sourced directly (to avoid unending debate :P)
   uint32_t batCalV = ( adcBatt + adcBatt*(g_eeGeneral.vBatCalib)/128 ) * 4191 ;
   batCalV /= 55296  ;
-  putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 5*FH, batCalV, (m_posVert==1 ? INVERS : 0));
+  putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 5*FH+1, batCalV, (m_posVert==1 ? INVERS : 0));
 #elif defined(PCBGRUVIN9X)
   lcd_putsLeft(6*FH-2, STR_BATT_CALIB);
   // Gruvin wants 2 decimal places and instant update of volts calib field when button pressed
@@ -886,6 +892,13 @@ void menuGeneralDiagAna(uint8_t event)
   adcBatt = ((adcBatt * 7) + anaIn(7)) / 8; // running average, sourced directly (to avoid unending debate :P)
   uint32_t batCalV = ((uint32_t)adcBatt*1390 + (10*(int32_t)adcBatt*g_eeGeneral.vBatCalib)/8) / BandGap;
   lcd_outdezNAtt(LEN_CALIB_FIELDS*FW+4*FW, 6*FH-2, batCalV, PREC2|(m_posVert==1 ? INVERS : 0));
+#elif defined(PCBX9D)
+  lcd_putsLeft(5*FH+1, STR_BATT_CALIB);
+  static uint32_t adcBatt;
+  adcBatt = ((adcBatt * 7) + anaIn(8)) / 8; // running average, sourced directly (to avoid unending debate :P)
+  uint32_t batCalV = ( adcBatt + adcBatt*(g_eeGeneral.vBatCalib)/128 ) * 15 ;
+  batCalV /= 256  ;
+  putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 5*FH+1, batCalV, (m_posVert==1 ? INVERS : 0));
 #else
   lcd_putsLeft(6*FH-2, STR_BATT_CALIB);
   putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 6*FH-2, g_vbat100mV, (m_posVert==1 ? INVERS : 0));
@@ -893,14 +906,14 @@ void menuGeneralDiagAna(uint8_t event)
   if (m_posVert==1) CHECK_INCDEC_GENVAR(event, g_eeGeneral.vBatCalib, -127, 127);
 
 #if defined(PCBSKY9X) && !defined(REVA)
-  lcd_putsLeft(6*FH, STR_CURRENT_CALIB);
-  putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 6*FH, getCurrent(), UNIT_MILLIAMPS, (m_posVert==2 ? INVERS : 0)) ;
+  lcd_putsLeft(6*FH+1, STR_CURRENT_CALIB);
+  putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 6*FH+1, getCurrent(), UNIT_MILLIAMPS, (m_posVert==2 ? INVERS : 0)) ;
   if (m_posVert==2) CHECK_INCDEC_GENVAR(event, g_eeGeneral.currentCalib, -49, 49);
 #endif
 
 #if defined(CPUARM)
-  lcd_putsLeft(7*FH, STR_TEMP_CALIB);
-  putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 7*FH, getTemperature(), UNIT_DEGREES, (m_posVert==3 ? INVERS : 0)) ;
+  lcd_putsLeft(7*FH+1, STR_TEMP_CALIB);
+  putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 7*FH+1, getTemperature(), UNIT_DEGREES, (m_posVert==3 ? INVERS : 0)) ;
   if (m_posVert==3) CHECK_INCDEC_GENVAR(event, g_eeGeneral.temperatureCalib, -100, 100);
 #endif
 }
@@ -908,6 +921,11 @@ void menuGeneralDiagAna(uint8_t event)
 #if defined(PCBSKY9X)
 enum menuGeneralHwItems {
   ITEM_SETUP_HW_OPTREX_DISPLAY,
+  ITEM_SETUP_HW_STICKS_GAINS_LABELS,
+  ITEM_SETUP_HW_STICK_LV_GAIN,
+  ITEM_SETUP_HW_STICK_LH_GAIN,
+  ITEM_SETUP_HW_STICK_RV_GAIN,
+  ITEM_SETUP_HW_STICK_RH_GAIN,
   IF_BLUETOOTH(ITEM_SETUP_HW_BT_BAUDRATE)
   ITEM_SETUP_HW_MAX
 };
@@ -915,12 +933,12 @@ enum menuGeneralHwItems {
 #define GENERAL_HW_PARAM_OFS (2+(15*FW))
 void menuGeneralHardware(uint8_t event)
 {
-  MENU(STR_HARDWARE, menuTabDiag, e_Hardware, ITEM_SETUP_HW_MAX+1, {0, 0, IF_BLUETOOTH(0)});
+  MENU(STR_HARDWARE, menuTabDiag, e_Hardware, ITEM_SETUP_HW_MAX+1, {0, 0, (uint8_t)-1, 0, 0, 0, 0, IF_BLUETOOTH(0)});
 
   uint8_t sub = m_posVert - 1;
 
-  for (uint8_t i=0; i<7; i++) {
-    uint8_t y = 1*FH + i*FH;
+  for (uint8_t i=0; i<LCD_LINES-1; i++) {
+    uint8_t y = 1 + 1*FH + i*FH;
     uint8_t k = i+s_pgOfs;
     uint8_t blink = ((s_editMode>0) ? BLINK|INVERS : INVERS);
     uint8_t attr = (sub == k ? blink : 0);
@@ -929,6 +947,30 @@ void menuGeneralHardware(uint8_t event)
       case ITEM_SETUP_HW_OPTREX_DISPLAY:
         g_eeGeneral.optrexDisplay = selectMenuItem(GENERAL_HW_PARAM_OFS, y, STR_LCD, STR_VLCD, g_eeGeneral.optrexDisplay, 0, 1, attr, event);
         break;
+
+      case ITEM_SETUP_HW_STICKS_GAINS_LABELS:
+        lcd_putsLeft(y, PSTR("Sticks"));
+        break;
+
+      case ITEM_SETUP_HW_STICK_LV_GAIN:
+      case ITEM_SETUP_HW_STICK_LH_GAIN:
+      case ITEM_SETUP_HW_STICK_RV_GAIN:
+      case ITEM_SETUP_HW_STICK_RH_GAIN:
+      {
+        lcd_putsiAtt(INDENT_WIDTH, y, PSTR("\002LVLHRVRH"), k-ITEM_SETUP_HW_STICK_LV_GAIN, 0);
+        lcd_puts(INDENT_WIDTH+3*FW, y, PSTR("Gain"));
+        uint8_t mask = (1<<(k-ITEM_SETUP_HW_STICK_LV_GAIN));
+        uint8_t val = (g_eeGeneral.sticksGain & mask ? 1 : 0);
+        lcd_putcAtt(15*FW, y, val ? '2' : '1', attr);
+        if (attr) {
+          CHECK_INCDEC_GENVAR(event, val, 0, 1);
+          if (checkIncDec_Ret) {
+            g_eeGeneral.sticksGain ^= mask;
+            setSticksGain(g_eeGeneral.sticksGain);
+          }
+        }
+        break;
+      }
 
 #if defined(BLUETOOTH)
       case ITEM_SETUP_HW_BT_BAUDRATE:
@@ -954,6 +996,9 @@ void menuGeneralCalib(uint8_t event)
     int16_t vt = anaIn(i);
     reusableBuffer.calib.loVals[i] = min(vt, reusableBuffer.calib.loVals[i]);
     reusableBuffer.calib.hiVals[i] = max(vt, reusableBuffer.calib.hiVals[i]);
+    if (i >= NUM_STICKS) {
+      reusableBuffer.calib.midVals[i] = (reusableBuffer.calib.hiVals[i] + reusableBuffer.calib.loVals[i]) / 2;
+    }
   }
 
   s_noScroll = idxState; // make sure we don't scroll while calibrating
@@ -982,7 +1027,7 @@ void menuGeneralCalib(uint8_t event)
 
     case 1:
       // SET MIDPOINT
-      lcd_putsAtt(5*FW, 2*FH, STR_SETMIDPOINT, s_noScroll ? INVERS : 0);
+      lcd_putsAtt(0*FW, 2*FH, STR_SETMIDPOINT, s_noScroll ? INVERS : 0);
       lcd_putsLeft(3*FH, STR_MENUWHENDONE);
 
       for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
@@ -994,12 +1039,12 @@ void menuGeneralCalib(uint8_t event)
 
     case 2:
       // MOVE STICKS/POTS
-      lcd_putsAtt(3*FW, 2*FH, STR_MOVESTICKSPOTS, s_noScroll ? INVERS : 0);
+      lcd_putsAtt(0*FW, 2*FH, STR_MOVESTICKSPOTS, s_noScroll ? INVERS : 0);
       lcd_putsLeft(3*FH, STR_MENUWHENDONE);
 
       for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
         if (abs(reusableBuffer.calib.loVals[i]-reusableBuffer.calib.hiVals[i])>50) {
-          g_eeGeneral.calibMid[i] = reusableBuffer.calib.midVals[i];
+          if (i < NUM_STICKS) g_eeGeneral.calibMid[i] = reusableBuffer.calib.midVals[i];
           int16_t v = reusableBuffer.calib.midVals[i] - reusableBuffer.calib.loVals[i];
           g_eeGeneral.calibSpanNeg[i] = v - v/64;
           v = reusableBuffer.calib.hiVals[i] - reusableBuffer.calib.midVals[i];

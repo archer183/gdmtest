@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -205,10 +206,10 @@ void menuTelemetryJeti(uint8_t event)
   if (JetiBufferReady)
   {
     JETI_EnableTXD();
-    if (keyState((EnumKeys)(KEY_UP))) jeti_keys &= JETI_KEY_UP;
-    if (keyState((EnumKeys)(KEY_DOWN))) jeti_keys &= JETI_KEY_DOWN;
-    if (keyState((EnumKeys)(KEY_LEFT))) jeti_keys &= JETI_KEY_LEFT;
-    if (keyState((EnumKeys)(KEY_RIGHT))) jeti_keys &= JETI_KEY_RIGHT;
+    if (switchState((EnumKeys)(KEY_UP))) jeti_keys &= JETI_KEY_UP;
+    if (switchState((EnumKeys)(KEY_DOWN))) jeti_keys &= JETI_KEY_DOWN;
+    if (switchState((EnumKeys)(KEY_LEFT))) jeti_keys &= JETI_KEY_LEFT;
+    if (switchState((EnumKeys)(KEY_RIGHT))) jeti_keys &= JETI_KEY_RIGHT;
 
     JetiBufferReady = 0;    // invalidate buffer
 

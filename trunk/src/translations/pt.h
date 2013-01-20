@@ -37,11 +37,11 @@
 
 #define LEN_RETA123      "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123       "LPMA123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123       "LPMA123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
 #else
 #define TR_RETA123       "LPMA123"
 #endif
@@ -205,9 +205,9 @@
 #define LEN_VSRCRAW      "\004"
 #if defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa "
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb "
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -325,8 +325,8 @@
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
 #define TR_MENUTOSTART         CENTER"\006[MENU] INICIAR"
-#define TR_SETMIDPOINT         CENTER"CENTRAR STICK/POT"
-#define TR_MOVESTICKSPOTS      CENTER"MOVER STICKS/POTs"
+#define TR_SETMIDPOINT         CENTER"\005CENTRAR STICK/POT"
+#define TR_MOVESTICKSPOTS      CENTER"\005MOVER STICKS/POTs"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -351,6 +351,7 @@
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODEL"
 #define TR_FP                  "FP"
+#define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM BX Memoria"
 #define TR_ALERT               "\016ALERT"
 #define TR_PRESSANYKEYTOSKIP   "Pulsar Tecla p/ sair"
@@ -367,7 +368,7 @@
 #define TR_MENUDIAG            "DIAGNOST"
 #define TR_MENUANA             "ANALOGICOS"
 #define TR_MENUCALIBRATION     "CALIBRAGEM"
-#define TR_TRIMS2OFFSETS       "Trims => Offsets"
+#define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
 #define TR_MENUMODELSEL        "MODELOS"
 #define TR_MENUSETUP           "SETUP"
 #define TR_MENUFLIGHTPHASE     "MODO DE VOO"

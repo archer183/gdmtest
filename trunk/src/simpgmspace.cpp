@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -43,18 +44,29 @@ uint16_t dummyport16;
 const char *eepromFile = NULL;
 FILE *fp = NULL;
 
-#if defined(CPUARM)
+#if defined(PCBX9D) || defined(PCBACT)
+uint32_t Peri1_frequency ;
+uint32_t Peri2_frequency ;
+GPIO_TypeDef gpioa;
+GPIO_TypeDef gpiob;
+GPIO_TypeDef gpioc;
+GPIO_TypeDef gpiod;
+GPIO_TypeDef gpioe;
+#elif defined(PCBSKY9X)
 Pio Pioa, Piob, Pioc;
 Pwm pwm;
 Twi Twio;
 Usart Usart0;
 Dacc dacc;
+Adc Adc0;
+#endif
+
+#if defined(PCBSKY9X)
 uint32_t eeprom_pointer;
 char* eeprom_buffer_data;
 volatile int32_t eeprom_buffer_size;
 bool eeprom_read_operation;
 #define EESIZE (128*4096)
-void configure_pins( uint32_t pins, uint16_t config ) { }
 #else
 extern uint16_t eeprom_pointer;
 extern const char* eeprom_buffer_data;
@@ -63,111 +75,144 @@ extern const char* eeprom_buffer_data;
 uint8_t eeprom[EESIZE];
 sem_t *eeprom_write_sem;
 
+
 #if defined(CPUARM)
-#define SWITCH_CASE(swtch, pin, bit) \
+#define SWITCH_CASE(swtch, pin, mask) \
     case -DSW(swtch): \
-      pin &= ~(1<<bit); \
+      pin &= ~mask; \
       break; \
     case DSW(swtch): \
-      pin |= (1<<bit); \
+      pin |= mask; \
+      break;
+#define KEY_CASE(key, pin, mask) \
+    case key: \
+      if (state) pin &= ~mask; else pin |= mask;\
       break;
 #else
-#define SWITCH_CASE(swtch, pin, bit) \
+#define SWITCH_CASE(swtch, pin, mask) \
     case DSW(swtch): \
-      pin &= ~(1<<bit); \
+      pin &= ~mask; \
       break; \
     case -DSW(swtch): \
-      pin |= (1<<bit); \
+      pin |= mask; \
+      break;
+#define KEY_CASE(key, pin, mask) \
+    case key: \
+      if (state) pin |= mask; else pin &= ~mask;\
       break;
 #endif
 
-void setSwitch(int8_t swtch)
+void simuSetKey(uint8_t key, bool state)
+{
+  switch (key) {
+    KEY_CASE(KEY_MENU, GPIO_BUTTON_MENU, PIN_BUTTON_MENU)
+    KEY_CASE(KEY_EXIT, GPIO_BUTTON_EXIT, PIN_BUTTON_EXIT)
+#if defined(PCBACT)
+    KEY_CASE(KEY_CLR, GPIO_BUTTON_CLR, PIN_BUTTON_CLR)
+    KEY_CASE(KEY_PAGE, GPIO_BUTTON_PAGE, PIN_BUTTON_PAGE)
+    KEY_CASE(BTN_REa, GPIO_BUTTON_ENTER, PIN_BUTTON_ENTER)
+#elif defined(PCBX9D)
+    KEY_CASE(KEY_ENTER, GPIO_BUTTON_ENTER, PIN_BUTTON_ENTER)
+    KEY_CASE(KEY_PAGE, GPIO_BUTTON_PAGE, PIN_BUTTON_PAGE)
+    KEY_CASE(KEY_MINUS, GPIO_BUTTON_MINUS, PIN_BUTTON_MINUS)
+    KEY_CASE(KEY_PLUS, GPIO_BUTTON_PLUS, PIN_BUTTON_PLUS)
+#else
+    KEY_CASE(KEY_RIGHT, GPIO_BUTTON_RIGHT, PIN_BUTTON_RIGHT)
+    KEY_CASE(KEY_LEFT, GPIO_BUTTON_LEFT, PIN_BUTTON_LEFT)
+    KEY_CASE(KEY_UP, GPIO_BUTTON_UP, PIN_BUTTON_UP)
+    KEY_CASE(KEY_DOWN, GPIO_BUTTON_DOWN, PIN_BUTTON_DOWN)
+#endif
+  }
+}
+
+void simuSetSwitch(int8_t swtch)
 {
   switch (swtch) {
-#if defined(PCBX9D)
+#if defined(PCBACT)
+#elif defined(PCBX9D)
     case DSW(SW_SA0):
-      PIOC->PIO_PDSR &= ~(1<<31);
+      GPIOE->IDR |= PIN_SW_A_L;
+      GPIOB->IDR &= ~PIN_SW_A_H;
+      break;
+    case DSW(SW_SA1):
+      GPIOB->IDR |= PIN_SW_A_H;
+      GPIOE->IDR |= PIN_SW_A_L;
       break;
     case DSW(SW_SA2):
-      PIOC->PIO_PDSR |= (1<<31);
+      GPIOE->IDR &= ~PIN_SW_A_L;
+      GPIOB->IDR |= PIN_SW_A_H;
       break;
     case DSW(SW_SB0):
-      PIOC->PIO_PDSR &= ~(1<<26);
-      PIOC->PIO_PDSR &= ~(1<<27);
+      GPIOB->IDR |= PIN_SW_B_L;
+      GPIOB->IDR &= ~PIN_SW_B_H;
       break;
     case DSW(SW_SB1):
-      PIOC->PIO_PDSR |= (1<<27);
-      PIOC->PIO_PDSR &= ~(1<<26);
+      GPIOB->IDR |= PIN_SW_B_H;
+      GPIOB->IDR |= PIN_SW_B_L;
       break;
     case DSW(SW_SB2):
-      PIOC->PIO_PDSR |= (1<<26);
-      PIOC->PIO_PDSR &= ~(1<<27);
+      GPIOB->IDR &= ~PIN_SW_B_L;
+      GPIOB->IDR |= PIN_SW_B_H;
       break;
     case DSW(SW_SC0):
-      PIOC->PIO_PDSR &= ~(1<<22);
-      PIOC->PIO_PDSR &= ~(1<<23);
+      GPIOE->IDR |= PIN_SW_C_L;
+      GPIOB->IDR &= ~PIN_SW_C_H;
       break;
     case DSW(SW_SC1):
-      PIOC->PIO_PDSR |= (1<<23);
-      PIOC->PIO_PDSR &= ~(1<<22);
+      GPIOB->IDR |= PIN_SW_C_H;
+      GPIOE->IDR |= PIN_SW_C_L;
       break;
     case DSW(SW_SC2):
-      PIOC->PIO_PDSR |= (1<<22);
-      PIOC->PIO_PDSR &= ~(1<<23);
+      GPIOE->IDR &= ~PIN_SW_C_L;
+      GPIOB->IDR |= PIN_SW_C_H;
       break;
     case DSW(SW_SD0):
-      PIOC->PIO_PDSR &= ~(1<<20);
-      PIOC->PIO_PDSR &= ~(1<<21);
+      GPIOE->IDR |= PIN_SW_D_L;
+      GPIOE->IDR &= ~PIN_SW_D_H;
       break;
     case DSW(SW_SD1):
-      PIOC->PIO_PDSR |= (1<<21);
-      PIOC->PIO_PDSR &= ~(1<<20);
+      GPIOE->IDR |= PIN_SW_D_H;
+      GPIOE->IDR |= PIN_SW_D_L;
       break;
     case DSW(SW_SD2):
-      PIOC->PIO_PDSR |= (1<<20);
-      PIOC->PIO_PDSR &= ~(1<<21);
+      GPIOE->IDR &= ~PIN_SW_D_L;
+      GPIOE->IDR |= PIN_SW_D_H;
       break;
     case DSW(SW_SE0):
-      PIOC->PIO_PDSR &= ~(1<<18);
-      PIOC->PIO_PDSR &= ~(1<<19);
+      GPIOB->IDR |= PIN_SW_E_L;
+      GPIOB->IDR &= ~PIN_SW_E_H;
       break;
     case DSW(SW_SE1):
-      PIOC->PIO_PDSR |= (1<<19);
-      PIOC->PIO_PDSR &= ~(1<<18);
+      GPIOB->IDR |= PIN_SW_E_H;
+      GPIOB->IDR |= PIN_SW_E_L;
       break;
     case DSW(SW_SE2):
-      PIOC->PIO_PDSR |= (1<<18);
-      PIOC->PIO_PDSR &= ~(1<<19);
+      GPIOB->IDR &= ~PIN_SW_E_L;
+      GPIOB->IDR |= PIN_SW_E_H;
       break;
     case DSW(SW_SF0):
-      PIOC->PIO_PDSR &= ~(1<<16);
-      PIOC->PIO_PDSR &= ~(1<<17);
-      break;
-    case DSW(SW_SF1):
-      PIOC->PIO_PDSR |= (1<<17);
-      PIOC->PIO_PDSR &= ~(1<<16);
+      GPIOE->IDR &= ~PIN_SW_F;
       break;
     case DSW(SW_SF2):
-      PIOC->PIO_PDSR |= (1<<16);
-      PIOC->PIO_PDSR &= ~(1<<17);
+      GPIOE->IDR |= PIN_SW_F;
       break;
     case DSW(SW_SG0):
-      PIOC->PIO_PDSR &= ~(1<<14);
-      PIOC->PIO_PDSR &= ~(1<<15);
+      GPIOB->IDR |= PIN_SW_G_L;
+      GPIOA->IDR &= ~PIN_SW_G_H;
       break;
     case DSW(SW_SG1):
-      PIOC->PIO_PDSR |= (1<<15);
-      PIOC->PIO_PDSR &= ~(1<<14);
+      GPIOA->IDR |= PIN_SW_G_H;
+      GPIOB->IDR |= PIN_SW_G_L;
       break;
     case DSW(SW_SG2):
-      PIOC->PIO_PDSR |= (1<<14);
-      PIOC->PIO_PDSR &= ~(1<<15);
+      GPIOB->IDR &= ~PIN_SW_G_L;
+      GPIOA->IDR |= PIN_SW_G_H;
       break;
     case DSW(SW_SH0):
-      PIOC->PIO_PDSR &= ~(1<<13);
+      GPIOE->IDR &= ~PIN_SW_H;
       break;
     case DSW(SW_SH2):
-      PIOC->PIO_PDSR |= (1<<13);
+      GPIOE->IDR |= PIN_SW_H;
       break;
 #elif defined(PCBSKY9X)
     case DSW(SW_ID0):
@@ -182,16 +227,16 @@ void setSwitch(int8_t swtch)
       PIOC->PIO_PDSR |= 0x00004000;
       break;
 
-    SWITCH_CASE(SW_THR, PIOC->PIO_PDSR, 20)
-    SWITCH_CASE(SW_RUD, PIOA->PIO_PDSR, 15)
-    SWITCH_CASE(SW_ELE, PIOC->PIO_PDSR, 31)
-    SWITCH_CASE(SW_AIL, PIOA->PIO_PDSR, 2)
-    SWITCH_CASE(SW_GEA, PIOC->PIO_PDSR, 16)
-    SWITCH_CASE(SW_TRN, PIOC->PIO_PDSR, 8)
+    SWITCH_CASE(SW_THR, PIOC->PIO_PDSR, 1<<20)
+    SWITCH_CASE(SW_RUD, PIOA->PIO_PDSR, 1<<15)
+    SWITCH_CASE(SW_ELE, PIOC->PIO_PDSR, 1<<31)
+    SWITCH_CASE(SW_AIL, PIOA->PIO_PDSR, 1<<2)
+    SWITCH_CASE(SW_GEA, PIOC->PIO_PDSR, 1<<16)
+    SWITCH_CASE(SW_TRN, PIOC->PIO_PDSR, 1<<8)
 #elif defined(PCBGRUVIN9X)
-    SWITCH_CASE(SW_THR, ping, INP_G_ThrCt)
-    SWITCH_CASE(SW_RUD, ping, INP_G_RuddDR)
-    SWITCH_CASE(SW_ELE, pinc, INP_C_ElevDR)
+    SWITCH_CASE(SW_THR, ping, 1<<INP_G_ThrCt)
+    SWITCH_CASE(SW_RUD, ping, 1<<INP_G_RuddDR)
+    SWITCH_CASE(SW_ELE, pinc, 1<<INP_C_ElevDR)
 
     case DSW(SW_ID0):
       ping |=  (1<<INP_G_ID1);
@@ -206,13 +251,13 @@ void setSwitch(int8_t swtch)
       pinb |=  (1<<INP_B_ID2);
       break;
 
-    SWITCH_CASE(SW_AIL, pinc, INP_C_AileDR)
-    SWITCH_CASE(SW_GEA, ping, INP_G_Gear)
-    SWITCH_CASE(SW_TRN, pinb, INP_B_Trainer)
+    SWITCH_CASE(SW_AIL, pinc, 1<<INP_C_AileDR)
+    SWITCH_CASE(SW_GEA, ping, 1<<INP_G_Gear)
+    SWITCH_CASE(SW_TRN, pinb, 1<<INP_B_Trainer)
 #else // STOCK
 #if defined(JETI) || defined(FRSKY) || defined(NMEA) || defined(ARDUPILOT)
-    SWITCH_CASE(SW_THR, pinc, INP_C_ThrCt)
-    SWITCH_CASE(SW_AIL, pinc, INP_C_AileDR)
+    SWITCH_CASE(SW_THR, pinc, 1<<INP_C_ThrCt)
+    SWITCH_CASE(SW_AIL, pinc, 1<<INP_C_AileDR)
 #else
     SWITCH_CASE(SW_THR, pine, INP_E_ThrCt)
     SWITCH_CASE(SW_AIL, pine, INP_E_AileDR)
@@ -230,10 +275,10 @@ void setSwitch(int8_t swtch)
       pine |=  (1<<INP_E_ID2);
       break;
 
-    SWITCH_CASE(SW_RUD, ping, INP_G_RuddDR)
-    SWITCH_CASE(SW_ELE, pine, INP_E_ElevDR)
-    SWITCH_CASE(SW_GEA, pine, INP_E_Gear)
-    SWITCH_CASE(SW_TRN, pine, INP_E_Trainer)
+    SWITCH_CASE(SW_RUD, ping, 1<<INP_G_RuddDR)
+    SWITCH_CASE(SW_ELE, pine, 1<<INP_E_ElevDR)
+    SWITCH_CASE(SW_GEA, pine, 1<<INP_E_Gear)
+    SWITCH_CASE(SW_TRN, pine, 1<<INP_E_Trainer)
 #endif
 
     default:
@@ -246,6 +291,7 @@ uint16_t getTmr16KHz()
   return get_tmr10ms() * 160;
 }
 
+#if !defined(PCBX9D) && !defined(PCBACT)
 bool eeprom_thread_running = true;
 void *eeprom_write_function(void *)
 {
@@ -289,6 +335,7 @@ void *eeprom_write_function(void *)
   }
   return 0;
 }
+#endif
 
 uint8_t main_thread_running = 0;
 char * main_thread_error = NULL;
@@ -307,10 +354,6 @@ void *main_thread(void *)
     g_menuStack[0] = menuMainView;
     g_menuStack[1] = menuModelSelect;
 
-#if defined(CPUARM)
-    eeprom_init();
-#endif
-
     eeReadAll(); //load general setup and selected model
 
     if (g_eeGeneral.backlightMode != e_backlight_mode_off) backlightOn(); // on Tx start turn the light on
@@ -322,6 +365,10 @@ void *main_thread(void *)
 
 #if !defined(CPUARM)
       checkLowEEPROM();
+#endif
+
+#if defined(CPUARM)
+      eeLoadModel(g_eeGeneral.currModel);
 #endif
 
       checkTHR();
@@ -374,32 +421,56 @@ void StartEepromThread(const char *filename)
   eeprom_write_sem = (sem_t *)malloc(sizeof(sem_t));
   sem_init(eeprom_write_sem, 0, 0);
 #endif
+
+#if !defined(PCBX9D) && !defined(PCBACT)
   eeprom_thread_running = true;
   assert(!pthread_create(&eeprom_thread_pid, NULL, &eeprom_write_function, NULL));
+#endif
 }
 
 void StopEepromThread()
 {
+#if !defined(PCBX9D) && !defined(PCBACT)
   eeprom_thread_running = false;
   sem_post(eeprom_write_sem);
   pthread_join(eeprom_thread_pid, NULL);
+#endif
 }
 
-void eeprom_read_block (void *pointer_ram,
-    const void *pointer_eeprom,
-    size_t size)
+#if defined(PCBX9D) || defined(PCBACT)
+void eeprom_read_block (void *pointer_ram, uint16_t pointer_eeprom, size_t size)
+#else
+void eeprom_read_block (void *pointer_ram, const void *pointer_eeprom, size_t size)
+#endif
 {
   assert(size);
 
   if (fp) {
-    memset(pointer_ram, 0, size);
-    if (fseek(fp, (long) pointer_eeprom, SEEK_SET)==-1) perror("error in seek");
-    if (fread(pointer_ram, size, 1, fp) <= 0) perror("error in read");
+    // printf("EEPROM read (pos=%d, size=%d)\n", pointer_eeprom, size); fflush(stdout);
+    if (fseek(fp, (long)pointer_eeprom, SEEK_SET)==-1) perror("error in fseek");
+    if (fread(pointer_ram, size, 1, fp) <= 0) perror("error in fread");
   }
   else {
     memcpy(pointer_ram, &eeprom[(uint64_t)pointer_eeprom], size);
   }
 }
+
+#if defined(PCBX9D) || defined(PCBACT)
+void eeWriteBlockCmp(const void *pointer_ram, uint16_t pointer_eeprom, size_t size)
+{
+  assert(size);
+
+  if (fp) {
+    // printf("EEPROM write (pos=%d, size=%d)\n", pointer_eeprom, size); fflush(stdout);
+    if (fseek(fp, (long)pointer_eeprom, SEEK_SET)==-1) perror("error in fseek");
+    if (fwrite(pointer_ram, size, 1, fp) <= 0) perror("error in fwrite");
+  }
+  else {
+    memcpy(&eeprom[(uint64_t)pointer_eeprom], pointer_ram, size);
+  }
+}
+
+#endif
 
 #if defined(CPUARM)
 uint16_t stack_free(uint8_t)
@@ -438,7 +509,7 @@ FATFS g_FATFS_Obj;
 FRESULT f_stat (const TCHAR * path, FILINFO *)
 {
   struct stat tmp;
-  // printf("f_stat(%s)\n", path); fflush(stdout);
+  printf("f_stat(%s)\n", path); fflush(stdout);
   return stat(path, &tmp) ? FR_INVALID_NAME : FR_OK;
 }
 
@@ -481,8 +552,10 @@ FRESULT f_lseek (FIL* fil, DWORD offset)
 
 FRESULT f_close (FIL * fil)
 {
-  if (fil->fs)
+  if (fil->fs) {
     fclose((FILE*)fil->fs);
+    fil->fs=NULL;
+  }
   return FR_OK;
 }
 
@@ -568,7 +641,7 @@ FRESULT f_getcwd (TCHAR *path, UINT sz_path)
   return FR_OK;
 }
 
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
 int32_t Card_state = SD_ST_MOUNTED;
 uint32_t Card_CSD[4]; // TODO elsewhere
 #endif
@@ -576,14 +649,41 @@ uint32_t Card_CSD[4]; // TODO elsewhere
 #endif
 
 bool lcd_refresh = true;
-uint8_t lcd_buf[DISPLAY_W*DISPLAY_H/8];
+uint8_t lcd_buf[DISPLAY_BUF_SIZE];
 
 void lcdSetRefVolt(uint8_t val)
 {
 }
 
-void refreshDisplay()
+void lcdRefresh()
 {
-  memcpy(lcd_buf, displayBuf, sizeof(displayBuf));
+  memcpy(lcd_buf, displayBuf, DISPLAY_BUF_SIZE);
   lcd_refresh = true;
 }
+
+#if defined(PCBX9D)
+ErrorStatus RTC_SetTime(uint32_t RTC_Format, RTC_TimeTypeDef* RTC_TimeStruct) { return SUCCESS; }
+ErrorStatus RTC_SetDate(uint32_t RTC_Format, RTC_DateTypeDef* RTC_DateStruct) { return SUCCESS; }
+void RTC_GetTime(uint32_t RTC_Format, RTC_TimeTypeDef* RTC_TimeStruct) { }
+void RTC_GetDate(uint32_t RTC_Format, RTC_DateTypeDef* RTC_DateStruct) { }
+void PWR_BackupAccessCmd(FunctionalState NewState) { }
+void RCC_RTCCLKConfig(uint32_t RCC_RTCCLKSource) { }
+void RCC_APB1PeriphClockCmd(uint32_t RCC_APB1Periph, FunctionalState NewState) { }
+void RCC_RTCCLKCmd(FunctionalState NewState) { }
+ErrorStatus RTC_Init(RTC_InitTypeDef* RTC_InitStruct) { return SUCCESS; }
+void USART_SendData(USART_TypeDef* USARTx, uint16_t Data) { }
+FlagStatus USART_GetFlagStatus(USART_TypeDef* USARTx, uint16_t USART_FLAG) { return SET; }
+void GPIO_PinAFConfig(GPIO_TypeDef* GPIOx, uint16_t GPIO_PinSource, uint8_t GPIO_AF) { }
+void USART_Init(USART_TypeDef* USARTx, USART_InitTypeDef* USART_InitStruct) { }
+void USART_Cmd(USART_TypeDef* USARTx, FunctionalState NewState) { }
+void RCC_PLLI2SConfig(uint32_t PLLI2SN, uint32_t PLLI2SR) { }
+void RCC_PLLI2SCmd(FunctionalState NewState) { }
+void RCC_I2SCLKConfig(uint32_t RCC_I2SCLKSource) { }
+void SPI_I2S_DeInit(SPI_TypeDef* SPIx) { }
+void I2S_Init(SPI_TypeDef* SPIx, I2S_InitTypeDef* I2S_InitStruct) { }
+void I2S_Cmd(SPI_TypeDef* SPIx, FunctionalState NewState) { }
+void SPI_I2S_ITConfig(SPI_TypeDef* SPIx, uint8_t SPI_I2S_IT, FunctionalState NewState) { }
+void RCC_LSEConfig(uint8_t RCC_LSE) { }
+FlagStatus RCC_GetFlagStatus(uint8_t RCC_FLAG) { return RESET; }
+ErrorStatus RTC_WaitForSynchro(void) { return ERROR; }
+#endif

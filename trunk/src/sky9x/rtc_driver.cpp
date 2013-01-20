@@ -1,5 +1,6 @@
 /*
  * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
@@ -39,7 +40,7 @@ struct t_i2cTime
   uint8_t Time[7] ;
 } I2CTime ;
 
-void rtc_settime(struct gtm * t)
+void rtcSetTime(struct gtm * t)
 {
   g_rtcTime = gmktime(t); // update local timestamp and get wday calculated
   g_ms100 = 0; // start of next second begins now
@@ -50,12 +51,12 @@ void rtc_settime(struct gtm * t)
   I2CTime.Time[2] = t->tm_hour ;
   I2CTime.Time[3] = t->tm_mday ;
   I2CTime.Time[4] = t->tm_mon+1 ;
-  I2CTime.Time[5] = (uint8_t) (t->tm_year+1900) ;
-  I2CTime.Time[6] = (t->tm_year+1900) >> 8 ;
-  write_coprocessor( (uint8_t *) &I2CTime, 8 ) ;
+  I2CTime.Time[5] = (uint8_t) (t->tm_year+1900);
+  I2CTime.Time[6] = (t->tm_year+1900) >> 8;
+  coprocWriteData((uint8_t *) &I2CTime, 8);
 }
 
-void rtc_init()
+void rtcInit()
 {
-  read_coprocessor();
+  coprocReadData();
 }
