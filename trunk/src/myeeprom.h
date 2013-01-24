@@ -679,8 +679,8 @@ PACK(typedef struct t_PhaseData {
 #define NUM_POINTS 512
 #define CURVTYPE   int16_t
 #else
-#define MAX_CURVES 8
-#define NUM_POINTS (112-MAX_CURVES)
+#define MAX_CURVES 10
+#define NUM_POINTS (140-MAX_CURVES)
 #define CURVTYPE   int8_t
 #endif
 
