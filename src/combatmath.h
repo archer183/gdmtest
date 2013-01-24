@@ -90,7 +90,17 @@ enum CombatInputs {
 
 
 };
-extern int16_t combatarray[5];
+
+enum combatarrayout {
+	C9X_T4B,
+	C9X_T4R,
+	C9X_T3B,
+	C9X_T3R,
+	C9X_T2B,
+	C9X_T2R
+};
+
+extern int16_t combatarray[8];
 	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
 		226,223,220,216,213,209,206,202,198,194,
@@ -532,13 +542,13 @@ void TargetRange(){
 	else if (Returnvar > 1023) {
 		Returnvar = 1024;
 	}*/
-	combatarray[1] = R2;
-	combatarray[0] = Beta;
+	combatarray[C9X_T4R] = R2;
+	combatarray[C9X_T4B] = Beta;
 	combatarray[2] = R1max*1024/10;
 
 
 	i=0;
-	while (i<2){
+	while (i<8){  /
 	if (combatarray[i] < -1023) {
 		combatarray[i] = -1024;
 	}
