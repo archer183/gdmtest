@@ -548,7 +548,7 @@ void TargetRange(){
 
 
 	i=0;
-	while (i<8){  /
+	while (i<8){  //
 	if (combatarray[i] < -1023) {
 		combatarray[i] = -1024;
 	}
