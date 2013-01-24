@@ -36,7 +36,7 @@
 
 #if defined(CURVES) && defined(TRIG)
 #include "combatmath.h"
-int16_t combatarray[8] = {0,0,0,0,0,0,0,0};
+int16_t combatarray[C9X_ARY] = {0};
 /*
 0 = Aft Bearing
 1 = Aft Range

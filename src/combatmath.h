@@ -97,10 +97,11 @@ enum combatarrayout {
 	C9X_T3B,
 	C9X_T3R,
 	C9X_T2B,
-	C9X_T2R
+	C9X_T2R,
+	C9X_ARY
 };
 
-extern int16_t combatarray[8];
+extern int16_t combatarray[C9X_ARY];
 	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
 		226,223,220,216,213,209,206,202,198,194,
@@ -548,7 +549,7 @@ void TargetRange(){
 
 
 	i=0;
-	while (i<8){  //
+	while (i<C9X_ARY){  //
 	if (combatarray[i] < -1023) {
 		combatarray[i] = -1024;
 	}
