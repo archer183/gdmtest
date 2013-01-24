@@ -36,7 +36,7 @@
 
 #if defined(CURVES) && defined(TRIG)
 #include "combatmath.h"
-int16_t combatarray[5] = {0,0,0,0,0};
+int16_t combatarray[8] = {0,0,0,0,0,0,0,0};
 /*
 0 = Aft Bearing
 1 = Aft Range
@@ -470,11 +470,11 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		return x;
 	case CURVE_RNG:
 		TargetRange();
-		x=combatarray[1];
+		x=combatarray[C9X_T4R];
 		return x;
 	case CURVE_BTA:
 		//GvarTestFcn(x);
-		x=combatarray[0];
+		x=combatarray[C9X_T4B];
 		return x;
 	case CURVE_BTV:
 		x=BETAVfcn(x);
