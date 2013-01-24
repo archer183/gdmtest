@@ -469,10 +469,11 @@ int16_t applyCurve(int16_t x, int8_t idx)
 		//x=combatarray[4];
 		return x;
 	case CURVE_RNG:
-		TargetRange();
+		
 		x=combatarray[C9X_T4R];
 		return x;
 	case CURVE_BTA:
+		TargetRange();
 		//GvarTestFcn(x);
 		x=combatarray[C9X_T4B];
 		return x;
