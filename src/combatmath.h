@@ -85,7 +85,7 @@ enum CombatInputs {
 	RangeIN = 9,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
 	BearingIN = 8,
 	MaxRangeIN = 7,
-	SpacingG2 = 6   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
+	SpacingG2 = 6,   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
 	SpacingG3 = 5
 
 
