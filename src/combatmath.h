@@ -82,9 +82,9 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 //the following lists the global variables that are used for inputs
 enum CombatInputs {
-	RangeIN = 9,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
-	BearingIN = 8,
-	MaxRangeIN = 7,
+	RangeIN = 1,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
+	BearingIN = 0,
+	MaxRangeIN = 2,
 	SpacingG2 = 6,   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
 	SpacingG3 = 5
 
@@ -432,8 +432,15 @@ void TargetRange(){
 	Lst = 2048/((int16_t)R1max);  //dist between turrets relative to R1max in 0-2048 domain
 	//gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on thru 150 =15 for mixes 0-15 (1-16 in display)
 	// 200 = 20 thru 260 = 26  correlates to input pots 0-6 (0,1,2,3 = sticks, 4,5,6 = pots)
-	R1 = Comb_input_fcn(GVAR_VALUE(1,0));
-	Alpha = Comb_input_fcn(GVAR_VALUE(0,0));
+
+	//RangeIN = 1,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
+	//BearingIN = 0,
+	//MaxRangeIN = 2,
+	//SpacingG2 = 6,   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
+	//SpacingG3 = 5
+
+	R1 = Comb_input_fcn(GVAR_VALUE(RangeIN,0));
+	Alpha = Comb_input_fcn(GVAR_VALUE(BearingIN,0));
 	combatarray[3]=(GVAR_VALUE(1,0));
 	combatarray[4]=(GVAR_VALUE(0,0));
 
