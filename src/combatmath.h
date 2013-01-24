@@ -79,6 +79,17 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 
  already tried to have only one return at the end */
+
+//the following lists the global variables that are used for inputs
+enum CombatInputs {
+	RangeIN = 9,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
+	BearingIN = 8,
+	MaxRangeIN = 7,
+	SpacingG2 = 6   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
+	SpacingG3 = 5
+
+
+};
 extern int16_t combatarray[5];
 	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
@@ -86,11 +97,7 @@ extern int16_t combatarray[5];
 		190,	185,181,177,172,167,162,157,152,147,
 		142,137,132,	126,121,115,109,104,98,92,
 		86,80,74,68,62,56,50,44,38,31,
-		25,19,13,6,0};/*100,100,100,100,100,99,99,99,
-		98,98,97,96,96,95,94,93,92,91,90,89,88,87,86,
-		84,83,82,80,79,77,76,74,72,71,69,67,65,63,62,
-		60,58,56,53,51,49,47,45,43,41,38,36,34,31,29,
-		27,24,22,20,17,15,12,10,7,5,2,0};*/
+		25,19,13,6,0};
 	/* Preceeding defines one quarter of a cosine centered on zero, phase shift to create sine.  
 	OUTPUT IS +/- 255 range for an input range of +/-128.  -1024 ->1024 is assumed in real life 
 	and is divided by 8 to get the correct range for this array.  Larger not used to save memory.
@@ -106,10 +113,7 @@ extern int16_t combatarray[5];
 		201,199,196,193,191,188,185,182,180,177,
 		174,171,168,165,162,159,155,152,149,145,
 		142,139,135,131,127,124,120,115,111,107,
-		102,97,92,87,81,75,69,61,53,43,31,0};/*{106,104,102,101,99,97,
-		95,94,92,90,88,86,85,83,81,79,77,74,
-		72,70,68,65,63,60,58,55,52,49,46,43,
-		39,35,30,24,17,0};*/
+		102,97,92,87,81,75,69,61,53,43,31,0};
 	/* for better resolution, acos which should run from 0 to 128 has been scaled for the lookup 
 	only.   so we scale up for better resolution for free
 	by a factor of 3.   look for this to be divided out in the code.

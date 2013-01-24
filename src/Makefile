@@ -822,31 +822,31 @@ stamp_header:
 	@echo "//Automatically generated file (Makefile) - do not edit" > stamp-open9x.h
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" >> stamp-open9x.h
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x.h
-	@echo "#define SVN_STR  \"open9x-r$(SVNREV)\"" >> stamp-open9x.h
+	@echo "#define SVN_STR  \"Combat9x$(SVNREV)\"" >> stamp-open9x.h
 	@cat stamp-open9x.h
 
 stock-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock.txt
-	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock.txt
+	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-stock.txt
 	@cat stamp-open9x-stock.txt
 
 stock128-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock128.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock128.txt
-	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock128.txt
+	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-stock128.txt
 	@cat stamp-open9x-stock128.txt
 
 v4-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-v4.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-v4.txt
-	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-v4.txt
+	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-v4.txt
 	@cat stamp-open9x-v4.txt
 
 arm-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-arm.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-arm.txt
-	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-arm.txt
+	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-arm.txt
 	@cat stamp-open9x-arm.txt
 
 font.lbm: font.xbm font_extra.xbm translations/font_se.xbm translations/font_de.xbm translations/font_it.xbm translations/font_cz.xbm translations/font_fr.xbm translations/font_es.xbm
