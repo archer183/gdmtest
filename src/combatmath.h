@@ -102,7 +102,8 @@ enum combatarrayout {
 };
 
 extern int16_t combatarray[C9X_ARY];
-	uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
+
+uint8_t scp[65] = {255,255,255,255,255,254,253,252,251,250,
 		248,247,245,243,241,239,237,234,231,	229,
 		226,223,220,216,213,209,206,202,198,194,
 		190,	185,181,177,172,167,162,157,152,147,
@@ -119,7 +120,7 @@ extern int16_t combatarray[C9X_ARY];
 	Might consider going to unsigned 8 bit to allow array values from 0 to 200
 	for more resolution with no memory hit.  65 parts makes the symmetric math easier.  with int16 variables on the output,
 	this should not be a problem*/
-	uint8_t acosn[58]={240,238,236,233,231,229,
+uint8_t acosn[58]={240,238,236,233,231,229,
 		226,224,221,219,216,214,212,209,206,204,
 		201,199,196,193,191,188,185,182,180,177,
 		174,171,168,165,162,159,155,152,149,145,
