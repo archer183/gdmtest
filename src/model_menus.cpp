@@ -54,6 +54,7 @@ enum EnumTabModel {
   e_CustomFunctions,
   IF_FRSKY(e_Telemetry)
   IF_TEMPLATES(e_Templates)
+  TabModelMax
 };
 
 void menuModelSelect(uint8_t event);
@@ -2588,6 +2589,62 @@ void menuModelCurvesAll(uint8_t event)
     DrawCurve(curveFn, 25);
   }
 }
+void menuModelCurvesAll(uint8_t event)
+{
+#if defined(GVARS) && defined(CPUM64)
+  SIMPLE_MENU(STR_MENUCURVES, TabModelMax, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
+#else
+  SIMPLE_MENU(STR_MENUCURVES, TabModelMax, e_CurvesAll, 1+MAX_CURVES);
+#endif
+
+  int8_t  sub = m_posVert - 1;
+
+  switch (event) {
+#if defined(ROTARY_ENCODERS)
+    case EVT_KEY_BREAK(BTN_REa):
+    case EVT_KEY_BREAK(BTN_REb):
+      if (!navigationRotaryEncoder(event))
+        break;
+      // no break
+#endif
+#if !defined(PCBX9D)
+    case EVT_KEY_FIRST(KEY_RIGHT):
+#endif
+    case EVT_KEY_FIRST(KEY_ENTER):
+      if (CURVE_SELECTED()) {
+        s_curveChan = sub;
+        pushMenu(menuModelCurveOne);
+      }
+      break;
+  }
+
+  for (uint8_t i=0; i<LCD_LINES-1; i++) {
+    uint8_t y = 1 + FH + i*FH;
+    uint8_t k = i + s_pgOfs;
+    uint8_t attr = (sub == k ? INVERS : 0);
+#if defined(GVARS) && defined(CPUM64)
+    if (k < MAX_CURVES) {
+      putsStrIdx(0, y, STR_CV, k+1, attr);
+    }
+    else {
+      putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+      if (GVAR_SELECTED()) {
+        if (attr && s_editMode>0) attr |= BLINK;
+        lcd_outdezAtt(10*FW, y, GVAR_VALUE(k-MAX_CURVES, -1), attr);
+        if (attr) g_model.gvars[k-MAX_CURVES] = checkIncDec(event, g_model.gvars[k-MAX_CURVES], -1000, 1000, EE_MODEL);
+      }
+    }
+#else
+    putsStrIdx(0, y, STR_CV, k+1, attr);
+#endif
+  }
+
+  if (CURVE_SELECTED()) {
+    s_curveChan = sub;
+    DrawCurve(curveFn, 25);
+  }
+}
+
 #endif
 
 #if LCD_W >= 260 && defined(GVARS)
