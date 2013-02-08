@@ -2589,7 +2589,7 @@ void menuModelCurvesAll(uint8_t event)
     DrawCurve(curveFn, 25);
   }
 }
-void menuModelCurvesAll(uint8_t event)
+void menuModelCurvesAll2(uint8_t event)
 {
 #if defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_MENUCURVES, TabModelMax, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
