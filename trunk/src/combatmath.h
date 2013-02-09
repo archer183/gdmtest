@@ -87,7 +87,7 @@ enum CombatInputs {
 	MaxRangeIN = 2,
 	SpacingG2 = 6,   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
 	SpacingG3 = 5
-
+	//DO NOT FORGET TO UPDATE MODEL MENU NAMES FOR GVARS!
 
 };
 
