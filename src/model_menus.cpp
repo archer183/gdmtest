@@ -2597,6 +2597,9 @@ void menuModelCurvesAll(uint8_t event)
 
 void menuModelCombat(uint8_t event)
 {
+const pm_char STR_COMBAT="COMBAT";
+const pm_char STR_COMBNAME[5] = {"RN","AZ","Rn","Az","Tm"};
+
 #if defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CombatFunctions, 1+MAX_CURVES+MAX_GVARS);
 #else
@@ -2633,7 +2636,16 @@ void menuModelCombat(uint8_t event)
       putsStrIdx(0, y, STR_CV, k+1, attr);
     }
     else {
-      putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+      //putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+		if (k< MAX_CURVES + 5) {
+		putsStrIdx(0,y,STR_COMBNAME[k-MAX_CURVES],k-MAX_CURVES+1);
+		} 
+		else {
+			putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+
+		}
+
+
       if (GVAR_SELECTED()) {
         if (attr && s_editMode>0) attr |= BLINK;
         lcd_outdezAtt(10*FW, y, GVAR_VALUE(k-MAX_CURVES, -1), attr);
