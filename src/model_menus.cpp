@@ -2597,8 +2597,8 @@ void menuModelCurvesAll(uint8_t event)
 
 void menuModelCombat(uint8_t event)
 {
-pm_char STR_COMBAT="COMBAT";
-pm_char STR_COMBNAME[5] = {"RN","AZ","Rn","Az","Tm"};
+const char STR_COMBAT[] PROGMEM = "COMBAT";
+//char STR_COMBNAME[5] = {"RN","AZ","Rn","Az","Tm"};
 
 #if defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES+MAX_GVARS);
@@ -2638,10 +2638,10 @@ pm_char STR_COMBNAME[5] = {"RN","AZ","Rn","Az","Tm"};
     else {
       //putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		if (k< MAX_CURVES + 5) {
-		putsStrIdx(0,y,STR_COMBNAME[k-MAX_CURVES],k-MAX_CURVES+1);
+		putsStrIdx(0,y,STR_GV,k-MAX_CURVES+1);
 		} 
 		else {
-			putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+		putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 
 		}
 
