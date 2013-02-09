@@ -431,7 +431,7 @@ void TargetRange(){
 	int32_t R2,CosBV,Beta;
 	//the following three should be set via global variables
 
-	R1 = GVAR_VALUE(2,0);  // gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on
+	R1 = GVAR_VALUE(MaxRangeIN,0);  // gvar 0 = corelates to 0 = 0, 10 = 1, 20 = 2 and so on
 	R1 = R1/10;
 	R1max = (int8_t)R1;
 	
