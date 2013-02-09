@@ -2599,7 +2599,9 @@ void menuModelCombat(uint8_t event)
 {
 const char STR_COMBAT[] = "COMBAT";
 const char STR_COMB1[] = "AZ";
-const char STR_COMB2[] = "BR";
+const char STR_COMB2[] = "RN";
+const char STR_COMB3[] = "RMX";
+
 
 const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2};
 
@@ -2640,7 +2642,7 @@ const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2};
     }
     else {
       //putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
-		if (k< MAX_CURVES + 1) {
+		if (k< MAX_CURVES + 3) {
 		putsStrIdx(0,y,CombatMenuPointer[k-MAX_CURVES],0);
 		} 
 		else {
