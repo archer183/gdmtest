@@ -2597,12 +2597,11 @@ void menuModelCurvesAll(uint8_t event)
 
 void menuModelCombat(uint8_t event)
 {
-//const char STR_COMBAT[] PROGMEM = "COMBAT";
-//const char STR_COMB1[] PROGMEM = "AZ";
-//const char STR_COMB2[] PROGMEM = "BR";
-//
-//const char* CombatMenuPointer[] PROGMEM = {STR_COMB1,STR_COMB2};
-//char STR_COMBNAME[5] = {"RN","AZ","Rn","Az","Tm"};
+const char STR_COMBAT[] = "COMBAT";
+const char STR_COMB1[] = "AZ";
+const char STR_COMB2[] = "BR";
+
+const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2};
 
 #if defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES+MAX_GVARS);
