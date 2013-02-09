@@ -2603,7 +2603,7 @@ const char STR_COMB2[] = "RN";
 const char STR_COMB3[] = "RMX";
 
 
-const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2};
+const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2,STR_COMB3};
 
 #if defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES+MAX_GVARS);
