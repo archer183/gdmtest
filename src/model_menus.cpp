@@ -2601,7 +2601,7 @@ const char STR_COMBAT[] PROGMEM = "COMBAT";
 const char STR_COMB1[] PROGMEM = "AZ";
 const char STR_COMB2[] PROGMEM = "BR";
 
-char* CombatMenuPointer[] PROGMEM = {STR_COMB1,STR_COMB2};
+const char* CombatMenuPointer[] PROGMEM = {STR_COMB1,STR_COMB2};
 //char STR_COMBNAME[5] = {"RN","AZ","Rn","Az","Tm"};
 
 #if defined(GVARS) && defined(CPUM64)
