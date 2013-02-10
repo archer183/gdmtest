@@ -82,13 +82,13 @@ To use, select appropriate function in pulldown menu in TX.  for bow cluster, ra
 
 //the following lists the global variables that are used for inputs
 enum CombatInputs {
-	RangeIN = 1,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
-	BearingIN = 0,
-	MaxRangeIN = 2,
+	RangeIN = 9,  //corresponds to gvar 10  remember gvar 1,2,..n -> [0,1,2,..n-1]
+	BearingIN = 8,
+	MaxRangeIN = 7,
 	SpacingG2 = 6,   //spacing for as yet not implemented additional turret groups, remember that this will be a fraction  of the dist between frontmost and aftmost group
 	SpacingG3 = 5
 	//DO NOT FORGET TO UPDATE MODEL MENU NAMES FOR GVARS!
-
+	//make sure these positions match those in model_menus.cpp
 };
 
 enum combatarrayout {

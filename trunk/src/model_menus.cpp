@@ -54,7 +54,7 @@ enum EnumTabModel {
   e_CustomFunctions,
   IF_FRSKY(e_Telemetry)
   IF_TEMPLATES(e_Templates)
-  e_CombatFunctions
+  //e_CombatFunctions
 };
 
 void menuModelSelect(uint8_t event);
@@ -89,7 +89,7 @@ const MenuFuncP_PROGMEM menuTabModel[] PROGMEM = {
   menuModelCustomFunctions,
   IF_FRSKY(menuModelTelemetry)
   IF_TEMPLATES(menuModelTemplates)
-  menuModelCombat
+  //menuModelCombat
 };
 
 #define COPY_MODE 1
@@ -2538,7 +2538,19 @@ void menuModelLimits(uint8_t event)
 
 void menuModelCurvesAll(uint8_t event)
 {
-#if defined(GVARS) && defined(CPUM64)
+#if defined(TRIG)
+const char STR_COMBAT[] = "COMBATCURVES";
+const char STR_COMB1[] = "AZ";
+const char STR_COMB2[] = "RN";
+const char STR_COMB3[] = "RMX";
+const char STR_COMB4[] = "TSP";
+
+const char* CombatMenuPointer[] = {STR_COMB4,STR_COMB3,STR_COMB2,STR_COMB1};
+uint8_t CombatGvarUsed = 5;
+
+SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS)
+
+#elif defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
 #else
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES);
@@ -2574,83 +2586,27 @@ void menuModelCurvesAll(uint8_t event)
       putsStrIdx(0, y, STR_CV, k+1, attr);
     }
     else {
-      putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
-      if (GVAR_SELECTED()) {
-        if (attr && s_editMode>0) attr |= BLINK;
-        lcd_outdezAtt(10*FW, y, GVAR_VALUE(k-MAX_CURVES, -1), attr);
-        if (attr) g_model.gvars[k-MAX_CURVES] = checkIncDec(event, g_model.gvars[k-MAX_CURVES], -1000, 1000, EE_MODEL);
-      }
-    }
-#else
-    putsStrIdx(0, y, STR_CV, k+1, attr);
-#endif
-  }
-
-  if (CURVE_SELECTED()) {
-    s_curveChan = sub;
-    DrawCurve(curveFn, 25);
-  }
-}
-
-
-#endif
-
-void menuModelCombat(uint8_t event)
-{
-const char STR_COMBAT[] = "COMBAT";
-const char STR_COMB1[] = "AZ";
-const char STR_COMB2[] = "RN";
-const char STR_COMB3[] = "RMX";
-
-
-const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2,STR_COMB3};
-
-#if defined(GVARS) && defined(CPUM64)
-  SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES+MAX_GVARS);
-#else
-  SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES);
-#endif
-
-  int8_t  sub = m_posVert - 1;
-
-  switch (event) {
-#if defined(ROTARY_ENCODERS)
-    case EVT_KEY_BREAK(BTN_REa):
-    case EVT_KEY_BREAK(BTN_REb):
-      if (!navigationRotaryEncoder(event))
-        break;
-      // no break
-#endif
-#if !defined(PCBX9D)
-    case EVT_KEY_FIRST(KEY_RIGHT):
-#endif
-    case EVT_KEY_FIRST(KEY_ENTER):
-      if (CURVE_SELECTED()) {
-        s_curveChan = sub;
-        pushMenu(menuModelCurveOne);
-      }
-      break;
-  }
-
-  for (uint8_t i=0; i<LCD_LINES-1; i++) {
-    uint8_t y = 1 + FH + i*FH;
-    uint8_t k = i + s_pgOfs;
-    uint8_t attr = (sub == k ? INVERS : 0);
-#if defined(GVARS) && defined(CPUM64)
-    if (k < MAX_CURVES) {
-      putsStrIdx(0, y, STR_CV, k+1, attr);
-    }
-    else {
-      //putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
-		if (k< MAX_CURVES + 3) {
-		putsStrIdx(0,y,CombatMenuPointer[k-MAX_CURVES],0);
-		} 
-		else {
-		putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
-
+		//trigmods
+#if defined(TRIG)
+		if (k<MAX_CURVES + MAX_GVARS - CombatGvarUsed) {
+			putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		}
-
-
+		else 
+		{
+			//must make sure these positions follow with those in combatmath.h!
+			if (k<MAX_CURVES + MAX_GVARS - CombatGvarUsed +2 ) {
+				putsStrIdx(0, y, CombatMenuPointer[0], k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed)+1);
+			}
+			else
+			{
+				putsStrIdx(0, y, CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1],1);
+			}
+			putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+		}
+		
+#else
+		putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+#endif
       if (GVAR_SELECTED()) {
         if (attr && s_editMode>0) attr |= BLINK;
         lcd_outdezAtt(10*FW, y, GVAR_VALUE(k-MAX_CURVES, -1), attr);
@@ -2667,6 +2623,82 @@ const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2,STR_COMB3};
     DrawCurve(curveFn, 25);
   }
 }
+
+
+#endif
+
+//void menuModelCombat(uint8_t event)
+//{
+//const char STR_COMBAT[] = "COMBAT";
+//const char STR_COMB1[] = "AZ";
+//const char STR_COMB2[] = "RN";
+//const char STR_COMB3[] = "RMX";
+//
+//
+//const char* CombatMenuPointer[] = {STR_COMB1,STR_COMB2,STR_COMB3};
+//
+//#if defined(GVARS) && defined(CPUM64)
+//  SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES+MAX_GVARS);
+//#else
+//  SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CombatFunctions, 1+MAX_CURVES);
+//#endif
+//
+//  int8_t  sub = m_posVert - 1;
+//
+//  switch (event) {
+//#if defined(ROTARY_ENCODERS)
+//    case EVT_KEY_BREAK(BTN_REa):
+//    case EVT_KEY_BREAK(BTN_REb):
+//      if (!navigationRotaryEncoder(event))
+//        break;
+//      // no break
+//#endif
+//#if !defined(PCBX9D)
+//    case EVT_KEY_FIRST(KEY_RIGHT):
+//#endif
+//    case EVT_KEY_FIRST(KEY_ENTER):
+//      if (CURVE_SELECTED()) {
+//        s_curveChan = sub;
+//        pushMenu(menuModelCurveOne);
+//      }
+//      break;
+//  }
+//
+//  for (uint8_t i=0; i<LCD_LINES-1; i++) {
+//    uint8_t y = 1 + FH + i*FH;
+//    uint8_t k = i + s_pgOfs;
+//    uint8_t attr = (sub == k ? INVERS : 0);
+//#if defined(GVARS) && defined(CPUM64)
+//    if (k < MAX_CURVES) {
+//      putsStrIdx(0, y, STR_CV, k+1, attr);
+//    }
+//    else {
+//      //putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+//		if (k< MAX_CURVES + 3) {
+//		putsStrIdx(0,y,CombatMenuPointer[k-MAX_CURVES],0);
+//		} 
+//		else {
+//		putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
+//
+//		}
+//
+//
+//      if (GVAR_SELECTED()) {
+//        if (attr && s_editMode>0) attr |= BLINK;
+//        lcd_outdezAtt(10*FW, y, GVAR_VALUE(k-MAX_CURVES, -1), attr);
+//        if (attr) g_model.gvars[k-MAX_CURVES] = checkIncDec(event, g_model.gvars[k-MAX_CURVES], -1000, 1000, EE_MODEL);
+//      }
+//    }
+//#else
+//    putsStrIdx(0, y, STR_CV, k+1, attr);
+//#endif
+//  }
+//
+//  if (CURVE_SELECTED()) {
+//    s_curveChan = sub;
+//    DrawCurve(curveFn, 25);
+//  }
+//}
 
 
 
