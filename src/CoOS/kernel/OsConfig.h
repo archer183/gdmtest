@@ -42,16 +42,12 @@ Idle task stack size(word).
 /*!< 
 System frequency (Hz).	                 	         
 */    
-#if defined(PCBX9D)
-#define CFG_CPU_FREQ            (60000000)
-#else
-#define CFG_CPU_FREQ            (36000000)  // TODO check if really correct for sky9x?
-#endif
+#define CFG_CPU_FREQ            (72000000)  
 
 /*!< 
 systick frequency (Hz).	                         
 */
-#define CFG_SYSTICK_FREQ        (500)
+#define CFG_SYSTICK_FREQ        (100) 		
 
 /*!< 
 max systerm api call num in ISR.	                         
@@ -114,19 +110,19 @@ Enable(1) or disable(0) CoSetPriority() API.
 /*!< 
 Enable(1) or disable(0) CoAwakeTask() and CoSuspendTask() API.		      
 */
-#define CFG_TASK_SUSPEND_EN       (0)
+#define CFG_TASK_SUSPEND_EN       (1)
 
 
 /*---------------------- Debug Management Config ----------------------------*/
 /*!< 
 Enable(1) or disable(0) parameter checkout .		  
 */
-#define CFG_PAR_CHECKOUT_EN     (0)	
+#define CFG_PAR_CHECKOUT_EN     (1)	
 
 /*!< 
 Enable(1) or disable(0) stack overflow checkout .  	  
 */		
-#define CFG_STK_CHECKOUT_EN     (0)		
+#define CFG_STK_CHECKOUT_EN     (1)		
 
 
 
@@ -134,7 +130,7 @@ Enable(1) or disable(0) stack overflow checkout .
 /*!< 
 Enable(1) or disable(0) memory management.	      
 */
-#define CFG_MM_EN               (0)   
+#define CFG_MM_EN               (1)   
 
 /*!< 
 Max number of memory.(must be less than 32).      
@@ -165,7 +161,7 @@ Kernel heap size(word).
 Enable(1) or disable(0) TimeDelay() API.		      
 */
 #if CFG_TASK_WAITTING_EN >0
-#define CFG_TIME_DELAY_EN       (0)	
+#define CFG_TIME_DELAY_EN       (1)	
 #endif
 
 
@@ -202,7 +198,7 @@ Event sort type.(1)FIFO (2)PRI (3)FIFO+PRI
 Max number of event.(must be less than 255) 	      
 Event = semaphore + mailbox + queue;			      
 */
-#define CFG_MAX_EVENT           (10)
+#define CFG_MAX_EVENT           (20)
 
 /*!< 
 Enable(1) or disable(0) semaphore management.	      
@@ -236,7 +232,7 @@ Enable(1) or disable(0) flag management.
 Max number of flag is 32.					    	  
 */
 #if CFG_TASK_WAITTING_EN > 0
-#define  CFG_FLAG_EN            (1)
+#define  CFG_FLAG_EN           (0) 
 #endif		
 
 
@@ -246,7 +242,7 @@ Enable(1) or disable(0) mutex management.
 */
 #if CFG_TASK_WAITTING_EN > 0
 #if CFG_TASK_SCHEDULE_EN > 0
-#define  CFG_MUTEX_EN           (1)
+#define  CFG_MUTEX_EN           (0) 
 #endif
 #endif
 

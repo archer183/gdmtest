@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -50,17 +47,16 @@ const pm_char STR_OPEN9X[] PROGMEM =
 #if defined(ROTARY_ENCODERS)
     ISTR(VRENAVIG)
 #endif
-#if defined(ROTARY_ENCODER_NAVIGATION)
-    ISTR(VRENCODERS)
-#endif
+    ISTR(VFILTERADC)
     ISTR(TRNMODE)
     ISTR(TRNCHN)
     ISTR(VTRIMINC)
     ISTR(RETA123)
     ISTR(VPROTOS)
     ISTR(POSNEG)
-    ISTR(VBLMODE)
     ISTR(VCURVEFUNC)
+    ISTR(CURVMODES)
+    ISTR(EXPLABELS)
     ISTR(VMLTPX)
     ISTR(VMLTPX2)
     ISTR(VMIXTRIMS)
@@ -69,15 +65,13 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(VFSWRESET)
     ISTR(FUNCSOUNDS)
     ISTR(VTELEMCHNS)
-#if defined(FRSKY) || defined(CPUARM)
+#if defined(FRSKY) || defined(PCBARM)
     ISTR(VTELEMUNIT)
     ISTR(VALARM)
     ISTR(VALARMFN)
     ISTR(VTELPROTO)
     ISTR(GPSFORMAT)
-    ISTR(VOLTSRC)
     ISTR(VARIOSRC)
-    ISTR(VSCREEN)
 #endif
 #ifdef TEMPLATES
     ISTR(VTEMPLATES)
@@ -89,11 +83,12 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(VSWITCHES)
     ISTR(VSRCRAW)
     ISTR(VTMRMODES)
-#if defined(PCBGRUVIN9X) || defined (CPUARM)
-    ISTR(DATETIME)
+#if defined(DSM2)
+    ISTR(DSM2MODE)
 #endif
-#if defined(CPUARM)
-    ISTR(VLCD)
+#if defined(PCBV4)
+    ISTR(RE1RE2)
+    ISTR(DATETIME)
 #endif
     ;
 
@@ -106,7 +101,6 @@ const pm_char STR_COPYINGMODEL[] PROGMEM = TR_COPYINGMODEL;
 const pm_char STR_MOVINGMODEL[] PROGMEM = TR_MOVINGMODEL;
 const pm_char STR_LOADINGMODEL[] PROGMEM = TR_LOADINGMODEL;
 const pm_char STR_NAME[] PROGMEM = TR_NAME;
-const pm_char STR_BITMAP[] PROGMEM = TR_BITMAP;
 const pm_char STR_TIMER[] PROGMEM = TR_TIMER;
 const pm_char STR_ELIMITS[] PROGMEM = TR_ELIMITS;
 const pm_char STR_ETRIMS[] PROGMEM = TR_ETRIMS;
@@ -138,13 +132,10 @@ const pm_char STR_INSERTMIX[] PROGMEM = TR_INSERTMIX;
 const pm_char STR_EDITMIX[] PROGMEM = TR_EDITMIX;
 const pm_char STR_SOURCE[] PROGMEM = TR_SOURCE;
 const pm_char STR_WEIGHT[] PROGMEM = TR_WEIGHT;
-const pm_char STR_EXPO[] PROGMEM = TR_EXPO;
-const pm_char STR_SIDE[] PROGMEM = TR_SIDE;
 const pm_char STR_DIFFERENTIAL[] PROGMEM = TR_DIFFERENTIAL;
 const pm_char STR_OFFSET[] PROGMEM = TR_OFFSET;
 const pm_char STR_TRIM[] PROGMEM = TR_TRIM;
-const pm_char STR_DREX[] PROGMEM = TR_DREX;
-const pm_char STR_CURVE[] PROGMEM = TR_CURVE;
+const pm_char STR_CURVES[] PROGMEM = TR_CURVES;
 const pm_char STR_FPHASE[] PROGMEM = TR_FPHASE;
 const pm_char STR_MIXWARNING[] PROGMEM = TR_MIXWARNING;
 const pm_char STR_OFF[] PROGMEM = TR_OFF;
@@ -155,47 +146,42 @@ const pm_char STR_SLOWDOWN[] PROGMEM = TR_SLOWDOWN;
 const pm_char STR_SLOWUP[] PROGMEM = TR_SLOWUP;
 const pm_char STR_MIXER[] PROGMEM = TR_MIXER;
 const pm_char STR_CV[] PROGMEM = TR_CV;
-const pm_char STR_GV[] PROGMEM = TR_GV;
 const pm_char STR_ACHANNEL[] PROGMEM = TR_ACHANNEL;
 const pm_char STR_RANGE[] PROGMEM = TR_RANGE;
 const pm_char STR_BAR[] PROGMEM = TR_BAR;
 const pm_char STR_ALARM[] PROGMEM = TR_ALARM;
 const pm_char STR_USRDATA[] PROGMEM = TR_USRDATA;
-const pm_char STR_BLADES[] PROGMEM = TR_BLADES;
-const pm_char STR_SCREEN[] PROGMEM = TR_SCREEN;
-const pm_char STR_SOUND_LABEL[] PROGMEM = TR_SOUND_LABEL;
-const pm_char STR_LENGTH[] PROGMEM = TR_LENGTH;
+const pm_char STR_BLADES[] PROGMEM = TR_BLADES; // TODO check that it is optimized away when no FRSKY
+const pm_char STR_BARS[] PROGMEM = TR_BARS;
+const pm_char STR_DISPLAY[] PROGMEM = TR_DISPLAY;
+const pm_char STR_BEEPERMODE[] PROGMEM = TR_BEEPERMODE;
+const pm_char STR_BEEPERLEN[] PROGMEM = TR_BEEPERLEN;
 #if defined(AUDIO)
 const pm_char STR_SPKRPITCH[] PROGMEM = TR_SPKRPITCH;
 #endif
 #if defined(HAPTIC)
-const pm_char STR_HAPTIC_LABEL[] PROGMEM = TR_HAPTIC_LABEL;
+const pm_char STR_HAPTICMODE[] PROGMEM = TR_HAPTICMODE;
 const pm_char STR_HAPTICSTRENGTH[] PROGMEM = TR_HAPTICSTRENGTH;
+const pm_char STR_HAPTICLENGTH[] PROGMEM = TR_HAPTICLENGTH;
 #endif
 const pm_char STR_CONTRAST[] PROGMEM = TR_CONTRAST;
-const pm_char STR_ALARMS_LABEL[] PROGMEM = TR_ALARMS_LABEL;
 const pm_char STR_BATTERYWARNING[] PROGMEM = TR_BATTERYWARNING;
 const pm_char STR_INACTIVITYALARM[] PROGMEM = TR_INACTIVITYALARM;
-const pm_char STR_MEMORYWARNING[] PROGMEM = TR_MEMORYWARNING;
-const pm_char STR_ALARMWARNING[] PROGMEM = TR_ALARMWARNING;
 #if defined(ROTARY_ENCODERS)
 const pm_char STR_RENAVIG[] PROGMEM = TR_RENAVIG;
 #endif
+const pm_char STR_FILTERADC[] PROGMEM = TR_FILTERADC;
 const pm_char STR_THROTTLEREVERSE[] PROGMEM = TR_THROTTLEREVERSE;
-const pm_char STR_BEEP_LABEL[] PROGMEM = TR_BEEP_LABEL;
 const pm_char STR_MINUTEBEEP[] PROGMEM = TR_MINUTEBEEP;
 const pm_char STR_BEEPCOUNTDOWN[] PROGMEM = TR_BEEPCOUNTDOWN;
-const pm_char STR_BACKLIGHT_LABEL[] PROGMEM = TR_BACKLIGHT_LABEL;
-const pm_char STR_BLDELAY[] PROGMEM = TR_BLDELAY;
-
-#if defined(PWM_BACKLIGHT)
-const pm_char STR_BLONBRIGHTNESS[] PROGMEM = TR_BLONBRIGHTNESS;
-const pm_char STR_BLOFFBRIGHTNESS[] PROGMEM = TR_BLOFFBRIGHTNESS;
-#endif
-
+const pm_char STR_FLASHONBEEP[] PROGMEM = TR_FLASHONBEEP;
+const pm_char STR_LIGHTSWITCH[] PROGMEM = TR_LIGHTSWITCH;
+const pm_char STR_LIGHTOFFAFTER[] PROGMEM = TR_LIGHTOFFAFTER;
 const pm_char STR_SPLASHSCREEN[] PROGMEM = TR_SPLASHSCREEN;
 const pm_char STR_THROTTLEWARNING[] PROGMEM = TR_THROTTLEWARNING;
 const pm_char STR_SWITCHWARNING[] PROGMEM = TR_SWITCHWARNING;
+const pm_char STR_MEMORYWARNING[] PROGMEM = TR_MEMORYWARNING;
+const pm_char STR_ALARMWARNING[] PROGMEM = TR_ALARMWARNING;
 #ifdef FRSKY
 const pm_char STR_TIMEZONE[] PROGMEM = TR_TIMEZONE;
 const pm_char STR_GPSCOORD[] PROGMEM = TR_GPSCOORD;
@@ -206,6 +192,7 @@ const pm_char STR_SLAVE[] PROGMEM = TR_SLAVE;
 const pm_char STR_MODESRC[] PROGMEM = TR_MODESRC;
 const pm_char STR_MULTIPLIER[] PROGMEM = TR_MULTIPLIER;
 const pm_char STR_CAL[] PROGMEM = TR_CAL;
+const pm_char STR_EEPROMV[] PROGMEM = TR_EEPROMV;
 const pm_char STR_VTRIM[] PROGMEM = TR_VTRIM;
 const pm_char STR_BG[] PROGMEM = TR_BG;
 const pm_char STR_MENUTOSTART[] PROGMEM = TR_MENUTOSTART;
@@ -221,7 +208,7 @@ const pm_char STR_TOT[] PROGMEM = TR_TOT;
 const pm_char STR_TMR1LATMAXUS[] PROGMEM = TR_TMR1LATMAXUS;
 const pm_char STR_TMR1LATMINUS[] PROGMEM = TR_TMR1LATMINUS;
 const pm_char STR_TMR1JITTERUS[] PROGMEM = TR_TMR1JITTERUS;
-const pm_char STR_TMIXMAXMS[] PROGMEM = TR_TMIXMAXMS;
+const pm_char STR_TMAINMAXMS[] PROGMEM = TR_TMAINMAXMS;
 #ifdef DEBUG
 const pm_char STR_T10MSUS[] PROGMEM = TR_T10MSUS;
 #endif
@@ -231,7 +218,6 @@ const pm_char STR_PPM[] PROGMEM = TR_PPM;
 const pm_char STR_CH[] PROGMEM = TR_CH;
 const pm_char STR_MODEL[] PROGMEM = TR_MODEL;
 const pm_char STR_FP[] PROGMEM = TR_FP;
-const pm_char STR_MIX[] PROGMEM = TR_MIX;
 const pm_char STR_EEPROMLOWMEM[] PROGMEM = TR_EEPROMLOWMEM;
 const pm_char STR_ALERT[] PROGMEM = TR_ALERT;
 const pm_char STR_PRESSANYKEYTOSKIP[] PROGMEM = TR_PRESSANYKEYTOSKIP;
@@ -244,7 +230,7 @@ const pm_char STR_EEPROMOVERFLOW[] PROGMEM = TR_EEPROMOVERFLOW;
 const pm_char STR_TRIMS2OFFSETS[] PROGMEM = TR_TRIMS2OFFSETS;
 const pm_char STR_MENURADIOSETUP[] PROGMEM = TR_MENURADIOSETUP;
 
-#if defined(PCBGRUVIN9X) || defined(CPUARM)
+#ifdef PCBV4
 const pm_char STR_MENUDATEANDTIME[] PROGMEM = TR_MENUDATEANDTIME;
 #endif
 
@@ -267,16 +253,14 @@ const pm_char STR_MENUDREXPO[] PROGMEM = TR_MENUDREXPO;
 const pm_char STR_MENULIMITS[] PROGMEM = TR_MENULIMITS;
 const pm_char STR_MENUCURVES[] PROGMEM = TR_MENUCURVES;
 const pm_char STR_MENUCURVE[] PROGMEM = TR_MENUCURVE;
-const pm_char STR_MENUCUSTOMSWITCH[] PROGMEM = TR_MENUCUSTOMSWITCH;
 const pm_char STR_MENUCUSTOMSWITCHES[] PROGMEM = TR_MENUCUSTOMSWITCHES;
-const pm_char STR_MENUCUSTOMFUNC[] PROGMEM = TR_MENUCUSTOMFUNC;
+const pm_char STR_MENUFUNCSWITCHES[] PROGMEM = TR_MENUFUNCSWITCHES;
 
-#if defined(FRSKY)
+#ifdef FRSKY
 const pm_char STR_MENUTELEMETRY[] PROGMEM = TR_MENUTELEMETRY;
-const pm_char STR_LIMIT[] PROGMEM = TR_LIMIT;
 #endif
 
-#if defined(TEMPLATES)
+#ifdef TEMPLATES
 const pm_char STR_MENUTEMPLATES[] PROGMEM = TR_MENUTEMPLATES;
 #endif
 
@@ -293,41 +277,44 @@ const pm_char STR_SYNCMENU[] PROGMEM = TR_SYNCMENU;
 
 const pm_char STR_INVERT_THR[] PROGMEM = TR_INVERT_THR;
 
+#if defined(ROTARY_ENCODERS)
+const pm_char STR_BACK[] PROGMEM = TR_BACK;
+const pm_char STR_MIXERWEIGHT[] PROGMEM = TR_MIXERWEIGHT;
+const pm_char STR_MIXEROFFSET[] PROGMEM = TR_MIXEROFFSET;
+const pm_char STR_DRWEIGHT[] PROGMEM = TR_DRWEIGHT;
+const pm_char STR_DREXPO[] PROGMEM = TR_DREXPO;
+const pm_char STR_MAXLIMIT[] PROGMEM = TR_MAXLIMIT;
+#endif
+
+#if defined(ROTARY_ENCODERS) || defined(FRSKY)
+const pm_char STR_MINLIMIT[] PROGMEM = TR_MINLIMIT;
+#endif
+
 #if defined(FRSKY_HUB)
 const pm_char STR_MINRSSI[] PROGMEM = TR_MINRSSI;
 const pm_char STR_LATITUDE[] PROGMEM = TR_LATITUDE;
 const pm_char STR_LONGITUDE[] PROGMEM = TR_LONGITUDE;
 #endif
 
-#if defined(CPUARM) || defined(PCBGRUVIN9X)
+#if defined(PCBARM) || defined(PCBV4)
 const pm_char STR_SHUTDOWN[] PROGMEM = TR_SHUTDOWN;
 #endif
 
 const pm_char STR_BATT_CALIB[] PROGMEM = TR_BATT_CALIB;
 
-#if defined(CPUARM) || defined(FRSKY)
-const pm_char STR_VOLTAGE[] PROGMEM = TR_VOLTAGE;
+#if defined(PCBARM)
+const pm_char STR_CURRENT_CALIB[] PROGMEM = TR_CURRENT_CALIB;
 const pm_char STR_CURRENT[] PROGMEM = TR_CURRENT;
 #endif
 
-#if defined(CPUARM)
-const pm_char STR_CURRENT_CALIB[] PROGMEM = TR_CURRENT_CALIB;
-#endif
-
-#if defined(NAVIGATION_MENUS)
+#if defined(SDCARD)
 const pm_char STR_SELECT_MODEL[] PROGMEM = TR_SELECT_MODEL;
 const pm_char STR_CREATE_MODEL[] PROGMEM = TR_CREATE_MODEL;
-const pm_char STR_COPY_MODEL[] PROGMEM = TR_COPY_MODEL;
-const pm_char STR_MOVE_MODEL[] PROGMEM = TR_MOVE_MODEL;
-const pm_char STR_DELETE_MODEL[] PROGMEM = TR_DELETE_MODEL;
-#endif
-
-#if defined(SDCARD)
 const pm_char STR_BACKUP_MODEL[] PROGMEM = TR_BACKUP_MODEL;
+const pm_char STR_DELETE_MODEL[] PROGMEM = TR_DELETE_MODEL;
 const pm_char STR_RESTORE_MODEL[] PROGMEM = TR_RESTORE_MODEL;
 const pm_char STR_SDCARD_ERROR[] PROGMEM = TR_SDCARD_ERROR;
 const pm_char STR_NO_SDCARD[] PROGMEM = TR_NO_SDCARD;
-const pm_char STR_INCOMPATIBLE[] PROGMEM = TR_INCOMPATIBLE;
 const pm_char STR_LOGS_PATH[] PROGMEM = LOGS_PATH;
 const pm_char STR_LOGS_EXT[] PROGMEM = LOGS_EXT;
 const pm_char STR_MODELS_PATH[] PROGMEM = MODELS_PATH;
@@ -340,59 +327,7 @@ const pm_char STR_THROTTLEWARN[] PROGMEM = TR_THROTTLEWARN;
 const pm_char STR_ALARMSWARN[] PROGMEM = TR_ALARMSWARN;
 const pm_char STR_SWITCHWARN[] PROGMEM = TR_SWITCHWARN;
 
-const pm_char STR_SPEAKER_VOLUME[] PROGMEM = TR_SPEAKER_VOLUME;
-const pm_char STR_LCD[] PROGMEM = TR_LCD;
-const pm_char STR_BRIGHTNESS[] PROGMEM = TR_BRIGHTNESS;
-const pm_char STR_CPU_TEMP[] PROGMEM = TR_CPU_TEMP;
-const pm_char STR_CPU_CURRENT[] PROGMEM = TR_CPU_CURRENT;
-const pm_char STR_CPU_MAH[] PROGMEM = TR_CPU_MAH;
-const pm_char STR_COPROC[] PROGMEM = TR_COPROC;
-const pm_char STR_COPROC_TEMP[] PROGMEM = TR_COPROC_TEMP;
-const pm_char STR_TEMPWARNING[] PROGMEM = TR_TEMPWARNING;
-const pm_char STR_CAPAWARNING[] PROGMEM = TR_CAPAWARNING;
-const pm_char STR_FUNC[] PROGMEM = TR_FUNC;
-const pm_char STR_V1[] PROGMEM = TR_V1;
-const pm_char STR_V2[] PROGMEM = TR_V2;
-const pm_char STR_DURATION[] PROGMEM = TR_DURATION;
-const pm_char STR_DELAY[] PROGMEM = TR_DELAY;
-const pm_char STR_SD_CARD[] PROGMEM = TR_SD_CARD;
-const pm_char STR_SDHC_CARD[] PROGMEM = TR_SDHC_CARD;
-const pm_char STR_NO_SOUNDS_ON_SD[] PROGMEM = TR_NO_SOUNDS_ON_SD;
-const pm_char STR_NO_MODELS_ON_SD[] PROGMEM = TR_NO_MODELS_ON_SD;
-const pm_char STR_NO_BITMAPS_ON_SD[] PROGMEM = TR_NO_BITMAPS_ON_SD;
-const pm_char STR_PLAY_FILE[] PROGMEM = TR_PLAY_FILE;
-const pm_char STR_DELETE_FILE[] PROGMEM = TR_DELETE_FILE;
-const pm_char STR_COPY_FILE[] PROGMEM = TR_COPY_FILE;
-const pm_char STR_RENAME_FILE[] PROGMEM = TR_RENAME_FILE;
-const pm_char STR_SD_INFO[] PROGMEM = TR_SD_INFO;
-const pm_char STR_SD_FORMAT[] PROGMEM = TR_SD_FORMAT;
-const pm_char STR_REMOVED[] PROGMEM = TR_REMOVED;
-const pm_char STR_NA[] PROGMEM = TR_NA;
-const pm_char STR_HARDWARE[] PROGMEM = TR_HARDWARE;
-const pm_char STR_FORMATTING[] PROGMEM = TR_FORMATTING;
-const pm_char STR_TEMP_CALIB[] PROGMEM = TR_TEMP_CALIB;
-const pm_char STR_TIME[] PROGMEM = TR_TIME;
-const pm_char STR_BAUDRATE[] PROGMEM = TR_BAUDRATE;
-const pm_char STR_SD_INFO_TITLE[] PROGMEM = TR_SD_INFO_TITLE;
-const pm_char STR_SD_TYPE[] PROGMEM = TR_SD_TYPE;
-const pm_char STR_SD_SPEED[] PROGMEM = TR_SD_SPEED;
-const pm_char STR_SD_SECTORS[] PROGMEM = TR_SD_SECTORS;
-const pm_char STR_SD_SIZE[] PROGMEM = TR_SD_SIZE;
-const pm_char STR_CURVE_TYPE[] PROGMEM = TR_CURVE_TYPE;
-const pm_char STR_GLOBAL_VARS[] PROGMEM = TR_GLOBAL_VARS;
-const pm_char STR_OWN[] PROGMEM = TR_OWN;
-const pm_char STR_ROTARY_ENCODER[] PROGMEM = TR_ROTARY_ENCODER;
-const pm_char STR_DATE[] PROGMEM = TR_DATE;
-const pm_char STR_CHANNELS_MONITOR[] PROGMEM = TR_CHANNELS_MONITOR;
-
-#if LCD_W >= 212
-const pm_char STR_MODELNAME[] PROGMEM = TR_MODELNAME;
-const pm_char STR_PHASENAME[] PROGMEM = TR_PHASENAME;
-const pm_char STR_MIXNAME[] PROGMEM = TR_MIXNAME;
-const pm_char STR_EXPONAME[] PROGMEM = TR_EXPONAME;
-#endif
-
-const pm_uchar font_5x7[] PROGMEM = {
+const pm_uchar font[] PROGMEM = {
 #include "font.lbm"
 #if defined(TRANSLATIONS_SE)
 #include "font_se.lbm"
@@ -404,12 +339,10 @@ const pm_uchar font_5x7[] PROGMEM = {
 #include "font_cz.lbm"
 #elif defined(TRANSLATIONS_FR)
 #include "font_fr.lbm"
-#elif defined(TRANSLATIONS_ES)
-#include "font_es.lbm"
 #endif
 };
 
-const pm_uchar font_10x14[] PROGMEM = {
+const pm_uchar font_dblsize[] PROGMEM = {
 #include "font_dblsize.lbm"
 #if defined(TRANSLATIONS_SE)
 #include "font_dblsize_se.lbm"
@@ -419,30 +352,11 @@ const pm_uchar font_10x14[] PROGMEM = {
 #include "font_dblsize_it.lbm"
 #elif defined(TRANSLATIONS_FR)
 #include "font_dblsize_fr.lbm"
-#elif defined(TRANSLATIONS_ES)
-#include "font_dblsize_es.lbm"
 #endif
 };
 
-#if defined(CPUARM)
-const pm_uchar font_3x5[] PROGMEM = {
-#include "font_tiny.lbm"
-};
-
-const pm_uchar font_4x6[] PROGMEM = {
-#include "font_small.lbm"
-};
-
-const pm_uchar font_8x10[] PROGMEM = {
-#include "font_midsize.lbm"
-};
-
-const pm_uchar font_5x7_extra[] PROGMEM = {
-#include "font_extra.lbm"
-};
-
-const pm_uchar font_10x14_extra[] PROGMEM = {
-#include "font_dblsize_extra.lbm"
-};
+#if defined(TRANSLATIONS_FR)
+#include "translations/fr.cpp"
+#else
+#include "translations/en.cpp"
 #endif
-

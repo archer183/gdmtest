@@ -688,7 +688,7 @@ int main(int argc, char **argv)
             pMailbox->argument.outputInit.bufferSize = bufferSize;
             pMailbox->argument.outputInit.memorySize = 128*4096;
 //            TRACE_INFO("%s blockSize : 0x%lx bufferAddr : 0x%lx\n\r",
-//                   "sky9x", blockSize, pMailbox->argument.outputInit.bufferAddress);
+//                   "ersky9x", blockSize, pMailbox->argument.outputInit.bufferAddress);
 //        }
     }
 

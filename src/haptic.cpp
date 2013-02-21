@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -51,10 +48,11 @@ void hapticQueue::heartbeat()
 {
 #if defined(SIMU)
   return;
-#else
+#endif
+
   if (buzzTimeLeft > 0) {
     buzzTimeLeft--; // time gets counted down
-#if defined(PCBSKY9X)
+#if defined(PCBARM)
     hapticOn(g_eeGeneral.hapticStrength * 20);
 #else
     if (hapticTick-- > 0) {
@@ -75,11 +73,10 @@ void hapticQueue::heartbeat()
       buzzTimeLeft = queueHapticLength[t_queueRidx];
       buzzPause = queueHapticPause[t_queueRidx];
       if (!queueHapticRepeat[t_queueRidx]--) {
-        t_queueRidx = (t_queueRidx + 1) & (HAPTIC_QUEUE_LENGTH-1);
+        t_queueRidx = (t_queueRidx + 1) % HAPTIC_QUEUE_LENGTH;
       }
     }
   }
-#endif // defined(SIMU)
 }
 
 void hapticQueue::play(uint8_t tLen, uint8_t tPause, uint8_t tFlags)
@@ -97,7 +94,7 @@ void hapticQueue::play(uint8_t tLen, uint8_t tPause, uint8_t tFlags)
 
   tFlags &= 0x0f;
   if (tFlags) {
-    uint8_t next_queueWidx = (t_queueWidx + 1) & (HAPTIC_QUEUE_LENGTH-1);
+    uint8_t next_queueWidx = (t_queueWidx + 1) % HAPTIC_QUEUE_LENGTH;
     if (next_queueWidx != t_queueRidx) {
       queueHapticLength[t_queueWidx] = tLen;
       queueHapticPause[t_queueWidx] = tPause;
