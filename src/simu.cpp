@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -44,8 +41,10 @@
 #include <time.h>
 #include <ctype.h>
 
-#define W2 LCD_W*2
-#define H2 LCD_H*2
+#define W  DISPLAY_W
+#define H  DISPLAY_H
+#define W2 W*2
+#define H2 H*2
 
 int g_snapshot_idx = 0;
 
@@ -61,11 +60,13 @@ public:
   void makeSnapshot(const FXDrawable* drawable);
   void doEvents();
   void refreshDiplay();
-
 private:
-  FXImage       *bmp;
-  FXImageFrame  *bmf;
-  bool           firstTime;
+
+
+  FX::FXuchar    buf2[W2*H2/8]; 
+  FXBitmap      *bmp;
+  FXBitmapFrame *bmf;
+  bool          firstTime;
 
 public:
   FXSlider      *sliders[8];
@@ -86,13 +87,15 @@ FXDEFMAP(Open9xSim) Open9xSimMap[]={
 
 FXIMPLEMENT(Open9xSim,FXMainWindow,Open9xSimMap,ARRAYNUMBER(Open9xSimMap))
 
+
 Open9xSim::Open9xSim(FXApp* a)
 :FXMainWindow(a,"Open9xSim",NULL,NULL,DECOR_ALL,20,90,0,0)
 {
 
   firstTime=true;
-  for(int i=0; i<(LCD_W*LCD_H/8); i++) displayBuf[i]=0;//rand();
-  bmp = new FXPPMImage(getApp(),NULL,IMAGE_OWNED|IMAGE_KEEP|IMAGE_SHMI|IMAGE_SHMP, W2, H2);
+  for(int i=0; i<(W*H/8); i++) displayBuf[i]=0;//rand();
+  for(int i=0; i<(W2*H2/8); i++) buf2[i]=0;//rand();
+  bmp = new FXBitmap(a,&buf2,BITMAP_KEEP,W2,H2);
 
   FXHorizontalFrame *hf00=new FXHorizontalFrame(this,LAYOUT_CENTER_X);
   FXHorizontalFrame *hf01=new FXHorizontalFrame(this,LAYOUT_CENTER_X);
@@ -133,8 +136,8 @@ Open9xSim::Open9xSim(FXApp* a)
   arrow[2]= new FXArrowButton(hf10,this,1000,ARROW_RIGHT);
   for(int i=4; i<8; i++){
     knobs[i]= new FXKnob(hf11,NULL,0,KNOB_TICKS|LAYOUT_LEFT);
-    knobs[i]->setRange(-1024, 1024);
-    knobs[i]->setValue(0);
+    knobs[i]->setRange(0,1023);
+    knobs[i]->setValue(512);
   }
   
   arrow2[0]= new FXArrowButton(hf00,this,1000,ARROW_LEFT);
@@ -148,7 +151,8 @@ Open9xSim::Open9xSim(FXApp* a)
   }
 
 
-  bmf = new FXImageFrame(this,bmp);
+  bmf = new FXBitmapFrame(this,bmp,0,0,0,0,0,0,0,0,0);
+  bmf->setOnColor(FXRGB(0,0,0));
 
   getApp()->addTimeout(this,2,100);
 }
@@ -212,7 +216,6 @@ long Open9xSim::onArrowPress(FXObject*sender,FXSelector sel,void*v)
   }
   return 0;
 }
-
 long Open9xSim::onKeypress(FXObject*,FXSelector,void*v)
 {
   FXEvent *evt=(FXEvent*)v;
@@ -234,183 +237,201 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
     }
   }
 
-  if(hasFocus()) {
-    static int keys1[]={
-#if defined(PCBACT)
-      KEY_Page_Up,   KEY_MENU,
-      KEY_BackSpace, KEY_EXIT,
-      KEY_Page_Down, KEY_PAGE,
-      KEY_Clear,     KEY_CLR,
-      KEY_Return,    BTN_REa,
-#elif defined(PCBX9D)
-      KEY_Page_Up,   KEY_MENU,
-      KEY_Page_Down, KEY_PAGE,
-      KEY_Return,    KEY_ENTER,
-      KEY_BackSpace, KEY_EXIT,
-      KEY_Right,     KEY_PLUS,
-      KEY_Left,      KEY_MINUS,
-#else
-      KEY_Return,    KEY_MENU,
-      KEY_BackSpace, KEY_EXIT,
-      KEY_Right,     KEY_RIGHT,
-      KEY_Left,      KEY_LEFT,
-      KEY_Up,        KEY_UP,
-      KEY_Down,      KEY_DOWN,
-#endif
-#if defined(ROTARY_ENCODER_NAVIGATION)
-      KEY_F,  BTN_REa,
-#endif
-    };
-
-#if defined(PCBSKY9X)
-    Coproc_temp = 23;
-    Coproc_maxtemp = 28;
-#endif
-
-#if defined(CPUARM)
-    temperature = 31;
-    maxTemperature = 42;
-#endif
-
-    for (unsigned int i=0; i<DIM(keys1); i+=2) {
-      simuSetKey(keys1[i+1], getApp()->getKeyState(keys1[i]));
-    }
-
-#if defined(PCBACT)
-    static bool rotencState = false;
-    if (rotencState) {
-      if (!getApp()->getKeyState(KEY_Right) && !getApp()->getKeyState(KEY_Left))
-        rotencState = false;
-    }
-    else if (getApp()->getKeyState(KEY_Right)) {
-      g_rotenc[0] -= 1;
-      rotencState = true;
-    }
-    else if (getApp()->getKeyState(KEY_Left)) {
-      g_rotenc[0] += 1;
-      rotencState = true;
-    }
-#endif
-
-#ifdef __APPLE__
-    // gruvin: Can't use Function keys on the Mac -- too many other app conflicts.
-    //         The ordering of these keys, Q/W,E/R,T/Y,U/I matches the on screen 
-    //         order of trim sliders
-    static FXuint trimKeys[] = { KEY_E, KEY_R, KEY_U, KEY_I, KEY_R, KEY_E, KEY_Y, KEY_T, KEY_Q, KEY_W };
-#else
-    static FXuint trimKeys[] = { KEY_F1, KEY_F2, KEY_F3, KEY_F4, KEY_F5, KEY_F6, KEY_F7, KEY_F8 };
-#endif
-
-    for (unsigned i=0; i<DIM(trimKeys); i++) {
-      simuSetTrim(i, getApp()->getKeyState(trimKeys[i]));
-    }
-
-#if defined(ROTARY_ENCODER_NAVIGATION)
-    static bool rotencAction = false;
-    if (getApp()->getKeyState(KEY_G)) {
-      if (!rotencAction) g_rotenc[0] += ROTARY_ENCODER_GRANULARITY;
-      rotencAction = true;
-    }
-    else if (getApp()->getKeyState(KEY_D)) {
-      if (!rotencAction) g_rotenc[0] -= ROTARY_ENCODER_GRANULARITY;
-      rotencAction = true;
-    }
-    else {
-      rotencAction = false;
-    }
-#endif
-
-#define SWITCH_KEY(key, swtch, states) \
-    static bool state##key = 0; \
-    static int8_t state_##swtch = 2; \
-    if (getApp()->getKeyState(KEY_##key)) { \
-      if (!state##key) { \
-        state_##swtch = (state_##swtch+1); \
-        if (state_##swtch == 2+states) state_##swtch = 2; \
-        state##key = true; \
-      } \
-    } \
-    else { \
-      state##key = false; \
-    } \
-    simuSetSwitch(swtch, state_##swtch-states);
-
-#if defined(PCBX9D) || defined(PCBACT)
-    SWITCH_KEY(A, 0, 3);
-    SWITCH_KEY(B, 1, 3);
-    SWITCH_KEY(C, 2, 3);
-    SWITCH_KEY(D, 3, 3);
-    SWITCH_KEY(E, 4, 3);
-    SWITCH_KEY(F, 5, 2);
-    SWITCH_KEY(G, 6, 3);
-    SWITCH_KEY(H, 7, 2);
-#else
-    SWITCH_KEY(1, 0, 2);
-    SWITCH_KEY(2, 1, 2);
-    SWITCH_KEY(3, 2, 2);
-    SWITCH_KEY(4, 3, 3);
-    SWITCH_KEY(5, 4, 2);
-    SWITCH_KEY(6, 5, 2);
-    SWITCH_KEY(7, 6, 2);
-#endif
-  }
-
   per10ms();
   refreshDiplay();
   getApp()->addTimeout(this,2,5);
   return 0;
 }
 
-#if defined(PCBX9D) || defined(PCBACT)
-#define BL_COLOR FXRGB(47,123,227)
-#else
-#define BL_COLOR FXRGB(150,200,152)
-#endif
-
 void Open9xSim::refreshDiplay()
 {
   if (lcd_refresh) {
     lcd_refresh = false;
-    FXColor offColor = IS_BACKLIGHT_ON() ? BL_COLOR : FXRGB(200,200,200);
-#if !defined(PCBX9D)
-    FXColor onColor = FXRGB(0,0,0);
-#endif
-    for (int x=0;x<LCD_W;x++) {
-      for (int y=0; y<LCD_H; y++) {
-#if defined(PCBX9D)
-        #define PALETTE_IDX(p, x, mask) ((((p)[(x)] & (mask)) ? 0x1 : 0) + (((p)[DISPLAY_PLAN_SIZE+(x)] & (mask)) ? 0x2 : 0) + (((p)[2*DISPLAY_PLAN_SIZE+(x)] & (mask)) ? 0x4 : 0) + (((p)[3*DISPLAY_PLAN_SIZE+(x)] & (mask)) ? 0x8 : 0))
-        uint8_t mask = (1 << (y%8));
-        uint32_t z = PALETTE_IDX(lcd_buf, (y/8)*LCD_W+x, mask);
-        if (z) {
-          FXColor color;
-          if (IS_BACKLIGHT_ON())
-            color = FXRGB(47-(z*47)/15, 123-(z*123)/15, 227-(z*227)/15);
-          else
-            color = FXRGB(200-(z*200)/15, 200-(z*200)/15, 200-(z*200)/15);
-          bmp->setPixel(2*x, 2*y, color);
-          bmp->setPixel(2*x+1, 2*y, color);
-          bmp->setPixel(2*x, 2*y+1, color);
-          bmp->setPixel(2*x+1, 2*y+1, color);
-        }
+#if defined(PCBV4)
+    if(portc & 1<<OUT_C_LIGHT)  bmf->setOffColor(FXRGB(150,200,152));
+    else                        bmf->setOffColor(FXRGB(200,200,200));
 #else
-        if (lcd_buf[x+(y/8)*LCD_W] & (1<<(y%8))) {
-          bmp->setPixel(2*x, 2*y, onColor);
-          bmp->setPixel(2*x+1, 2*y, onColor);
-          bmp->setPixel(2*x, 2*y+1, onColor);
-          bmp->setPixel(2*x+1, 2*y+1, onColor);
-        }
+    if(portb & 1<<OUT_B_LIGHT)  bmf->setOffColor(FXRGB(150,200,152));
+    else                        bmf->setOffColor(FXRGB(200,200,200));
 #endif
+
+    for(int x=0;x<W;x++){
+      for(int y=0;y<H;y++)
+      {
+        int o2 = x/4 + y*W*2*2/8;
+        if( lcd_buf[x+(y/8)*W] & (1<<(y%8))) {
+          buf2[o2]      |=   3<<(x%4*2);
+          buf2[o2+W2/8] |=   3<<(x%4*2);
+        }
         else {
-          bmp->setPixel(2*x, 2*y, offColor);
-          bmp->setPixel(2*x+1, 2*y, offColor);
-          bmp->setPixel(2*x, 2*y+1, offColor);
-          bmp->setPixel(2*x+1, 2*y+1, offColor);
+          buf2[o2]      &= ~(3<<(x%4*2));
+          buf2[o2+W2/8] &= ~(3<<(x%4*2));
+          //buf2[x2/8+y2*W2/8] &= ~(3<<(x%8));
         }
       }
     }
 
+    bmp->setData (buf2,0);
     bmp->render();
-    bmf->setImage(bmp);
+    bmf->setBitmap( bmp );
+  }
+
+  if(hasFocus()) {
+#ifdef REVB
+#define ERSKY9X_MENU_MASK  (0x20)
+#define ERSKY9X_EXIT_MASK  (0x01000000)
+#define ERSKY9X_EXIT_PIO   PIOC
+#define ERSKY9X_UP_MASK    (0x04 >> 1)
+#define ERSKY9X_RIGHT_MASK (0x20 >> 1)
+#define ERSKY9X_DOWN_MASK  (0x40 >> 1)
+#define ERSKY9X_LEFT_MASK  (0x10 >> 1)
+#else
+#define ERSKY9X_MENU_MASK  (0x40)
+#define ERSKY9X_EXIT_MASK  (0x80000000)
+#define ERSKY9X_EXIT_PIO   PIOA
+#define ERSKY9X_UP_MASK    (0x08 >> 1)
+#define ERSKY9X_RIGHT_MASK (0x20 >> 1)
+#define ERSKY9X_DOWN_MASK  (0x10 >> 1)
+#define ERSKY9X_LEFT_MASK  (0x40 >> 1)
+#endif
+    static uint64_t keys1[]={
+      KEY_Return,    INP_B_KEY_MEN, INP_P_KEY_MEN, (uint64_t)PIOB, ERSKY9X_MENU_MASK,
+      KEY_Page_Up,   INP_B_KEY_MEN, INP_P_KEY_MEN, (uint64_t)PIOB, ERSKY9X_MENU_MASK,
+      KEY_KP_1,      INP_B_KEY_MEN, INP_P_KEY_MEN, (uint64_t)PIOB, ERSKY9X_MENU_MASK,
+      KEY_Page_Down, INP_B_KEY_EXT, INP_P_KEY_EXT, (uint64_t)ERSKY9X_EXIT_PIO, ERSKY9X_EXIT_MASK,
+      KEY_BackSpace, INP_B_KEY_EXT, INP_P_KEY_EXT, (uint64_t)ERSKY9X_EXIT_PIO, ERSKY9X_EXIT_MASK,
+      KEY_KP_0,      INP_B_KEY_EXT, INP_P_KEY_EXT, (uint64_t)ERSKY9X_EXIT_PIO, ERSKY9X_EXIT_MASK,
+      KEY_Down,      INP_B_KEY_DWN, INP_P_KEY_DWN, (uint64_t)PIOC, ERSKY9X_DOWN_MASK,
+      KEY_Up,        INP_B_KEY_UP,  INP_P_KEY_UP,  (uint64_t)PIOC, ERSKY9X_UP_MASK,
+      KEY_Right,     INP_B_KEY_RGT, INP_P_KEY_RGT, (uint64_t)PIOC, ERSKY9X_RIGHT_MASK,
+      KEY_Left,      INP_B_KEY_LFT, INP_P_KEY_LFT, (uint64_t)PIOC, ERSKY9X_LEFT_MASK,
+    };
+
+#if defined(PCBARM)
+    PIOC->PIO_PDSR |= ERSKY9X_DOWN_MASK | ERSKY9X_UP_MASK | ERSKY9X_RIGHT_MASK | ERSKY9X_LEFT_MASK ;
+    ERSKY9X_EXIT_PIO->PIO_PDSR |= ERSKY9X_EXIT_MASK;
+    PIOB->PIO_PDSR |= ERSKY9X_MENU_MASK;
+//    PIOA->PIO_PDSR = 0xFFFFFFFF;
+    Temperature = 1000;
+    maxTemperature = 1500;
+#elif defined(PCBV4)
+    pinl &= ~ 0x3f;
+#else
+    pinb &= ~ 0x7e;
+#endif
+    for(unsigned i=0; i<DIM(keys1);i+=5) {
+      if (getApp()->getKeyState(keys1[i])) {
+#if defined(PCBARM)
+        ((Pio*)keys1[i+3])->PIO_PDSR &= ~(keys1[i+4]);
+#elif defined(PCBV4)
+        pinl |= (1<<keys1[i+2]);
+#else
+        pinb |= (1<<keys1[i+1]);
+#endif
+      }
+    }
+
+#ifdef __APPLE__
+    // gruvin: Can't use Function keys on the Mac -- too many other app conflicts.
+    //         The ordering of these keys, Q/W,E/R,T/Y,U/I matches the on screen 
+    //         order of trim sliders
+    static FXuint keys2[]={KEY_Y, KEY_T, KEY_W, KEY_Q, KEY_I, KEY_U, KEY_E, KEY_R  };
+#else
+    static FXuint keys2[]={KEY_F8, KEY_F7, KEY_F4, KEY_F3, KEY_F6, KEY_F5, KEY_F1, KEY_F2  };
+#endif
+#if defined(PCBARM)
+    PIOA->PIO_PDSR |= (0x00800000 | 0x01000000 | 0x00000002 | 0x00000001);
+    PIOB->PIO_PDSR |= (0x00000010);
+    PIOC->PIO_PDSR |= (0x10000000 | 0x00000400 | 0x00000200);
+#elif defined(PCBV4)
+    pinj = 0;
+#else
+    pind  = 0;
+#endif
+    for(unsigned i=0; i<DIM(keys2);i++){
+      if(getApp()->getKeyState(keys2[i])) {
+#if defined(PCBARM)
+        switch(i) {
+          case 0:
+            PIOA->PIO_PDSR |= 0x00800000;
+            break;
+        }
+#elif defined(PCBV4)
+        pinj |= (1<<i);
+#else
+        pind |= (1<<i);
+#endif
+      }
+    }
+
+#if defined(PCBARM)
+    struct SwitchKey {
+        FXuint key;
+        volatile uint32_t & pin;
+        uint32_t shift;
+        uint32_t value;
+    };
+#else
+    struct SwitchKey {
+      FXuint key;
+      volatile unsigned char& pin;
+      unsigned char shift;
+      unsigned char value;
+    };
+#endif
+    
+    static SwitchKey keys3[] = {
+#if defined(PCBARM)
+      { KEY_1, PIOC->PIO_PDSR,  20, 0 },
+      { KEY_6, PIOA->PIO_PDSR,  2, 0 },
+      { KEY_2, PIOA->PIO_PDSR,  15, 0 },
+      { KEY_3, PIOC->PIO_PDSR,  31, 0 },
+      { KEY_7, PIOC->PIO_PDSR,  16, 0 },
+      { KEY_8, PIOC->PIO_PDSR,  8, 0 } };
+#else
+#if defined(PCBV4) || defined(JETI) || defined(FRSKY) || defined(NMEA) || defined(ARDUPILOT)
+      { KEY_1, pinc,  INP_C_ThrCt, 0 },
+      { KEY_6, pinc,  INP_C_AileDR, 0 },
+#else
+      { KEY_1, pine,  INP_E_ThrCt, 0 },
+      { KEY_6, pine,  INP_E_AileDR, 0 },
+#endif
+      { KEY_2, ping,  INP_G_RuddDR, 0 },
+      { KEY_3, pine,  INP_E_ElevDR, 0 },
+      //KEY_4, ping,  INP_G_ID1, 0,
+      //KEY_5, pine,  INP_E_ID2, 0,
+      { KEY_7, pine,  INP_E_Gear, 0 },
+      { KEY_8, pine,  INP_E_Trainer, 0 } };
+#endif
+
+    for(unsigned i=0; i<DIM(keys3); i++){
+      bool ks = getApp()->getKeyState(keys3[i].key);
+      if (ks != keys3[i].value) {
+        if (ks) keys3[i].pin ^= (1<<keys3[i].shift);
+        keys3[i].value = ks;
+      }
+    }
+      //     INP_G_ID1 INP_E_ID2
+      // id0    0        1
+      // id1    1        1
+      // id2    1        0
+    static FXuint id=0,k4st=0,k5st=0;
+    bool ks=getApp()->getKeyState(KEY_4);
+    if(ks != k4st){
+      if(ks && id>0) id--;
+      k4st = ks;
+    }
+    ks=getApp()->getKeyState(KEY_5);
+    if(ks != k5st){
+      if(ks && id<2) id++;
+      k5st = ks;
+    }
+
+    switch(id){
+      case 0: setSwitch(DSW_ID0); break;
+      case 1: setSwitch(DSW_ID1); break;
+      case 2: setSwitch(DSW_ID2); break;
+    }
   }
 }
 
@@ -468,17 +489,13 @@ int main(int argc,char **argv)
 
 uint16_t anaIn(uint8_t chan)
 {
-#if defined(PCBX9D)
-  if (chan == 8)
-    return 1500;
-#elif defined(PCBGRUVIN9X)
   if (chan == 7)
+#ifdef PCBV4
     return 150;
 #else
-  if (chan == 7)
     return 1500;
 #endif
-  else if (chan<NUM_STICKS)
+  else if (chan<4)
     return th9xSim->sliders[chan]->getValue();
   else
     return th9xSim->knobs[chan]->getValue();

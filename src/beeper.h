@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -47,54 +44,44 @@ extern bool warbleC;
 extern uint8_t hapticTick;
 #endif
 
-#if defined(CPUARM)
-inline void _beep(uint8_t b)
-{
-  buzzerSound(b);
+#if defined(PCBARM)
+#include "ersky9x/sound.h"
+inline void _beep(uint8_t b) {
+  buzzer_sound(b);
 }
 #else
-inline void _beep(uint8_t b)
-{
+inline void _beep(uint8_t b) {
   g_beepCnt = b;
 }
 #endif
 
 extern void beep(uint8_t val);
 
-#define AUDIO_TADA()
-#define AUDIO_KEYPAD_UP()        beep(0)
-#define AUDIO_KEYPAD_DOWN()      beep(0)
-#define AUDIO_MENUS()            beep(0)
-#define AUDIO_WARNING2()         beep(2)
-#define AUDIO_WARNING1()         beep(3)
-#define AUDIO_TX_BATTERY_LOW()   beep(4)
-#define AUDIO_ERROR()            beep(4)
-#define AUDIO_ERROR_MESSAGE(e)   beep(4)
-#define AUDIO_TIMER_MINUTE(t)    beep(2)
-#define AUDIO_TIMER_30()         { beepAgain=2; beep(2); }
-#define AUDIO_TIMER_20()         { beepAgain=1; beep(2); }
-#define AUDIO_TIMER_10()         beep(2)
-#define AUDIO_TIMER_LT3(x)       beep(2)
-#define AUDIO_INACTIVITY()       beep(3)
-#define AUDIO_MIX_WARNING_1()    beep(1)
-#define AUDIO_MIX_WARNING_2()    beep(1)
-#define AUDIO_MIX_WARNING_3()    beep(1)
+#define AUDIO_KEYPAD_UP()     beep(0)
+#define AUDIO_KEYPAD_DOWN()   beep(0)
+#define AUDIO_MENUS()         beep(0)
+#define AUDIO_TRIM()          beep(1)
+#define AUDIO_WARNING2()      beep(2)
+#define AUDIO_WARNING1()      beep(3)
+#define AUDIO_ERROR()         beep(4)
+#define AUDIO_TIMER_30()      { beepAgain=2; beep(2); }
+#define AUDIO_TIMER_20()      { beepAgain=1; beep(2); }
+#define AUDIO_TIMER_10()      beep(2)
+#define AUDIO_TIMER_LT3()     beep(2)
+#define AUDIO_MINUTE_BEEP()   beep(2)
+#define AUDIO_INACTIVITY()    beep(3)
+#define AUDIO_MIX_WARNING_1() beep(1)
+#define AUDIO_MIX_WARNING_2() beep(1)
+#define AUDIO_MIX_WARNING_3() beep(1)
 #define AUDIO_POT_STICK_MIDDLE() beep(2)
-#define AUDIO_VARIO_UP()         _beep(1)
-#define AUDIO_VARIO_DOWN()       _beep(1)
-#define AUDIO_TRIM(event, f)     { if (!IS_KEY_FIRST(event)) warble = true; beep(1); }
-#define AUDIO_TRIM_MIDDLE(f)     beep(2)
-#define AUDIO_TRIM_END(f)        beep(2)
-#define AUDIO_PLAY(p)            beep(3)
+#define AUDIO_VARIO_UP()      _beep(1)
+#define AUDIO_VARIO_DOWN()    _beep(1)
+#define AUDIO_TRIM_MIDDLE(f)   beep(2)
 
 #define IS_AUDIO_BUSY() (g_beepCnt || beepAgain || beepOn)
-#define AUDIO_RESET()
 
-#define PLAY_PHASE_OFF(phase)
-#define PLAY_PHASE_ON(phase)
-
-#if !defined(CPUARM)
-inline void AUDIO_HEARTBEAT()
+#if !defined(PCBARM)
+FORCEINLINE void AUDIO_HEARTBEAT()
 {
     if(g_beepCnt) {
         if(!beepAgainOrig) {

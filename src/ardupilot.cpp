@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -162,14 +159,14 @@ uint8_t ibuf[NB_BUF];				// subscripts on buffers values
 char rbuf[NB_BUF][LG_BUF];		    // receive buffers
 const char val_unknown[] = "?";
 
-void menuTelemetryArduPilot1(uint8_t event);
-void menuTelemetryArduPilot2(uint8_t event);
-void menuTelemetryArduPilot3(uint8_t event);
-void menuTelemetryArduPilot4(uint8_t event);
-void menuTelemetryArduPilot5(uint8_t event);
-void menuTelemetryArduPilot6(uint8_t event);
-void menuTelemetryArduPilot7(uint8_t event);
-void menuTelemetryArduPilot8(uint8_t event);
+void menuProcArduPilot1(uint8_t event);
+void menuProcArduPilot2(uint8_t event);
+void menuProcArduPilot3(uint8_t event);
+void menuProcArduPilot4(uint8_t event);
+void menuProcArduPilot5(uint8_t event);
+void menuProcArduPilot6(uint8_t event);
+void menuProcArduPilot7(uint8_t event);
+void menuProcArduPilot8(uint8_t event);
 void title(char x);
 void initval(uint8_t num, uint8_t pack, uint8_t val);
 
@@ -444,26 +441,26 @@ void ARDUPILOT_EnableRXD (void)
     UCSR0B |=  (1 << RXCIE0);		    // enable Interrupt
 }
 
-void menuTelemetryArduPilot(uint8_t event)
+void menuProcArduPilot(uint8_t event)
 {
-    menuTelemetryArduPilot1(event);
+    menuProcArduPilot1(event);
 }
 
 // Start of ArduPilot menus 1-8 <<<<<<<<<<<<<<<<<<<<<<<<<<<
 
-void menuTelemetryArduPilot1(uint8_t event)
+void menuProcArduPilot1(uint8_t event)
 {
     switch(event)						// new event received, branch accordingly
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot8);
+        chainMenu(menuProcArduPilot8);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot2);
+        chainMenu(menuProcArduPilot2);
         break;
     case EVT_KEY_FIRST(KEY_MENU):
         ARDUPILOT_DisableRXD();
-        chainMenu(menuStatisticsView);
+        chainMenu(menuProcStatistic);
         break;
     case EVT_KEY_FIRST(KEY_EXIT):
         ARDUPILOT_DisableRXD();
@@ -521,15 +518,15 @@ void menuTelemetryArduPilot1(uint8_t event)
     lcd_putsAtt (1*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot2(uint8_t event)
+void menuProcArduPilot2(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot1);
+        chainMenu(menuProcArduPilot1);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot3);
+        chainMenu(menuProcArduPilot3);
         break;
     case EVT_KEY_FIRST(KEY_EXIT):
         ARDUPILOT_DisableRXD();
@@ -545,15 +542,15 @@ void menuTelemetryArduPilot2(uint8_t event)
     lcd_putsAtt (2*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot3(uint8_t event)
+void menuProcArduPilot3(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot2);
+        chainMenu(menuProcArduPilot2);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot4);
+        chainMenu(menuProcArduPilot4);
         break;
     case EVT_KEY_FIRST(KEY_EXIT):
         ARDUPILOT_DisableRXD();
@@ -569,15 +566,15 @@ void menuTelemetryArduPilot3(uint8_t event)
     lcd_putsAtt (2*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot4(uint8_t event)
+void menuProcArduPilot4(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot3);
+        chainMenu(menuProcArduPilot3);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot5);
+        chainMenu(menuProcArduPilot5);
         break;
     case EVT_KEY_FIRST(KEY_EXIT):
         ARDUPILOT_DisableRXD();
@@ -593,15 +590,15 @@ void menuTelemetryArduPilot4(uint8_t event)
     lcd_putsAtt (2*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot5(uint8_t event)
+void menuProcArduPilot5(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot4);
+        chainMenu(menuProcArduPilot4);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot6);
+        chainMenu(menuProcArduPilot6);
         break;
     case EVT_KEY_FIRST(KEY_MENU):
         break;
@@ -619,15 +616,15 @@ void menuTelemetryArduPilot5(uint8_t event)
     lcd_putsAtt (2*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot6(uint8_t event)
+void menuProcArduPilot6(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot5);
+        chainMenu(menuProcArduPilot5);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot7);
+        chainMenu(menuProcArduPilot7);
         break;
     case EVT_KEY_FIRST(KEY_MENU):
         break;
@@ -645,15 +642,15 @@ void menuTelemetryArduPilot6(uint8_t event)
     lcd_putsAtt (2*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot7(uint8_t event)
+void menuProcArduPilot7(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot6);
+        chainMenu(menuProcArduPilot6);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot8);
+        chainMenu(menuProcArduPilot8);
         break;
     case EVT_KEY_FIRST(KEY_MENU):
         break;
@@ -671,15 +668,15 @@ void menuTelemetryArduPilot7(uint8_t event)
     lcd_putsAtt (2*FW, 5*FH, VALSTR(1), APSIZE);
 }
 
-void menuTelemetryArduPilot8(uint8_t event)
+void menuProcArduPilot8(uint8_t event)
 {
     switch(event)
     {
     case EVT_KEY_FIRST(KEY_UP):
-        chainMenu(menuTelemetryArduPilot7);
+        chainMenu(menuProcArduPilot7);
         break;
     case EVT_KEY_FIRST(KEY_DOWN):
-        chainMenu(menuTelemetryArduPilot1);
+        chainMenu(menuProcArduPilot1);
         break;
     case EVT_KEY_FIRST(KEY_MENU):
         break;

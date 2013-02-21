@@ -38,32 +38,14 @@ void putEvent(uint8_t evt)
 {
   s_evt = evt;
 }
-
-#if defined(PCBSKY9X)
-uint8_t getEvent(bool trim)
-{
-  uint8_t evt = s_evt;
-  int8_t k = (s_evt & EVT_KEY_MASK) - TRM_BASE;
-  bool trim_evt = (k>=0 && k<8);
-
-  if (trim == trim_evt) {
-    s_evt = 0;
-    return evt;
-  }
-  else {
-    return 0;
-  }
-}
-#else
 uint8_t getEvent()
 {
   uint8_t evt = s_evt;
-  s_evt = 0;
+  s_evt=0;
   return evt;
 }
-#endif
 
-#if defined(PCBSKY9X)
+#if defined(PCBARM)
 #define KEY_LONG_DELAY 32
 #else
 #define KEY_LONG_DELAY 24
@@ -74,22 +56,27 @@ void Key::input(bool val, EnumKeys enuk)
 {
   uint8_t t_vals = m_vals ;
   t_vals <<= 1 ;
-  if (val) t_vals |= 1; //portbit einschieben
+  if(val) t_vals |= 1; //portbit einschieben
   m_vals = t_vals ;
 
   m_cnt++;
 
-  if (m_state && m_vals==0) {  //gerade eben sprung auf 0
-    if (m_state != KSTATE_KILLED) {
+  if(m_state && m_vals==0){  //gerade eben sprung auf 0
+    if(m_state!=KSTATE_KILLED) {
       putEvent(EVT_KEY_BREAK(enuk));
+      if(!( m_state == 16 && m_cnt<16)){
+        m_dblcnt=0;
+      }
+        //      }
     }
     m_cnt   = 0;
     m_state = KSTATE_OFF;
   }
   switch(m_state){
     case KSTATE_OFF:
-      if (m_vals == FFVAL) { //gerade eben sprung auf ff
+      if(m_vals==FFVAL){ //gerade eben sprung auf ff
         m_state = KSTATE_START;
+        if(m_cnt>16) m_dblcnt=0; //pause zu lang fuer double
         m_cnt   = 0;
       }
       break;
@@ -97,6 +84,7 @@ void Key::input(bool val, EnumKeys enuk)
     case KSTATE_START:
       putEvent(EVT_KEY_FIRST(enuk));
       inacCounter = 0;
+      m_dblcnt++;
       m_state   = KSTATE_RPTDELAY;
       m_cnt     = 0;
       break;
@@ -117,7 +105,7 @@ void Key::input(bool val, EnumKeys enuk)
         m_state >>= 1;
         m_cnt     = 0;
       }
-      // no break
+      //fallthrough
     case 1:
       if( (m_cnt & (m_state-1)) == 0)  putEvent(EVT_KEY_REPT(enuk));
       break;
@@ -136,55 +124,43 @@ void Key::input(bool val, EnumKeys enuk)
 
 void pauseEvents(uint8_t event)
 {
-  event = event & EVT_KEY_MASK;
-  if (event < (int)DIM(keys)) keys[event].pauseEvents();
+  event=event & EVT_KEY_MASK;
+  if(event < (int)DIM(keys))  keys[event].pauseEvents();
 }
-
 void killEvents(uint8_t event)
 {
-  event = event & EVT_KEY_MASK;
-  if (event < (int)DIM(keys)) keys[event].killEvents();
+  event=event & EVT_KEY_MASK;
+  if(event < (int)DIM(keys))  keys[event].killEvents();
 }
 
-volatile tmr10ms_t g_tmr10ms;
-volatile uint8_t   g_blinkTmr10ms;
-volatile uint8_t   rtc_count=0;
+//uint16_t g_anaIns[8];
+volatile uint16_t g_tmr10ms;
+volatile uint8_t  g_blinkTmr10ms;
 
 void per10ms()
 {
   g_tmr10ms++;
   g_blinkTmr10ms++;
-  
-  if (s_noHi) s_noHi--;
-  if (trimsCheckTimer) trimsCheckTimer --;
 
-#if defined (PCBSKY9X)
+#if defined (PCBARM)
   Tenms |= 1 ;                    // 10 mS has passed
 #endif
 
-#if defined(RTCLOCK)
-  /* Update global Date/Time every 100 per10ms cycles */
+#if defined (PCBV4) && defined(SDCARD)
+  /* Update gloabal Date/Time every 100 per10ms cycles */
   if (++g_ms100 == 100) {
-    g_rtcTime++;   // inc global unix timestamp one second
-#if defined (PCBSKY9X)
-    if (g_rtcTime < 60 || rtc_count<5) { 
-      rtc_init();
-      rtc_count++;
-    } else {
-      read_coprocessor(true);
-    }
-#endif    
+    g_unixTime++; // inc global unix timestamp one second
     g_ms100 = 0;
   }
 #endif
 
   readKeysAndTrims();
 
-#if defined(MAVLINK) && !defined(PCBSKY9X)
+#if defined(MAVLINK) && !defined(PCBARM)
   check_mavlink();
 #endif
 
-#if defined (FRSKY) && !defined(PCBSKY9X) && !(defined(PCBSTD) && (defined(AUDIO) || defined(VOICE)))
+#if defined (FRSKY) && !defined(PCBARM)
   check_frsky();
 #endif
 

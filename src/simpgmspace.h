@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -98,30 +95,11 @@ typedef const uint8_t pm_uint8_t;
 typedef const int16_t pm_int16_t;
 typedef const int8_t pm_int8_t;
 
-#if defined(PCBX9D) || defined(PCBACT)
-extern GPIO_TypeDef gpioa;
-#undef GPIOA
-#define GPIOA (&gpioa)
-extern GPIO_TypeDef gpiob;
-#undef GPIOB
-#define GPIOB (&gpiob)
-extern GPIO_TypeDef gpioc;
-#undef GPIOC
-#define GPIOC (&gpioc)
-extern GPIO_TypeDef gpiod;
-#undef GPIOD
-#define GPIOD (&gpiod)
-extern GPIO_TypeDef gpioe;
-#undef GPIOE
-#define GPIOE (&gpioe)
-#elif defined(PCBSKY9X)
+extern sem_t eeprom_write_sem;
+#if defined(PCBARM)
 extern Pio Pioa, Piob, Pioc;
 extern Twi Twio;
-extern Dacc dacc;
 extern Usart Usart0;
-extern Adc Adc0;
-#undef ADC
-#define ADC (&Adc0)
 #undef USART0
 #define USART0 (&Usart0)
 #undef PIOA
@@ -132,24 +110,11 @@ extern Adc Adc0;
 #define PIOC (&Pioc)
 #undef TWI0
 #define TWI0 (&Twio)
-#undef DACC
-#define DACC (&dacc)
-extern Pwm pwm;
-#undef PWM
-#define PWM (&pwm)
-#endif
-
-extern sem_t *eeprom_write_sem;
-
-#if defined(PCBSKY9X)
 extern uint32_t eeprom_pointer;
 extern char* eeprom_buffer_data;
 extern volatile int32_t eeprom_buffer_size;
 extern bool eeprom_read_operation;
 extern volatile uint32_t Spi_complete;
-#endif
-
-#if defined(CPUARM)
 extern void startPdcUsartReceive() ;
 extern uint32_t txPdcUsart( uint8_t *buffer, uint32_t size );
 extern uint32_t txPdcPending();
@@ -174,7 +139,6 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define cli()
 #define sei()
 #define strcpy_P strcpy
-#define strcat_P strcat
 #define memcpy_P memcpy
 
 #define PORTA dummyport
@@ -193,7 +157,6 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define DDRE  dummyport
 #define DDRF  dummyport
 #define DDRG  dummyport
-#define PINA  ~pina
 #define PINB  ~pinb
 #define PINC  ~pinc
 #define PIND  ~pind
@@ -215,22 +178,19 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define RXCIE0 dummyport
 #define OCR0A dummyport
 #define OCR1A dummyport16
-#define OCR1B dummyport16
-#define OCR1C dummyport16
-#define OCR2 dummyport
 #define OCR3A dummyport16
 #define OCR3B dummyport16
 #define OCR4A dummyport
-#define OCR5A dummyport
+#define OCR1B dummyport16
+#define OCR1C dummyport16
 #define TCCR0A dummyport
 #define TCCR1A dummyport
 #define TCCR1B dummyport
 #define TCCR1C dummyport
 #define COM1B0 dummyport
 #define COM0A0 dummyport
+
 #define TCNT1 dummyport16
-#define TCNT1L dummyport
-#define TCNT5 dummyport16
 #define ICR1 dummyport16
 #define TIFR dummyport
 #define TIFR1 dummyport
@@ -245,7 +205,6 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define TIMSK1 dummyport
 #define TIMSK3 dummyport
 #define TIMSK4 dummyport
-#define TIMSK5 dummyport
 #define ETIMSK  dummyport
 #define ETIMSK1 dummyport
 
@@ -261,7 +220,6 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define OCIE1B dummyport
 #define OCIE1C dummyport
 #define OCIE4A dummyport
-#define OCIE5A dummyport
 
 #define OUT_B_LIGHT   7
 #define INP_E_ElevDR  2
@@ -278,14 +236,14 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define INP_B_KEY_EXT 2
 #define INP_B_KEY_MEN 1
 
-#define INP_L_SPARE6    7
-#define INP_L_SPARE5    6
-#define INP_L_KEY_EXT   5
-#define INP_L_KEY_MEN   4
-#define INP_L_KEY_LFT   3
-#define INP_L_KEY_RGT   2
-#define INP_L_KEY_UP    1
-#define INP_L_KEY_DWN   0
+#define INP_P_SPARE6    7
+#define INP_P_SPARE5    6
+#define INP_P_KEY_EXT   5
+#define INP_P_KEY_MEN   4
+#define INP_P_KEY_LFT   3
+#define INP_P_KEY_RGT   2
+#define INP_P_KEY_UP    1
+#define INP_P_KEY_DWN   0
 
 #define WGM10   0
 #define WGM12   0
@@ -294,10 +252,7 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define UPE0    0
 #define FE0     0
 
-#define ISR(x, ...)  void x()
-#define asm(x)
-
-#if defined(CPUARM)
+#if defined(PCBARM)
 extern volatile uint32_t Tenms;
 extern uint32_t Master_frequency;
 #define NVIC_EnableIRQ(x)
@@ -306,74 +261,22 @@ extern uint32_t Master_frequency;
 #define __enable_irq()
 #endif
 
-extern volatile unsigned char pina, pinb, pinc, pind, pine, ping, pinh, pinj, pinl;
+extern volatile unsigned char pinb,pinc,pind,pine,ping,pinh,pinj,pinl;
 extern uint8_t portb, portc, porth, dummyport;
 extern uint16_t dummyport16;
 extern uint8_t main_thread_running;
 
-#define getADC()
-#define getADC_bandgap()
-
-#define SIMU_SLEEP(x) do { if (!main_thread_running) return; sleep(x/*ms*/); } while (0)
-
-void simuSetKey(uint8_t key, bool state);
-void simuSetTrim(uint8_t trim, bool state);
-void simuSetSwitch(uint8_t swtch, int8_t state);
+extern void setSwitch(int8_t swtch);
 
 void StartMainThread(bool tests=true);
 void StartEepromThread(const char *filename="eeprom.bin");
 
 extern const char *eepromFile;
-#if defined(PCBX9D) || defined(PCBACT)
-void eeprom_read_block (void *pointer_ram, uint16_t pointer_eeprom, size_t size);
-#else
-void eeprom_read_block (void *pointer_ram, const void *pointer_eeprom, size_t size);
-#endif
+void eeprom_read_block (void *pointer_ram,
+                   const void *pointer_eeprom,
+                        size_t size);
 
 #define wdt_reset() sleep(1/*ms*/)
-#define boardInit()
-
-#define OS_MutexID int
-#define OS_FlagID int
-#define OS_TID int
-#define OS_TCID int
-#define OS_STK char
-
-#define E_OK   0
-
-#define CoSetFlag(...)
-#define CoClearFlag(...)
-#define CoSetTmrCnt(...)
-#define CoEnterISR(...)
-#define CoExitISR(...)
-#define CoStartTmr(...)
-#define CoWaitForSingleFlag(...) 0
-#define CoEnterMutexSection(...)
-#define CoLeaveMutexSection(...)
-#define CoTickDelay(...)
-#define CoCreateFlag(...) 0
-#define UART3_Configure(...)
-#define UART_Stop(...)
-#define UART3_Stop(...)
-
-#if defined(PCBX9D) || defined(PCBACT)
-inline void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct) { }
-#define GPIO_SetBits(GPIOx, pin) GPIOx->BSRRL |= pin
-#define GPIO_ResetBits(GPIOx, pin) GPIOx->BSRRL &= ~pin
-#define GPIO_IsSet(GPIOx, pin) (GPIOx->BSRRL & pin)
-#define RCC_AHB1PeriphClockCmd(...)
-#define GPIO_ReadInputDataBit(...) true
-#endif
-
-#define configure_pins(...)
-
-#define sdMountPoll()
-#define sdPoll10ms()
-#define sd_card_ready()  (true)
-#define sdMounted()      (true)
-#define SD_IS_HC()       (0)
-#define SD_GET_BLOCKNR() (0)
-#define SD_GET_SIZE_MB() (0)
-#define SD_GET_SPEED()   (0)
+#define board_init()
 
 #endif
