@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -39,11 +41,6 @@
 #include "board.h"
 #include "audio_driver.h"
 
-extern "C" {
-extern void init_SDcard();
-extern void sdInit();
-}
-
 #if defined(REVA)
 #define GPIO_BUTTON_MENU                PIOB->PIO_PDSR
 #define GPIO_BUTTON_EXIT                PIOA->PIO_PDSR
@@ -72,30 +69,57 @@ extern void sdInit();
 #define PIN_BUTTON_LEFT                 0x00000008
 #endif
 
-#define sdPoll10ms()
+#define GPIO_TRIM_LH_L                  PIOA->PIO_PDSR
+#define GPIO_TRIM_LV_DN                 PIOA->PIO_PDSR
+#define GPIO_TRIM_RV_UP                 PIOA->PIO_PDSR
+#define GPIO_TRIM_RH_L                  PIOA->PIO_PDSR
+#define GPIO_TRIM_LH_R                  PIOB->PIO_PDSR
+#define GPIO_TRIM_LV_UP                 PIOC->PIO_PDSR
+#define GPIO_TRIM_RV_DN                 PIOC->PIO_PDSR
+#define GPIO_TRIM_RH_R                  PIOC->PIO_PDSR
+
+#if defined(REVA)
+#define PIN_TRIM_LH_L                   0x00000080
+#define PIN_TRIM_LV_DN                  0x08000000
+#define PIN_TRIM_RV_UP                  0x40000000
+#define PIN_TRIM_RH_L                   0x20000000
+#define PIN_TRIM_LH_R                   0x00000010
+#define PIN_TRIM_LV_UP                  0x10000000
+#define PIN_TRIM_RV_DN                  0x00000400
+#define PIN_TRIM_RH_R                   0x00000200
+#else
+#define PIN_TRIM_LH_L                   0x00800000
+#define PIN_TRIM_LV_DN                  0x01000000
+#define PIN_TRIM_RV_UP                  0x00000002
+#define PIN_TRIM_RH_L                   0x00000001
+#define PIN_TRIM_LH_R                   0x00000010
+#define PIN_TRIM_LV_UP                  0x10000000
+#define PIN_TRIM_RV_DN                  0x00000400
+#define PIN_TRIM_RH_R                   0x00000200
+#endif
 
 void usbMassStorage();
 
-#define PIN_ENABLE           0x001
-#define PIN_PERIPHERAL       0x000
-#define PIN_INPUT            0x002
-#define PIN_OUTPUT           0x000
-#define PIN_PULLUP           0x004
-#define PIN_NO_PULLUP        0x000
-#define PIN_PULLDOWN         0x008
-#define PIN_NO_PULLDOWN      0x000
-#define PIN_PERI_MASK_L      0x010
-#define PIN_PERI_MASK_H      0x020
-#define PIN_PER_A            0x000
-#define PIN_PER_B            0x010
-#define PIN_PER_C            0x020
-#define PIN_PER_D            0x030
-#define PIN_PORT_MASK        0x0C0
-#define PIN_PORTA            0x000
-#define PIN_PORTB            0x040
-#define PIN_PORTC            0x080
-#define PIN_LOW              0x000
-#define PIN_HIGH             0x100
+#define PIN_ENABLE                      0x001
+#define PIN_PERIPHERAL                  0x000
+#define PIN_INPUT                       0x002
+#define PIN_OUTPUT                      0x000
+#define PIN_PULLUP                      0x004
+#define PIN_NO_PULLUP                   0x000
+#define PIN_PULLDOWN                    0x008
+#define PIN_NO_PULLDOWN                 0x000
+#define PIN_PERI_MASK_L                 0x010
+#define PIN_PERI_MASK_H                 0x020
+#define PIN_PER_A                       0x000
+#define PIN_PER_B                       0x010
+#define PIN_PER_C                       0x020
+#define PIN_PER_D                       0x030
+#define PIN_PORT_MASK                   0x0C0
+#define PIN_PORTA                       0x000
+#define PIN_PORTB                       0x040
+#define PIN_PORTC                       0x080
+#define PIN_LOW                         0x000
+#define PIN_HIGH                        0x100
 
 void configure_pins( uint32_t pins, uint16_t config );
 uint16_t getCurrent();
@@ -106,13 +130,6 @@ uint8_t getTemperature();
 
 #define strcpy_P strcpy
 #define strcat_P strcat
-
-extern uint32_t readKeys();
-#define KEYS_PRESSED() (~readKeys())
-#define DBLKEYS_PRESSED_RGT_LFT(i) ((in & (0x20 + 0x40)) == (0x20 + 0x40))
-#define DBLKEYS_PRESSED_UP_DWN(i)  ((in & (0x10 + 0x08)) == (0x10 + 0x08))
-#define DBLKEYS_PRESSED_RGT_UP(i)  ((in & (0x20 + 0x10)) == (0x20 + 0x10))
-#define DBLKEYS_PRESSED_LFT_DWN(i) ((in & (0x40 + 0x08)) == (0x40 + 0x08))
 
 #if !defined(REVA)
 extern uint16_t Current_analogue;
@@ -134,15 +151,45 @@ extern uint16_t sessionTimer;
 
 void setSticksGain(uint8_t gains);
 
+// Keys driver
+extern uint32_t readKeys();
+#define KEYS_PRESSED() (~readKeys())
+#define DBLKEYS_PRESSED_RGT_LFT(i) ((in & (0x20 + 0x40)) == (0x20 + 0x40))
+#define DBLKEYS_PRESSED_UP_DWN(i)  ((in & (0x10 + 0x08)) == (0x10 + 0x08))
+#define DBLKEYS_PRESSED_RGT_UP(i)  ((in & (0x20 + 0x10)) == (0x20 + 0x10))
+#define DBLKEYS_PRESSED_LFT_DWN(i) ((in & (0x40 + 0x08)) == (0x40 + 0x08))
+
+// Pulses driver
+void init_main_ppm(uint32_t period, uint32_t out_enable);
+void disable_main_ppm();
+void disable_ppm2();
+void init_ssc();
+void disable_ssc();
+#define disable_pxx() disable_ssc()
+// TODO illogical in the driver :(
+void setupPulsesPPM(uint32_t ppmPort=0);
+
+// SD driver
+#if !defined(SIMU)
+#define sdPoll10ms()
+void sdMountPoll();
+extern "C" {
+void init_SDcard();
+void sdInit();
+uint32_t sd_card_ready();
+uint32_t sdMounted();
+}
+#endif
+
 // WDT driver
 #if !defined(SIMU)
 #define wdt_disable()
-#define wdt_enable(x) WDT->WDT_MR = 0x3FFF217F;
+#define wdt_enable(x) WDT->WDT_MR = 0x3FFF217F
 #define wdt_reset()   WDT->WDT_CR = 0xA5000001
 #endif
 
 // Backlight driver
-#define setBacklight(xx)  PWM->PWM_CH_NUM[0].PWM_CDTYUPD = xx
+#define setBacklight(xx)  (PWM->PWM_CH_NUM[0].PWM_CDTYUPD = xx)
 #define __BACKLIGHT_ON    (PWM->PWM_CH_NUM[0].PWM_CDTY = g_eeGeneral.backlightBright)
 #define __BACKLIGHT_OFF   (PWM->PWM_CH_NUM[0].PWM_CDTY = 100)
 #define IS_BACKLIGHT_ON() (PWM->PWM_CH_NUM[0].PWM_CDTY != 100)
@@ -191,5 +238,11 @@ void eepromInit();
 // Rotary Encoder driver
 void rotencInit();
 void rotencEnd();
+
+#if defined(ROTARY_ENCODERS)
+  #define rotencDown()  (!(PIOB->PIO_PDSR & 0x40))
+#else
+  #define rotencDown()  0
+#endif
 
 #endif

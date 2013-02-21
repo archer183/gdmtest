@@ -47,22 +47,36 @@
 #endif
 
 #define LEN_VPROTOS      "\006"
-#ifdef PXX
-#define TR_PXX  "PXX\0  "
+
+#if defined(PXX)
+  #define TR_PXX         "PXX\0  "
+#elif defined(DSM2) || defined(IRPROTOS)
+  #define TR_PXX         "[PXX]\0"
 #else
-#define TR_PXX  "[PXX]\0"
+  #define TR_PXX
 #endif
-#ifdef DSM2
-#define TR_DSM2 "DSM2\0 "
+
+#if defined(DSM2)
+  #define TR_DSM2        "LP45\0 ""DSM2\0 ""DSMX\0 "
+#elif defined(IRPROTOS)
+  #define TR_DSM2        "[LP45]""[DSM2]""[DSMX]"
 #else
-#define TR_DSM2 "[DSM2]"
+  #define TR_DSM2
 #endif
-#ifdef IRPROTOS
-#define TR_IRPROTOS "SILV  TRAC09PICZ  SWIFT\0"
+
+#if defined(IRPROTOS)
+  #define TR_IRPROTOS    "SILV  TRAC09PICZ  SWIFT\0"
 #else
-#define TR_IRPROTOS
+  #define TR_IRPROTOS
 #endif
-#define TR_VPROTOS       "PPM\0  ""PPM16\0""PPMsim" TR_PXX TR_DSM2 TR_IRPROTOS
+
+#if defined(CPUARM)
+  #define TR_XPPM
+#else
+  #define TR_XPPM              "PPM16\0""PPMsim"
+#endif
+
+#define TR_VPROTOS             "PPM\0  " TR_XPPM TR_PXX TR_DSM2 TR_IRPROTOS
 
 #define LEN_POSNEG       "\003"
 #define TR_POSNEG        "POS""NEG"
@@ -79,8 +93,8 @@
 #define LEN_VMIXTRIMS    "\003"
 #define TR_VMIXTRIMS     "OFF""ON\0""Lem""Pfd""Mot""Ail"
 
-#define LEN_VCSWFUNC     "\010"
-#define TR_VCSWFUNC      "---\0    ""v>ofs\0  ""v<ofs\0  ""|v|>ofs\0""|v|<ofs\0""AND\0    ""OR\0     ""XOR\0    ""v1==v2\0 ""v1!=v2\0 ""v1>v2\0  ""v1<v2\0  ""v1>=v2\0 ""v1<=v2\0 ""d>=ofs\0 ""|d|>=ofs"
+#define LEN_VCSWFUNC     "\006"
+#define TR_VCSWFUNC      "---\0  ""v1>x\0 ""v1<x\0 ""|v1|>x""|v1|<x""AND\0  ""OR\0   ""XOR\0  ""v1==v2""v1!=v2""v1>v2\0""v1<v2\0""v1>=v2""v1<=v2""d>=x\0 ""|d|>=x"
 
 #define LEN_VFSWFUNC     "\015"
 #if defined(VARIO)
@@ -111,33 +125,33 @@
 #else
 #define TR_SDCLOGS       "[SDCARD Logs]"
 #endif
-#define TR_FSW_VOLUME    "Volume\0      "
-#define TR_FSW_BG_MUSIC  "BgMusic\0     ""BgMusic ||\0  "
+#define TR_CFN_VOLUME    "Volume\0      "
+#define TR_CFN_BG_MUSIC  "BgMusic\0     ""BgMusic ||\0  "
 #elif defined(PCBGRUVIN9X)
 #if defined(SDCARD)
 #define TR_SDCLOGS       "SDCARD Logs\0 "
 #else
 #define TR_SDCLOGS       "[SDCARD Logs]"
 #endif
-#define TR_FSW_VOLUME
-#define TR_FSW_BG_MUSIC
+#define TR_CFN_VOLUME
+#define TR_CFN_BG_MUSIC
 #else
 #define TR_SDCLOGS
-#define TR_FSW_VOLUME
-#define TR_FSW_BG_MUSIC
+#define TR_CFN_VOLUME
+#define TR_CFN_BG_MUSIC
 #endif
 #ifdef GVARS
-#define TR_FSW_ADJUST_GVAR  "Ajuste\0      "
+#define TR_CFN_ADJUST_GVAR  "Ajuste\0      "
 #else
-#define TR_FSW_ADJUST_GVAR
+#define TR_CFN_ADJUST_GVAR
 #endif
 #ifdef DEBUG
-#define TR_FSW_TEST         "Teste\0       "
+#define TR_CFN_TEST         "Teste\0       "
 #else
-#define TR_FSW_TEST
+#define TR_CFN_TEST
 #endif
 
-#define TR_VFSWFUNC      "Seguro\0      ""Aprendiz\0    ""Ajuste Rapido" TR_SOUND TR_HAPTIC "Reset\0       " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_FSW_VOLUME "Backlight\0   " TR_FSW_BG_MUSIC TR_FSW_ADJUST_GVAR TR_FSW_TEST
+#define TR_VFSWFUNC      "Seguro\0      ""Aprendiz\0    ""Ajuste Rapido" TR_SOUND TR_HAPTIC "Reset\0       " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "Backlight\0   " TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
 
 #define LEN_VFSWRESET    "\006"
 #define TR_VFSWRESET     "Tempo1""Tempo2""Todo  ""Telem."
@@ -173,8 +187,8 @@
 #define LEN_VOLTSRC      "\003"
 #define TR_VOLTSRC       "---""A1\0""A2\0""FAS""Cel"
 
-#define LEN_VARIOSRC     "\004"
-#define TR_VARIOSRC      "Data""A1\0 ""A2\0"
+#define LEN_VARIOSRC     "\005"
+#define TR_VARIOSRC      "Alti\0""Alti+""Vario""A1\0  ""A2\0"
 
 #define LEN_VSCREEN      "\004"
 #define TR_VSCREEN       "Nums""Bars"
@@ -217,13 +231,19 @@
 #else
 #define TR_CYC_VSRCRAW   "[C1]""[C2]""[C3]"
 #endif
-#define TR_VSRCRAW       "Lem\0""Pfd\0""Mot\0""Ail\0""Pot1""Pot2""Pot3" TR_ROTARY_ENCODERS_VSRCRAW "TrmL" "TrmP" "TrmM" "TrmA" "MAX\0""3POS" TR_CYC_VSRCRAW
+
+#if EXTRA_3POS == 1
+  #define TR_VSRCRAW       "Lem\0""Pfd\0""Mot\0""Ail\0""3PO2""Pot2""Pot3" TR_ROTARY_ENCODERS_VSRCRAW "TrmL" "TrmP" "TrmM" "TrmA" "MAX\0""3PO1" TR_CYC_VSRCRAW
+#elif EXTRA_3POS == 2
+  #define TR_VSRCRAW       "Lem\0""Pfd\0""Mot\0""Ail\0""Pot1""3PO2""Pot3" TR_ROTARY_ENCODERS_VSRCRAW "TrmL" "TrmP" "TrmM" "TrmA" "MAX\0""3PO1" TR_CYC_VSRCRAW
+#elif EXTRA_3POS == 3
+  #define TR_VSRCRAW       "Lem\0""Pfd\0""Mot\0""Ail\0""Pot1""Pot2""3PO2" TR_ROTARY_ENCODERS_VSRCRAW "TrmL" "TrmP" "TrmM" "TrmA" "MAX\0""3PO1" TR_CYC_VSRCRAW
+#else
+  #define TR_VSRCRAW       "Lem\0""Pfd\0""Mot\0""Ail\0""Pot1""Pot2""Pot3" TR_ROTARY_ENCODERS_VSRCRAW "TrmL" "TrmP" "TrmM" "TrmA" "MAX\0""3POS" TR_CYC_VSRCRAW
+#endif
 
 #define LEN_VTMRMODES    "\003"
 #define TR_VTMRMODES     "OFF""ABS""MTs""MT%""MTt"
-
-#define LEN_DSM2MODE     "\007"
-#define TR_DSM2MODE      "LP4/LP5DSMonlyDSMX   "
 
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
@@ -250,6 +270,7 @@
 #define TR_PPMFRAME            "PPM frame"
 #define TR_MS                  "ms"
 #define TR_SWITCH              "Chave"
+
 #define TR_BITMAP              "Bitmap"
 #define TR_TRIMS               "Trims"
 #define TR_FADEIN              "Aparecer"
@@ -313,6 +334,8 @@
 #define TR_BEEPCOUNTDOWN       INDENT"Beep Regressivo"
 #define TR_BACKLIGHT_LABEL     "Backlight"
 #define TR_BLDELAY             INDENT"Tempo Backlight"
+#define TR_BLONBRIGHTNESS      INDENT"ON Brightness"
+#define TR_BLOFFBRIGHTNESS     INDENT"OFF Brightness"
 #define TR_SPLASHSCREEN        "Splash screen"
 #define TR_THROTTLEWARNING     "Avisa Acel"
 #define TR_SWITCHWARNING       "Avisa Chav"
@@ -392,7 +415,6 @@
 #define TR_MENUDEBUG           "DEPURAR"
 #define TR_RXNUM               "RxNum"
 #define TR_SYNCMENU            "Sync [MENU]"
-#define TR_BACK                "Atras"
 #define TR_LIMIT               INDENT"Limite"
 #define TR_MINRSSI             "Min Rssi"
 #define TR_LATITUDE            "Latitude"

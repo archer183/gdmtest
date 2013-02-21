@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -170,7 +172,7 @@ ISR(TIMER4_COMPA_vect) //Every 0.5ms normally, every 2ms during startup reset
 }
 #endif
 
-void pushPrompt(uint16_t prompt, uint8_t id)
+void pushPrompt(uint16_t prompt)
 {
   /* TODO id */
   somo14playlist[somo14WIdx] = prompt;
@@ -180,7 +182,7 @@ void pushPrompt(uint16_t prompt, uint8_t id)
   sei();
 }
 
-bool isPlaying(uint8_t id)
+bool isPlaying()
 {
   /* TODO id */
 #if defined(SIMU)

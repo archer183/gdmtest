@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -34,15 +36,12 @@
 
 #include "../open9x.h"
 
-// TODO illogical in the driver :(
-void setupPulsesPPM();
-
 void init_main_ppm( uint32_t period, uint32_t out_enable )
 {
   register Pio *pioptr ;
   register Pwm *pwmptr ;
 
-  setupPulsesPPM() ;
+  setupPulsesPPM(0) ;
 
   if ( out_enable )
   {
@@ -62,9 +61,26 @@ void init_main_ppm( uint32_t period, uint32_t out_enable )
   pwmptr->PWM_CH_NUM[3].PWM_CDTY = g_model.ppmDelay*100+600;    // Duty in half uS
   pwmptr->PWM_CH_NUM[3].PWM_CDTYUPD = g_model.ppmDelay*100+600; // Duty in half uS
   pwmptr->PWM_ENA = PWM_ENA_CHID3 ;                             // Enable channel 3
-
-  NVIC_EnableIRQ(PWM_IRQn) ;
   pwmptr->PWM_IER1 = PWM_IER1_CHID3 ;
+
+#if !defined(REVA)
+  configure_pins( PIO_PC15, PIN_PERIPHERAL | PIN_INPUT | PIN_PER_B | PIN_PORTC | PIN_NO_PULLUP ) ;
+#endif
+
+#if !defined(REVA)
+  // PWM1 for PPM2
+  pwmptr->PWM_CH_NUM[1].PWM_CMR = 0x0000000B ;    // CLKB
+  if (g_model.pulsePol)
+    pwmptr->PWM_CH_NUM[1].PWM_CMR |= 0x00000200 ;   // CPOL
+  pwmptr->PWM_CH_NUM[1].PWM_CPDR = period ;                       // Period
+  pwmptr->PWM_CH_NUM[1].PWM_CPDRUPD = period ;            // Period
+  pwmptr->PWM_CH_NUM[1].PWM_CDTY = g_model.ppmDelay*100+600 ;                             // Duty
+  pwmptr->PWM_CH_NUM[1].PWM_CDTYUPD = g_model.ppmDelay*100+600 ;          // Duty
+  pwmptr->PWM_ENA = PWM_ENA_CHID1 ;                                               // Enable channel 1
+#endif
+
+  pwmptr->PWM_IER1 = PWM_IER1_CHID1 ;
+  NVIC_EnableIRQ(PWM_IRQn) ;
 }
 
 void disable_main_ppm()
@@ -75,6 +91,16 @@ void disable_main_ppm()
   pioptr->PIO_PER = PIO_PA17 ;                                            // Assign A17 to PIO
 
   PWM->PWM_IDR1 = PWM_IDR1_CHID3 ;
+}
+
+void disable_ppm2()
+{
+  register Pio *pioptr ;
+
+  pioptr = PIOC ;
+  pioptr->PIO_PER = PIO_PC17 ;                                            // Assign A17 to PIO
+
+  PWM->PWM_IDR1 = PWM_IDR1_CHID1 ;
   NVIC_DisableIRQ(PWM_IRQn) ;
 }
 

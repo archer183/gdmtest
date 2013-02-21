@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -33,6 +35,64 @@
  */
 
 #include "../open9x.h"
+
+#if defined(ROTARY_ENCODER_NAVIGATION)
+
+#if defined(TELEMETREZ)
+uint8_t TrotCount ;             // TeZ version
+uint8_t LastTrotCount ;         // TeZ version
+uint8_t RotEncoder ;
+#define ROTENC_DOWN() (RotEncoder != 0)
+#else
+uint8_t RotPosition ;
+int8_t LastRotaryValue ;
+int8_t Rotary_diff ;
+int8_t RotaryControl ;
+uint8_t RotEncoder ;
+#define ROTENC_DOWN() (RotEncoder & 0x20)
+#endif
+
+void rotencPoll()
+{
+#if defined(TELEMETREZ)
+  if (TrotCount != LastTrotCount) {
+    g_rotenc[0] = LastTrotCount = TrotCount ;
+  }
+#else
+  // Rotary Encoder polling
+  PORTA = 0 ;                     // No pullups
+  DDRA = 0x1F ;           // Top 3 bits input
+
+  asm(" rjmp 1f") ;
+  asm("1:") ;
+//      asm(" nop") ;
+//      asm(" nop") ;
+  uint8_t rotary ;
+  rotary = PINA ;
+  DDRA = 0xFF ;           // Back to all outputs
+  rotary &= 0xE0 ;
+
+  RotEncoder = rotary ; // just read the lcd pin
+
+  rotary &= 0xDF ;
+  if ( rotary != RotPosition ) {
+    uint8_t x ;
+    x = RotPosition & 0x40 ;
+    x <<= 1 ;
+    x ^= rotary & 0x80 ;
+    if ( x ) {
+      g_rotenc[0] -= 1 ;
+    }
+    else {
+      g_rotenc[0] += 1 ;
+    }
+    RotPosition = rotary ;
+  }
+#endif // TELEMETREZ
+}
+#else
+#define ROTENC_DOWN() (0)
+#endif // ROTARY_ENCODER_NAVIGATION
 
 #ifndef SIMU
 inline void boardInit()
@@ -64,6 +124,15 @@ inline void boardInit()
   OCR0 = 156;
 #endif
 
+#if defined(PWM_BACKLIGHT)
+  /** Smartieparts LED Backlight is connected to PORTB/pin7, which can be used as pwm output of timer2 **/
+#if defined(SP22)
+  TCCR2  = (0b011 << CS20)|(1<<WGM20)|(1<<COM21)|(1<<COM20); // inv. pwm mode, clk/64
+#else
+  TCCR2  = (0b011 << CS20)|(1<<WGM20)|(1<<COM21); // pwm mode, clk/64
+#endif
+#endif
+
   TIMSK |= (1<<OCIE0) |  (1<<TOIE0); // Enable Output-Compare and Overflow interrrupts
   /********************************/
 }
@@ -74,8 +143,7 @@ FORCEINLINE
 #endif
 uint8_t keyDown()
 {
-  // printf("PINB=%x\n", PINB & 0x7E); fflush(stdout);
-  return (~PINB) & 0x7E;
+  return ((~PINB) & 0x7E) | ROTENC_DOWN();
 }
 
 bool switchState(EnumKeys enuk)
@@ -118,6 +186,20 @@ bool switchState(EnumKeys enuk)
     case SW_ID2:
       result = !(PINE & (1<<INP_E_ID2));
       break;
+
+#if defined(EXTRA_3POS)
+    case SW_ID3:
+      result = (calibratedStick[POT1+EXTRA_3POS-1] < 0);
+      break;
+
+    case SW_ID4:
+      result = (calibratedStick[POT1+EXTRA_3POS-1] == 0);
+      break;
+
+    case SW_ID5:
+      result = (calibratedStick[POT1+EXTRA_3POS-1] > 0);
+      break;
+#endif
 
     case SW_GEA:
       result = PINE & (1<<INP_E_Gear);
@@ -180,9 +262,13 @@ void readKeysAndTrims()
 
   for (int i=0; i<8; i++) {
     // INP_D_TRM_RH_UP   0 .. INP_D_TRM_LH_UP   7
-    keys[enuk].input(in & pgm_read_byte(crossTrim+i),(EnumKeys)enuk);
+    keys[enuk].input(in & pgm_read_byte(crossTrim+i), (EnumKeys)enuk);
     ++enuk;
   }
+
+#if defined(ROTARY_ENCODER_NAVIGATION)
+  keys[enuk].input(ROTENC_DOWN(), (EnumKeys)enuk); // Rotary Enc. Switch
+#endif
 }
 
 bool checkSlaveMode()
@@ -201,3 +287,41 @@ bool checkSlaveMode()
   }
   return lastSlaveMode;
 }
+
+#if defined(PWM_BACKLIGHT)
+
+// exponential PWM table for linear brightness
+static const uint8_t pwmtable[16] PROGMEM =
+{
+    0, 2, 3, 4, 6, 8, 11, 16, 23, 32, 45, 64, 90, 128, 181, 255
+};
+
+static uint8_t bl_target;
+static uint8_t bl_current;
+
+void backlightFadeOn()
+{
+  bl_target = 15 - g_eeGeneral.blOnBright;
+}
+
+void backlightFadeOff()
+{
+  bl_target = g_eeGeneral.blOffBright;
+}
+
+bool getBackLightState()
+{
+  return (bl_target==g_eeGeneral.blOnBright);
+}
+
+void fadeBacklight() //called from per10ms()
+{
+  if (bl_target != bl_current) {
+    if (bl_target > bl_current)
+      OCR2 = pgm_read_byte(&pwmtable[++bl_current]);
+    else
+      OCR2 = pgm_read_byte(&pwmtable[--bl_current]);
+  }
+}
+
+#endif

@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -76,15 +78,11 @@ uint32_t Eeprom32_data_size ;
 
 #define EE_NOWAIT	1
 
-void init_spi();
-
 void eeDirty(uint8_t msk)
 {
   s_eeDirtyMsk |= msk;
   s_eeDirtyTime10ms = get_tmr10ms() ;
 }
-
-void handle_serial( void ) ;
 
 uint32_t get_current_block_number( uint32_t block_no, uint16_t *p_size, uint32_t *p_seq ) ;
 void write32_eeprom_block( uint32_t eeAddress, register uint8_t *buffer, uint32_t size, uint32_t immediate=0 ) ;
@@ -405,8 +403,9 @@ void eeLoadModel(uint8_t id)
       resumePulses();
     }
 
+    activeSwitches = 0;
+    activeFnSwitches = 0;
     activeFunctions = 0;
-    activeFunctionSwitches = 0;
 
     for (uint8_t i=0; i<MAX_TIMERS; i++) {
       if (g_model.timers[i].remanent) {
@@ -418,7 +417,7 @@ void eeLoadModel(uint8_t id)
     // TODO pulses should be started after mixer calculations ...
 
 #if defined(FRSKY)
-    FRSKY_setModelAlarms();
+    frskySendAlarms();
 #endif
 
 #if defined(SDCARD)
@@ -471,20 +470,19 @@ void eeReadAll()
 
     ALERT(STR_EEPROMWARN, STR_BADEEPROMDATA, AU_BAD_EEPROM);
 
-    if (pwrCheck()==e_power_off) {
-      // we don't want to store anything
+    if (pwrCheck() == e_power_off) {
+      // the radio has been powered off during the ALERT
       pwrOff(); // turn power off now
     }
-    else {
-      MESSAGE(STR_EEPROMWARN, STR_EEPROMFORMATTING, NULL, AU_EEPROM_FORMATTING);
 
-      /* we remove all models */
-      for (uint32_t i=0; i<MAX_MODELS; i++)
-        eeDeleteModel(i);
+    MESSAGE(STR_EEPROMWARN, STR_EEPROMFORMATTING, NULL, AU_EEPROM_FORMATTING);
 
-      STORE_GENERALVARS;
-      STORE_MODELVARS;
-    }
+    /* we remove all models */
+    for (uint32_t i=0; i<MAX_MODELS; i++)
+      eeDeleteModel(i);
+
+    STORE_GENERALVARS;
+    STORE_MODELVARS;
   }
   else {
     eeLoadModelNames() ;

@@ -32,16 +32,18 @@
 #define LEN_VLCD         "\006"
 #define TR_VLCD          "NormalOptrex"
 
-#define LEN_VTRIMINC     "\006"
-#define TR_VTRIMINC      "Expo  ""ExFine""Fine  ""Medium""Coarse"
+#define LEN_VTRIMINC     TR("\006","\013")
+#define TR_VTRIMINC      TR("Expo  ""ExFine""Fine  ""Medium""Coarse","Exponential""Extra Fine ""Fine       ""Medium     ""Coarse     ")
 
 #define LEN_RETA123      "\001"
 #if defined(PCBGRUVIN9X)
-#if defined(EXTRA_ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 2
 #define TR_RETA123       "RETA123abcd"
-#else //EXTRA_ROTARY_ENCODERS
+#else
 #define TR_RETA123       "RETA123ab"
-#endif //EXTRA_ROTARY_ENCODERS
+#endif
+#elif defined(PCBX9D)
+#define TR_RETA123       "RETA12LR"
 #else
 #define TR_RETA123       "RETA123"
 #endif
@@ -71,6 +73,7 @@
 
 #if defined(TRIG)
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""RNG""BTA""BTV"
+
 //TRIG FUNCTIONS ADDED ABOVE
 #else
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|"
@@ -145,8 +148,8 @@
 
 #define TR_VFSWFUNC      "Safety\0    ""Trainer \0  ""Inst. Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_FSW_VOLUME "Backlight\0 " TR_FSW_BG_MUSIC TR_FSW_ADJUST_GVAR TR_FSW_TEST
 
-#define LEN_VFSWRESET    "\006"
-#define TR_VFSWRESET     "Timer1""Timer2""All   ""Telem."
+#define LEN_VFSWRESET    TR("\006","\012")
+#define TR_VFSWRESET     "Timer 1  ""Timer 2  ""All      ""Telemetry"
 
 #define LEN_FUNCSOUNDS   "\006"
 #define TR_FUNCSOUNDS    "Beep1 ""Beep2 ""Beep3 ""Warn1 ""Warn2 ""Cheep ""Ring  ""SciFi ""Robot ""Chirp ""Tada  ""Crickt""Siren ""AlmClk""Ratata""Tick  "
@@ -203,7 +206,7 @@
 
 #define LEN_VSWITCHES    "\003"
 #if defined(PCBX9D)
-#define TR_VSWITCHES     "SA\300""SA\301""SB\300""SB-""SB\301""SC\300""SC-""SC\301""SD\300""SD-""SD\301""SE\300""SE-""SE\301""SF\300""SF-""SF\301""SG\300""SG-""SG\301""SH\300""SH\301""CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC""CSD""CSE""CSF""CSG""CSH""CSI""CSJ""CSK""CSL""CSM""CSN""CSO""CSP""CSQ""CSR""CSS""CST""CSU""CSV""CSW"" ON"
+#define TR_VSWITCHES     "SA\300""SA-""SA\301""SB\300""SB-""SB\301""SC\300""SC-""SC\301""SD\300""SD-""SD\301""SE\300""SE-""SE\301""SF\300""SF\301""SG\300""SG-""SG\301""SH\300""SH\301""CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC""CSD""CSE""CSF""CSG""CSH""CSI""CSJ""CSK""CSL""CSM""CSN""CSO""CSP""CSQ""CSR""CSS""CST""CSU""CSV""CSW"" ON"
 #elif defined(PCBSKY9X)
 #define TR_VSWITCHES     "THR""RUD""ELE""ID0""ID1""ID2""AIL""GEA""TRN""CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC""CSD""CSE""CSF""CSG""CSH""CSI""CSJ""CSK""CSL""CSM""CSN""CSO""CSP""CSQ""CSR""CSS""CST""CSU""CSV""CSW"" ON"
 #else
@@ -212,7 +215,7 @@
 
 #define LEN_VSRCRAW      "\004"
 #if defined(PCBX9D)
-#define TR_POTS_VSRCRAW  "S1\0 ""S2\0 ""S3\0 ""S4\0 "
+#define TR_POTS_VSRCRAW  "S1\0 ""S2\0 ""LS\0 ""RS\0 "
 #define TR_SW_VSRCRAW    "SA\0 ""SB\0 ""SC\0 ""SD\0 ""SE\0 ""SF\0 ""SG\0 ""SH\0 "
 #else
 #define TR_POTS_VSRCRAW  "P1\0 ""P2\0 ""P3\0 "
@@ -222,9 +225,9 @@
 #define TR_ROTARY_ENCODERS_VSRCRAW
 #elif defined(PCBSKY9X)
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa "
-#elif defined(PCBGRUVIN9X) && defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
-#elif defined(PCBGRUVIN9X) && !defined(EXTRA_ROTARY_ENCODERS)
+#elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
 #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb "
 #else
 #define TR_ROTARY_ENCODERS_VSRCRAW
@@ -247,24 +250,32 @@
 #define LEN_INDENT             1
 #define INDENT_WIDTH           (FW/2)
 
+#if defined(PCBX9D)
+#define TR_POPUPS              "[ENTER]\010[EXIT]"
+#else
 #define TR_POPUPS              "[MENU]\010[EXIT]"
+#endif
 #define OFS_EXIT               7
+#if defined(PCBX9D)
+#define TR_MENUWHENDONE        CENTER"\006[ENTER] WHEN DONE"
+#else
 #define TR_MENUWHENDONE        CENTER"\006[MENU] WHEN DONE"
+#endif
 #define TR_FREE                "free"
 #define TR_DELETEMODEL         "DELETE MODEL"
 #define TR_COPYINGMODEL        "Copying model..."
 #define TR_MOVINGMODEL         "Moving model..."
 #define TR_LOADINGMODEL        "Loading model..."
-#define TR_NAME                "Name"
-#define TR_BITMAP              "Bitmap"
-#define TR_TIMER               "Timer"
-#define TR_ELIMITS             "E.Limits"
-#define TR_ETRIMS              "E.Trims"
+#define TR_NAME                TR("Name","Model Name")
+#define TR_BITMAP              "Model Image"
+#define TR_TIMER               TR("Timer","Timer ")
+#define TR_ELIMITS             TR("E.Limits","Extended Limits")
+#define TR_ETRIMS              TR("E.Trims","Extended Trims")
 #define TR_TRIMINC             "Trim Step"
-#define TR_TTRACE              "T-Trace"
-#define TR_TTRIM               "T-Trim"
-#define TR_BEEPCTR             "Ctr Beep"
-#define TR_PROTO               INDENT"Proto"
+#define TR_TTRACE              TR("T-Trace","Throttle Trace")
+#define TR_TTRIM               TR("T-Trim","Throttle Trim")
+#define TR_BEEPCTR             TR("Ctr Beep","Center Beep")
+#define TR_PROTO               TR(INDENT"Proto",INDENT"Protocol")
 #define TR_PPMFRAME            "PPM frame"
 #define TR_MS                  "ms"
 #define TR_SWITCH              "Switch"
@@ -324,26 +335,30 @@
 #define TR_MEMORYWARNING       INDENT"Memory Low"
 #define TR_ALARMWARNING        INDENT"Sound Off"
 #define TR_RENAVIG             "RotEnc Navig"
-#define TR_THROTTLEREVERSE     "Thr reverse"
-#define TR_BEEP_LABEL          "Timer events"
-#define TR_MINUTEBEEP          INDENT"Minute"
+#define TR_THROTTLEREVERSE     TR("Thr reverse","Throttle reverse")
+#define TR_BEEP_LABEL          "Timer beeps"
+#define TR_MINUTEBEEP          TR(INDENT"Minute",INDENT"Every minute")
 #define TR_BEEPCOUNTDOWN       INDENT"Countdown"
 #define TR_BACKLIGHT_LABEL     "Backlight"
 #define TR_BLDELAY             INDENT"Duration"
 #define TR_SPLASHSCREEN        "Splash screen"
-#define TR_THROTTLEWARNING     "T-Warning"
-#define TR_SWITCHWARNING       "S-Warning"
-#define TR_TIMEZONE            "Time Zone"
-#define TR_RXCHANNELORD        "Rx Channel Ord"
+#define TR_THROTTLEWARNING     TR("T-Warning","Throttle Warning")
+#define TR_SWITCHWARNING       TR("S-Warning","Switch Warning")
+#define TR_TIMEZONE            TR("Time Zone","GPS Time zone")
+#define TR_RXCHANNELORD        TR("Rx Channel Ord","Default channel order")
 #define TR_SLAVE               "Slave"
 #define TR_MODESRC             "Mode\006% Source"
 #define TR_MULTIPLIER          "Multiplier"
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
+#if defined(PCBX9D)
+#define TR_MENUTOSTART         CENTER"\006[ENTER] TO START"
+#else
 #define TR_MENUTOSTART         CENTER"\006[MENU] TO START"
-#define TR_SETMIDPOINT         CENTER"SET MIDPOINT"
-#define TR_MOVESTICKSPOTS      CENTER"MOVE STICKS/POTS"
+#endif
+#define TR_SETMIDPOINT         CENTER"\003SET STICKS MIDPOINT"
+#define TR_MOVESTICKSPOTS      CENTER"\006MOVE STICKS/POTS"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
@@ -368,15 +383,16 @@
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODEL"
 #define TR_FP                  "FP"
+#define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM low mem"
 #define TR_ALERT               "\016ALERT"
 #define TR_PRESSANYKEYTOSKIP   CENTER"Press any key to skip"
 #define TR_THROTTLENOTIDLE     CENTER"Throttle not idle"
 #define TR_ALARMSDISABLED      CENTER"Alarms Disabled"
-#define TR_PRESSANYKEY         "\010Press any Key"
+#define TR_PRESSANYKEY         TR("\010Press any Key",CENTER"Press any Key")
 #define TR_BADEEPROMDATA       CENTER"Bad EEprom Data"
-#define TR_EEPROMFORMATTING    "Formatting EEPROM"
-#define TR_EEPROMOVERFLOW      "EEPROM overflow"
+#define TR_EEPROMFORMATTING    CENTER"Formatting EEPROM"
+#define TR_EEPROMOVERFLOW      CENTER"EEPROM overflow"
 #define TR_MENURADIOSETUP      "RADIO SETUP"
 #define TR_MENUDATEANDTIME     "DATE AND TIME"
 #define TR_MENUTRAINER         "TRAINER"
@@ -384,9 +400,9 @@
 #define TR_MENUDIAG            "DIAG"
 #define TR_MENUANA             "ANAS"
 #define TR_MENUCALIBRATION     "CALIBRATION"
-#define TR_TRIMS2OFFSETS       "Trims => Offsets"
-#define TR_MENUMODELSEL        "MODELSEL"
-#define TR_MENUSETUP           "SETUP"
+#define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
+#define TR_MENUMODELSEL        TR("MODELSEL","MODEL SELECTION")
+#define TR_MENUSETUP           TR("SETUP","MODEL SETUP")
 #define TR_MENUFLIGHTPHASE     "FLIGHT PHASE"
 #define TR_MENUFLIGHTPHASES    "FLIGHT PHASES"
 #define TR_MENUHELISETUP       "HELI SETUP"
@@ -406,15 +422,15 @@
 #define TR_MENUTEMPLATES       "TEMPLATES"
 #define TR_MENUSTAT            "STATS"
 #define TR_MENUDEBUG           "DEBUG"
-#define TR_RXNUM               "RxNum"
+#define TR_RXNUM               TR("RxNum","Receiver Number")
 #define TR_SYNCMENU            "Sync [MENU]"
 #define TR_BACK                "Back"
 #define TR_LIMIT               INDENT"Limit"
 #define TR_MINRSSI             "Min Rssi"
 #define TR_LATITUDE            "Latitude"
 #define TR_LONGITUDE           "Longitude"
-#define TR_GPSCOORD            "Gps Coords"
-#define TR_VARIO               "Vario"
+#define TR_GPSCOORD            TR("GPS Coords","GPS coordinate format")
+#define TR_VARIO               TR("Vario","Variometer")
 #define TR_SHUTDOWN            "SHUTTING DOWN"
 #define TR_BATT_CALIB          "Battery Calib"
 #define TR_CURRENT_CALIB       "Current Calib"
@@ -433,7 +449,7 @@
 #define TR_THROTTLEWARN        "THROTTLE"
 #define TR_ALARMSWARN          "ALARMS"
 #define TR_SWITCHWARN          "SWITCH"
-#define TR_INVERT_THR          "Invert Thr?"
+#define TR_INVERT_THR          TR("Invert Thr?","Invert Throttle?")
 #define TR_SPEAKER_VOLUME      INDENT"Volume"
 #define TR_LCD                 "LCD"
 #define TR_BRIGHTNESS          "Brightness"
@@ -442,8 +458,8 @@
 #define TR_CPU_MAH             "Consumpt."
 #define TR_COPROC              "CoProc."
 #define TR_COPROC_TEMP         "MB Temp. \016>"
-#define TR_CAPAWARNING         INDENT "Capacity Low"
-#define TR_TEMPWARNING         INDENT "Temp High"
+#define TR_CAPAWARNING         INDENT"Capacity Low"
+#define TR_TEMPWARNING         TR(INDENT"Temp High",INDENT"Temperature High")
 #define TR_FUNC                "Func"
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"

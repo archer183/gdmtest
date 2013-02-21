@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -191,6 +193,7 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define DDRE  dummyport
 #define DDRF  dummyport
 #define DDRG  dummyport
+#define PINA  ~pina
 #define PINB  ~pinb
 #define PINC  ~pinc
 #define PIND  ~pind
@@ -291,7 +294,8 @@ extern void rxPdcUsart( void (*pChProcess)(uint8_t x) );
 #define UPE0    0
 #define FE0     0
 
-#define ISR(x)     void x()
+#define ISR(x, ...)  void x()
+#define asm(x)
 
 #if defined(CPUARM)
 extern volatile uint32_t Tenms;
@@ -302,7 +306,7 @@ extern uint32_t Master_frequency;
 #define __enable_irq()
 #endif
 
-extern volatile unsigned char pinb,pinc,pind,pine,ping,pinh,pinj,pinl;
+extern volatile unsigned char pina, pinb, pinc, pind, pine, ping, pinh, pinj, pinl;
 extern uint8_t portb, portc, porth, dummyport;
 extern uint16_t dummyport16;
 extern uint8_t main_thread_running;
@@ -313,7 +317,8 @@ extern uint8_t main_thread_running;
 #define SIMU_SLEEP(x) do { if (!main_thread_running) return; sleep(x/*ms*/); } while (0)
 
 void simuSetKey(uint8_t key, bool state);
-void simuSetSwitch(int8_t swtch);
+void simuSetTrim(uint8_t trim, bool state);
+void simuSetSwitch(uint8_t swtch, int8_t state);
 
 void StartMainThread(bool tests=true);
 void StartEepromThread(const char *filename="eeprom.bin");
@@ -361,5 +366,14 @@ inline void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct) { 
 #endif
 
 #define configure_pins(...)
+
+#define sdMountPoll()
+#define sdPoll10ms()
+#define sd_card_ready()  (true)
+#define sdMounted()      (true)
+#define SD_IS_HC()       (0)
+#define SD_GET_BLOCKNR() (0)
+#define SD_GET_SIZE_MB() (0)
+#define SD_GET_SPEED()   (0)
 
 #endif

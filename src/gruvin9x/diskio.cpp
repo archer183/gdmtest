@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -669,12 +671,17 @@ void sdPoll10ms()
 }
 
 #if !defined(SIMU)
+bool sdMounted()
+{
+  return g_FATFS_Obj.fs_type != 0;
+}
+
 void sdMountPoll()
 {
   static uint8_t mountTimer;
   if (mountTimer-- == 0) {
     mountTimer = 100;
-    if (g_FATFS_Obj.fs_type == 0) {
+    if (!sdMounted()) {
       f_mount(0, &g_FATFS_Obj);
     }
   }

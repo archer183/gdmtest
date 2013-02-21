@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -79,21 +81,34 @@ const MenuFuncP_PROGMEM menuTabDiag[] PROGMEM = {
 #define RADIO_SETUP_DATE_COLUMN (FW*15+5)
 #endif
 
-#if defined(GRAPHICS)
-void displaySlider(uint8_t x, uint8_t y, uint8_t value, uint8_t attr)
-{
-  lcd_putc(RADIO_SETUP_2ND_COLUMN+2*FW+(value*FW), y, '$');
-  lcd_hline(RADIO_SETUP_2ND_COLUMN, y+3, 5*FW-1, SOLID);
-  if (attr && (!(attr & BLINK) || !BLINK_ON_PHASE)) lcd_filled_rect(RADIO_SETUP_2ND_COLUMN, y, 5*FW-1, FH-1);
-}
-#define SLIDER(y, value, min, max, label, values, event, attr) { \
-          int8_t tmp = value; \
-          displaySlider(RADIO_SETUP_2ND_COLUMN, y, tmp, attr); \
-          value = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, label, NULL, tmp, min, max, attr, event); \
-        }
+#if !defined(CPUM64)
+  void displaySlider(uint8_t x, uint8_t y, uint8_t value, uint8_t max, uint8_t attr)
+  {
+    lcd_putc(RADIO_SETUP_2ND_COLUMN+(value*4*FW)/max, y, '$');
+    lcd_hline(RADIO_SETUP_2ND_COLUMN, y+3, 5*FW-1, SOLID);
+    if (attr && (!(attr & BLINK) || !BLINK_ON_PHASE)) lcd_filled_rect(RADIO_SETUP_2ND_COLUMN, y, 5*FW-1, FH-1);
+  }
+  #define SLIDER_5POS(y, value, label, event, attr) { \
+    int8_t tmp = value; \
+    displaySlider(RADIO_SETUP_2ND_COLUMN, y, 2+tmp, 4, attr); \
+    value = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, label, NULL, tmp, -2, +2, attr, event); \
+  }
+#elif defined(GRAPHICS)
+  void display5posSlider(uint8_t x, uint8_t y, uint8_t value, uint8_t attr)
+  {
+    lcd_putc(RADIO_SETUP_2ND_COLUMN+2*FW+(value*FW), y, '$');
+    lcd_hline(RADIO_SETUP_2ND_COLUMN, y+3, 5*FW-1, SOLID);
+    if (attr && (!(attr & BLINK) || !BLINK_ON_PHASE)) lcd_filled_rect(RADIO_SETUP_2ND_COLUMN, y, 5*FW-1, FH-1);
+  }
+  #define SLIDER_5POS(y, value, label, event, attr) { \
+    int8_t tmp = value; \
+    display5posSlider(RADIO_SETUP_2ND_COLUMN, y, tmp, attr); \
+    value = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, label, NULL, tmp, -2, +2, attr, event); \
+  }
+  #define displaySlider(x, y, value, max, attr) lcd_outdezAtt(x, y, value, attr|LEFT)
 #else
-#define SLIDER(y, value, min, max, label, values, event, attr) \
-          value = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, label, values, value, min, max, attr, event)
+  #define SLIDER_5POS(y, value, label, event, attr) value = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, label, STR_VBEEPLEN, value, -2, +2, attr, event)
+  #define displaySlider(x, y, value, max, attr) lcd_outdezAtt(x, y, value, attr|LEFT)
 #endif
 
 enum menuGeneralSetupItems {
@@ -123,9 +138,11 @@ enum menuGeneralSetupItems {
   ITEM_SETUP_MINUTE_BEEP,
   ITEM_SETUP_COUNTDOWN_BEEP,
   ITEM_SETUP_BACKLIGHT_LABEL,
-  ITEM_SETUP_FLASH_BEEP,
   ITEM_SETUP_BACKLIGHT_MODE,
   ITEM_SETUP_BACKLIGHT_DELAY,
+  CASE_PWM_BACKLIGHT(ITEM_SETUP_BACKLIGHT_BRIGHTNESS_OFF)
+  CASE_PWM_BACKLIGHT(ITEM_SETUP_BACKLIGHT_BRIGHTNESS_ON)
+  ITEM_SETUP_FLASH_BEEP,
 #if defined(SPLASH) && !defined(FSPLASH)
   ITEM_SETUP_DISABLE_SPLASH,
 #endif
@@ -149,7 +166,7 @@ void menuGeneralSetup(uint8_t event)
   }
 #endif
 
-  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) LABEL(SOUND), 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, LABEL(TIMER_EVENTS), 0, 0, LABEL(BACKLIGHT), 0, 0, 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, LABEL(TX_MODE), IF_PCBX9D(0) 1/*to force edit mode*/});
+  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) LABEL(SOUND), 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, LABEL(TIMER_EVENTS), 0, 0, LABEL(BACKLIGHT), 0, 0, CASE_PWM_BACKLIGHT(0) CASE_PWM_BACKLIGHT(0) 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, LABEL(TX_MODE), CASE_PCBX9D(0) 1/*to force edit mode*/});
 
   uint8_t sub = m_posVert - 1;
 
@@ -223,12 +240,12 @@ void menuGeneralSetup(uint8_t event)
       case ITEM_SETUP_BEEPER_MODE:
         g_eeGeneral.beeperMode = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_MODE, STR_VBEEPMODE, g_eeGeneral.beeperMode, -2, 1, attr, event);
 #if defined(FRSKY)
-        if (attr && checkIncDec_Ret) FRSKY_setModelAlarms();
+        if (attr && checkIncDec_Ret) frskySendAlarms();
 #endif
         break;
 
       case ITEM_SETUP_BEEPER_LENGTH:
-        SLIDER(y, g_eeGeneral.beeperLength, -2, 2, STR_LENGTH, STR_VBEEPLEN, event, attr);
+        SLIDER_5POS(y, g_eeGeneral.beeperLength, STR_LENGTH, event, attr);
         break;
 
 #if defined(AUDIO)
@@ -245,22 +262,17 @@ void menuGeneralSetup(uint8_t event)
       case ITEM_SETUP_SPEAKER_VOLUME:
       {
         lcd_putsLeft(y, STR_SPEAKER_VOLUME);
-#if defined(CPUARM)
-        lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.speakerVolume, attr|LEFT);
+        uint8_t b = g_eeGeneral.speakerVolume+VOLUME_LEVEL_DEF;
+        displaySlider(RADIO_SETUP_2ND_COLUMN, y, b, VOLUME_LEVEL_MAX, attr);
         if (attr) {
-          CHECK_INCDEC_GENVAR(event, g_eeGeneral.speakerVolume, 0, NUM_VOL_LEVELS-1);
-        }
-#else
-        uint8_t b = g_eeGeneral.speakerVolume+7;
-        lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, b, attr|LEFT);
-        if (attr) {
-          CHECK_INCDEC_GENVAR(event, b, 0, 7);
+          CHECK_INCDEC_GENVAR(event, b, 0, VOLUME_LEVEL_MAX);
           if (checkIncDec_Ret) {
-            g_eeGeneral.speakerVolume = (int8_t)b-7;
-            SET_VOLUME(b);
+            g_eeGeneral.speakerVolume = (int8_t)b-VOLUME_LEVEL_DEF;
+#if !defined(CPUARM)
+            setVolume(b);
+#endif
           }
         }
-#endif
         break;
       }
 #endif
@@ -275,7 +287,7 @@ void menuGeneralSetup(uint8_t event)
         break;
 
       case ITEM_SETUP_HAPTIC_LENGTH:
-        SLIDER(y, g_eeGeneral.hapticLength, -2, 2, STR_LENGTH, STR_VBEEPLEN, event, attr);
+        SLIDER_5POS(y, g_eeGeneral.hapticLength, STR_LENGTH, event, attr);
         break;
 
       case ITEM_SETUP_HAPTIC_STRENGTH:
@@ -357,14 +369,11 @@ void menuGeneralSetup(uint8_t event)
         if(attr) g_eeGeneral.inactivityTimer = checkIncDec(event, g_eeGeneral.inactivityTimer, 0, 250, EE_GENERAL); //0..250minutes
         break;
 
-#if defined(ROTARY_ENCODERS) && NUM_ROTARY_ENCODERS > 0
+#if ROTARY_ENCODERS > 0
       case ITEM_SETUP_RE_NAVIGATION:
         g_eeGeneral.reNavigation = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_RENAVIG, STR_VRENAVIG, g_eeGeneral.reNavigation, 0, NUM_ROTARY_ENCODERS, attr, event);
         if (attr && checkIncDec_Ret) {
-          for (uint8_t i=0; i<ROTARY_ENCODERS; i++)
-            g_rotenc[i] = 0;
-          p1valdiff = 0;
-          scrollRE = 0;
+          g_rotenc[NAVIGATION_RE_IDX()] = 0;
         }
         break;
 #endif
@@ -374,15 +383,19 @@ void menuGeneralSetup(uint8_t event)
         break;
 
       case ITEM_SETUP_THROTTLE_REVERSED:
-        g_eeGeneral.throttleReversed = onoffMenuItem( g_eeGeneral.throttleReversed, RADIO_SETUP_2ND_COLUMN, y, STR_THROTTLEREVERSE, attr, event ) ;
+        g_eeGeneral.throttleReversed = onoffMenuItem(g_eeGeneral.throttleReversed, RADIO_SETUP_2ND_COLUMN, y, STR_THROTTLEREVERSE, attr, event ) ;
         break;
 
       case ITEM_SETUP_MINUTE_BEEP:
-        g_eeGeneral.minuteBeep = onoffMenuItem( g_eeGeneral.minuteBeep, RADIO_SETUP_2ND_COLUMN, y, STR_MINUTEBEEP, attr, event ) ;
+        g_eeGeneral.minuteBeep = onoffMenuItem(g_eeGeneral.minuteBeep, RADIO_SETUP_2ND_COLUMN, y, STR_MINUTEBEEP, attr, event ) ;
         break;
 
       case ITEM_SETUP_COUNTDOWN_BEEP:
-        g_eeGeneral.preBeep = onoffMenuItem( g_eeGeneral.preBeep, RADIO_SETUP_2ND_COLUMN, y, STR_BEEPCOUNTDOWN, attr, event ) ;
+        g_eeGeneral.preBeep = onoffMenuItem(g_eeGeneral.preBeep, RADIO_SETUP_2ND_COLUMN, y, STR_BEEPCOUNTDOWN, attr, event ) ;
+        break;
+
+      case ITEM_SETUP_BACKLIGHT_MODE:
+        g_eeGeneral.backlightMode = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_MODE, STR_VBLMODE, g_eeGeneral.backlightMode, e_backlight_mode_off, e_backlight_mode_on, attr, event);
         break;
 
       case ITEM_SETUP_BACKLIGHT_LABEL:
@@ -390,19 +403,29 @@ void menuGeneralSetup(uint8_t event)
         break;
 
       case ITEM_SETUP_FLASH_BEEP:
-        g_eeGeneral.flashBeep = onoffMenuItem( g_eeGeneral.flashBeep, RADIO_SETUP_2ND_COLUMN, y, STR_ALARM, attr, event ) ;
-        break;
-
-      case ITEM_SETUP_BACKLIGHT_MODE:
-        g_eeGeneral.backlightMode = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_MODE, STR_VBLMODE, g_eeGeneral.backlightMode, e_backlight_mode_off, e_backlight_mode_on, attr, event);
+        g_eeGeneral.flashBeep = onoffMenuItem(g_eeGeneral.flashBeep, RADIO_SETUP_2ND_COLUMN, y, STR_ALARM, attr, event ) ;
         break;
 
       case ITEM_SETUP_BACKLIGHT_DELAY:
-        lcd_putsLeft( y, STR_BLDELAY);
+        lcd_putsLeft(y, STR_BLDELAY);
         lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.lightAutoOff*5, attr|LEFT);
         lcd_putc(lcdLastPos, y, 's');
-        if(attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.lightAutoOff, 0, 600/5);
+        if (attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.lightAutoOff, 0, 600/5);
         break;
+
+#if defined(PWM_BACKLIGHT)
+      case ITEM_SETUP_BACKLIGHT_BRIGHTNESS_OFF:
+        lcd_putsLeft(y, STR_BLOFFBRIGHTNESS);
+        lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.blOffBright, attr|LEFT);
+        if (attr) CHECK_INCDEC_GENVAR(event, g_eeGeneral.blOffBright, 0, 15);
+        break;
+
+      case ITEM_SETUP_BACKLIGHT_BRIGHTNESS_ON:
+        lcd_putsLeft(y, STR_BLONBRIGHTNESS);
+        lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, 15-g_eeGeneral.blOnBright, attr|LEFT);
+        if (attr) g_eeGeneral.blOnBright = 15 - checkIncDecGen(event, 15-g_eeGeneral.blOnBright, 0, 15);
+        break;
+#endif
 
 #if defined(SPLASH) && !defined(FSPLASH)
       case ITEM_SETUP_DISABLE_SPLASH:
@@ -439,7 +462,7 @@ void menuGeneralSetup(uint8_t event)
 
       case ITEM_SETUP_STICK_MODE:
         lcd_putcAtt(2*FW, y, '1'+g_eeGeneral.stickMode, attr);
-        for (uint8_t i=0; i<4; i++) putsChnRaw( (6+4*i)*FW, y, pgm_read_byte(modn12x3 + 4*g_eeGeneral.stickMode + i), 0);
+        for (uint8_t i=0; i<4; i++) putsMixerSource((6+4*i)*FW, y, pgm_read_byte(modn12x3 + 4*g_eeGeneral.stickMode + i), 0);
         if (attr && s_editMode>0) {
           CHECK_INCDEC_GENVAR(event, g_eeGeneral.stickMode, 0, 3);
         }
@@ -450,6 +473,11 @@ void menuGeneralSetup(uint8_t event)
           resumePulses();
           clearKeyEvents();
         }
+#if defined(ROTARY_ENCODER_NAVIGATION)
+        if (m_posHorz > 0) {
+          REPEAT_LAST_CURSOR_MOVE();
+        }
+#endif
         break;
     }
   }
@@ -514,15 +542,14 @@ void menuGeneralSdManager(uint8_t event)
       f_chdir(ROOT_PATH);
       reusableBuffer.sd.offset = 65535;
       break;
-#if defined(ROTARY_ENCODERS)
-    case EVT_KEY_FIRST(BTN_REa):
-    case EVT_KEY_FIRST(BTN_REb):
-      if (!navigationRotaryEncoder(event))
-        break;
-      // no break
-#endif
+
+#if defined(PCBX9D)
+    case EVT_KEY_BREAK(KEY_ENTER):
+#else
+    CASE_EVT_ROTARY_BREAK
     case EVT_KEY_FIRST(KEY_RIGHT):
     case EVT_KEY_FIRST(KEY_ENTER):
+#endif
     {
       if (m_posVert > 0) {
         uint8_t index = m_posVert-1-s_pgOfs;
@@ -531,19 +558,17 @@ void menuGeneralSdManager(uint8_t event)
           s_pgOfs = 0;
           m_posVert = 1;
           reusableBuffer.sd.offset = 65535;
+          break;
         }
       }
-      break;
-    }
-#if defined(ROTARY_ENCODERS)
-    case EVT_KEY_LONG(BTN_REa):
-    case EVT_KEY_LONG(BTN_REb):
-      if (!navigationRotaryEncoder(event))
+      if (!IS_ROTARY_BREAK(event) || m_posVert==0)
         break;
-      // no break
-#endif
+      // no break;
+    }
+
     case EVT_KEY_LONG(KEY_ENTER):
       killEvents(event);
+      _event = 0;
       if (m_posVert == 0) {
         s_menu[s_menu_count++] = STR_SD_INFO;
         s_menu[s_menu_count++] = STR_SD_FORMAT;
@@ -736,7 +761,7 @@ void menuGeneralTrainer(uint8_t event)
       uint8_t chan = channel_order(i);
       volatile TrainerMix *td = &g_eeGeneral.trainer.mix[chan-1];
 
-      putsChnRaw(0, y, chan, 0);
+      putsMixerSource(0, y, chan, 0);
 
       for (uint8_t j=0; j<3; j++) {
 
@@ -841,8 +866,8 @@ void menuGeneralDiagKeys(uint8_t event)
     }
   }
 
-#if defined (ROTARY_ENCODERS)
-  for(uint8_t i=0; i<ROTARY_ENCODERS; i++) {
+#if defined(ROTARY_ENCODERS) || defined(ROTARY_ENCODER_NAVIGATION)
+  for(uint8_t i=0; i<DIM(g_rotenc); i++) {
     uint8_t y = i*FH + FH;
     lcd_putsiAtt(14*FW, y, STR_VRENCODERS, i, 0);
     lcd_outdezNAtt(18*FW, y, g_rotenc[i], LEFT|(switchState((EnumKeys)(BTN_REa+i)) ? INVERS : 0));
@@ -863,7 +888,7 @@ void menuGeneralDiagAna(uint8_t event)
 
   SIMPLE_MENU(STR_MENUANA, menuTabDiag, e_Ana, ANAS_ITEMS_COUNT);
 
-  for (uint8_t i=0; i<8; i++) {
+  for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
     uint8_t y = 1+FH+(i/2)*FH;
     uint8_t x = i&1 ? 64+5 : 0;
     putsStrIdx(x, y, PSTR("A"), i+1);
@@ -1046,9 +1071,9 @@ void menuGeneralCalib(uint8_t event)
         if (abs(reusableBuffer.calib.loVals[i]-reusableBuffer.calib.hiVals[i])>50) {
           g_eeGeneral.calibMid[i] = reusableBuffer.calib.midVals[i];
           int16_t v = reusableBuffer.calib.midVals[i] - reusableBuffer.calib.loVals[i];
-          g_eeGeneral.calibSpanNeg[i] = v - v/64;
+          g_eeGeneral.calibSpanNeg[i] = v - v/STICK_TOLERANCE;
           v = reusableBuffer.calib.hiVals[i] - reusableBuffer.calib.midVals[i];
-          g_eeGeneral.calibSpanPos[i] = v - v/64;
+          g_eeGeneral.calibSpanPos[i] = v - v/STICK_TOLERANCE;
         }
       }
 

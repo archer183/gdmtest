@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -76,14 +78,18 @@ PACK(struct DirEnt{
   uint16_t typ:4;
 });
 
+#if defined(CPUARM)
+#define EEFS_EXTRA_FIELDS uint8_t  spare[2];
+#else
+#define EEFS_EXTRA_FIELDS
+#endif
+
 PACK(struct EeFs{
   uint8_t  version;
   blkid_t  mySize;
   blkid_t  freeList;
   uint8_t  bs;
-#if defined(CPUARM)
-  uint8_t  spare[2];
-#endif
+  EEFS_EXTRA_FIELDS
   DirEnt   files[MAXFILES];
 });
 
@@ -234,8 +240,14 @@ inline void eeFlush() { theFile.flush(); }
 uint16_t evalChkSum();
 
 #define eeDeleteModel(x) EFile::rm(FILE_MODEL(x))
+
+#if defined(CPUARM)
+bool eeCopyModel(uint8_t dst, uint8_t src);
+void eeSwapModels(uint8_t id1, uint8_t id2);
+#else
 #define eeCopyModel(dst, src) theFile.copy(FILE_MODEL(dst), FILE_MODEL(src))
 #define eeSwapModels(id1, id2) EFile::swap(FILE_MODEL(id1), FILE_MODEL(id2))
+#endif
 
 #if defined(SDCARD)
 const pm_char * eeBackupModel(uint8_t i_fileSrc);

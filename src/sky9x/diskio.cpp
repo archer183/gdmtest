@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -957,6 +959,7 @@ FATFS g_FATFS_Obj = { 0 };
 
 void sdMountPoll()
 {
+#if 0
   if (!Card_initialized)
     return;
 
@@ -1019,6 +1022,7 @@ void sdMountPoll()
     case SD_ST_ERR:
       break;
   }
+#endif
 }
 
 void sdInit()

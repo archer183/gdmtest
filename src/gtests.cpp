@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -32,6 +34,7 @@
  *
  */
 
+#include <math.h>
 #include <gtest/gtest.h>
 #include "open9x.h"
 
@@ -219,6 +222,8 @@ TEST(EEPROM, rm)
   EXPECT_EQ(sz, 0);
 }
 
+#if defined(FRSKY)
+
 extern void processFrskyPacket(uint8_t *packet);
 
 TEST(FrSky, gpsNfuel)
@@ -266,6 +271,8 @@ TEST(FrSky, dateNtime)
   EXPECT_EQ(frskyData.hub.sec, 50);
 }
 
+#endif
+
 TEST(getSwitch, undefCSW)
 {
   MODEL_RESET();
@@ -295,10 +302,10 @@ TEST(getSwitch, nullSW)
 TEST(Phases, nullFadeOut_posFadeIn)
 {
   MODEL_RESET();
-  g_model.phaseData[1].swtch = DSW(SW_ID1);
+  g_model.phaseData[1].swtch = SWSRC_ID1);
   g_model.phaseData[1].fadeIn = 15;
   perMain();
-  setSwitch(DSW(SW_ID1));
+  simuSetSwitch(3, 0);
   perMain();
 }
 
@@ -315,7 +322,7 @@ TEST(Mixer, Cascaded3Channels)
   g_model.mixData[2].destCh = 2;
   g_model.mixData[2].srcRaw = MIXSRC_ID1;
   g_model.mixData[2].weight = 100;
-  setSwitch(DSW(SW_ID1));
+  simuSetSwitch(3, 0);
   perOut(e_perout_mode_normal, 0);
   EXPECT_EQ(chans[0], 102400);
   EXPECT_EQ(chans[1], 102400);
@@ -332,7 +339,7 @@ TEST(Mixer, CascadedOrderedChannels)
   g_model.mixData[1].destCh = 1;
   g_model.mixData[1].srcRaw = MIXSRC_CH1;
   g_model.mixData[1].weight = 100;
-  setSwitch(DSW(SW_ID1));
+  simuSetSwitch(3, 0);
   perOut(e_perout_mode_normal, 0);
   EXPECT_EQ(chans[0], 102400);
   EXPECT_EQ(chans[1], 102400);
@@ -357,35 +364,21 @@ TEST(Mixer, Cascaded5Channels)
   g_model.mixData[4].destCh = 4;
   g_model.mixData[4].srcRaw = MIXSRC_ID1;
   g_model.mixData[4].weight = 100;
-  int32_t lastVal = 0;
   for (uint8_t i=0; i<10; i++) {
-    setSwitch(DSW(SW_ID1));
-    doMixerCalculations();
-    EXPECT_EQ(chans[0], lastVal);
-    EXPECT_EQ(chans[1], lastVal);
-    EXPECT_EQ(chans[2], 102400);
-    EXPECT_EQ(chans[3], 102400);
-    EXPECT_EQ(chans[4], 102400);
+    simuSetSwitch(3, 0);
     doMixerCalculations();
     EXPECT_EQ(chans[0], 102400);
     EXPECT_EQ(chans[1], 102400);
     EXPECT_EQ(chans[2], 102400);
     EXPECT_EQ(chans[3], 102400);
     EXPECT_EQ(chans[4], 102400);
-    setSwitch(DSW(SW_ID0));
-    doMixerCalculations();
-    EXPECT_EQ(chans[0], 102400);
-    EXPECT_EQ(chans[1], 102400);
-    EXPECT_EQ(chans[2], -102400);
-    EXPECT_EQ(chans[3], -102400);
-    EXPECT_EQ(chans[4], -102400);
+    simuSetSwitch(3, -1);
     doMixerCalculations();
     EXPECT_EQ(chans[0], -102400);
     EXPECT_EQ(chans[1], -102400);
     EXPECT_EQ(chans[2], -102400);
     EXPECT_EQ(chans[3], -102400);
     EXPECT_EQ(chans[4], -102400);
-    lastVal = -102400;
   }
 }
 
@@ -437,6 +430,20 @@ TEST(Mixer, RecursiveAddChannel)
   perOut(e_perout_mode_normal, 0);
   EXPECT_EQ(chans[0], 102400/2);
   EXPECT_EQ(chans[1], 0);
+}
+
+TEST(Expo, AllValues)
+{
+  // TODO whole range
+  for (uint16_t x=0; x<20; x++) {
+    for (uint16_t k=0; k<20; k++) {
+      // TODO compare with the correct function instead of this one
+      // uint16_t ref = ((unsigned long)x*x*x/0x10000*k/(RESXul*RESXul/0x10000) + (RESKul-k)*x+RESKul/2)/RESKul;
+      double ref = exp(log((float)x)*(float)k/10);
+      printf("x=%d k=%d ref=%f res=%d\n", x, k, ref, expou(x, k));
+      // EXPECT_EQ(expou(x, k), ref);
+    }
+  }
 }
 
 

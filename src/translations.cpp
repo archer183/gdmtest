@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -47,6 +49,8 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(VBEEPMODE)
 #if defined(ROTARY_ENCODERS)
     ISTR(VRENAVIG)
+#endif
+#if defined(ROTARY_ENCODER_NAVIGATION)
     ISTR(VRENCODERS)
 #endif
     ISTR(TRNMODE)
@@ -85,9 +89,6 @@ const pm_char STR_OPEN9X[] PROGMEM =
     ISTR(VSWITCHES)
     ISTR(VSRCRAW)
     ISTR(VTMRMODES)
-#if defined(DSM2)
-    ISTR(DSM2MODE)
-#endif
 #if defined(PCBGRUVIN9X) || defined (CPUARM)
     ISTR(DATETIME)
 #endif
@@ -186,6 +187,12 @@ const pm_char STR_MINUTEBEEP[] PROGMEM = TR_MINUTEBEEP;
 const pm_char STR_BEEPCOUNTDOWN[] PROGMEM = TR_BEEPCOUNTDOWN;
 const pm_char STR_BACKLIGHT_LABEL[] PROGMEM = TR_BACKLIGHT_LABEL;
 const pm_char STR_BLDELAY[] PROGMEM = TR_BLDELAY;
+
+#if defined(PWM_BACKLIGHT)
+const pm_char STR_BLONBRIGHTNESS[] PROGMEM = TR_BLONBRIGHTNESS;
+const pm_char STR_BLOFFBRIGHTNESS[] PROGMEM = TR_BLOFFBRIGHTNESS;
+#endif
+
 const pm_char STR_SPLASHSCREEN[] PROGMEM = TR_SPLASHSCREEN;
 const pm_char STR_THROTTLEWARNING[] PROGMEM = TR_THROTTLEWARNING;
 const pm_char STR_SWITCHWARNING[] PROGMEM = TR_SWITCHWARNING;
@@ -286,10 +293,6 @@ const pm_char STR_SYNCMENU[] PROGMEM = TR_SYNCMENU;
 
 const pm_char STR_INVERT_THR[] PROGMEM = TR_INVERT_THR;
 
-#if defined(ROTARY_ENCODER_NAVIGATION)
-const pm_char STR_BACK[] PROGMEM = TR_BACK;
-#endif
-
 #if defined(FRSKY_HUB)
 const pm_char STR_MINRSSI[] PROGMEM = TR_MINRSSI;
 const pm_char STR_LATITUDE[] PROGMEM = TR_LATITUDE;
@@ -311,11 +314,16 @@ const pm_char STR_CURRENT[] PROGMEM = TR_CURRENT;
 const pm_char STR_CURRENT_CALIB[] PROGMEM = TR_CURRENT_CALIB;
 #endif
 
-#if defined(SDCARD)
+#if defined(NAVIGATION_MENUS)
 const pm_char STR_SELECT_MODEL[] PROGMEM = TR_SELECT_MODEL;
 const pm_char STR_CREATE_MODEL[] PROGMEM = TR_CREATE_MODEL;
-const pm_char STR_BACKUP_MODEL[] PROGMEM = TR_BACKUP_MODEL;
+const pm_char STR_COPY_MODEL[] PROGMEM = TR_COPY_MODEL;
+const pm_char STR_MOVE_MODEL[] PROGMEM = TR_MOVE_MODEL;
 const pm_char STR_DELETE_MODEL[] PROGMEM = TR_DELETE_MODEL;
+#endif
+
+#if defined(SDCARD)
+const pm_char STR_BACKUP_MODEL[] PROGMEM = TR_BACKUP_MODEL;
 const pm_char STR_RESTORE_MODEL[] PROGMEM = TR_RESTORE_MODEL;
 const pm_char STR_SDCARD_ERROR[] PROGMEM = TR_SDCARD_ERROR;
 const pm_char STR_NO_SDCARD[] PROGMEM = TR_NO_SDCARD;
@@ -376,6 +384,13 @@ const pm_char STR_OWN[] PROGMEM = TR_OWN;
 const pm_char STR_ROTARY_ENCODER[] PROGMEM = TR_ROTARY_ENCODER;
 const pm_char STR_DATE[] PROGMEM = TR_DATE;
 const pm_char STR_CHANNELS_MONITOR[] PROGMEM = TR_CHANNELS_MONITOR;
+
+#if LCD_W >= 212
+const pm_char STR_MODELNAME[] PROGMEM = TR_MODELNAME;
+const pm_char STR_PHASENAME[] PROGMEM = TR_PHASENAME;
+const pm_char STR_MIXNAME[] PROGMEM = TR_MIXNAME;
+const pm_char STR_EXPONAME[] PROGMEM = TR_EXPONAME;
+#endif
 
 const pm_uchar font_5x7[] PROGMEM = {
 #include "font.lbm"
