@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -470,19 +468,20 @@ void eeReadAll()
 
     ALERT(STR_EEPROMWARN, STR_BADEEPROMDATA, AU_BAD_EEPROM);
 
-    if (pwrCheck() == e_power_off) {
-      // the radio has been powered off during the ALERT
+    if (pwrCheck()==e_power_off) {
+      // we don't want to store anything
       pwrOff(); // turn power off now
     }
+    else {
+      MESSAGE(STR_EEPROMWARN, STR_EEPROMFORMATTING, NULL, AU_EEPROM_FORMATTING);
 
-    MESSAGE(STR_EEPROMWARN, STR_EEPROMFORMATTING, NULL, AU_EEPROM_FORMATTING);
+      /* we remove all models */
+      for (uint32_t i=0; i<MAX_MODELS; i++)
+        eeDeleteModel(i);
 
-    /* we remove all models */
-    for (uint32_t i=0; i<MAX_MODELS; i++)
-      eeDeleteModel(i);
-
-    STORE_GENERALVARS;
-    STORE_MODELVARS;
+      STORE_GENERALVARS;
+      STORE_MODELVARS;
+    }
   }
   else {
     eeLoadModelNames() ;

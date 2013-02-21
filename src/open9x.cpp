@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -36,18 +34,6 @@
 
 #include "open9x.h"
 
-#if defined(CURVES) && defined(TRIG)
-#include "combatmath.h"
-int16_t combatarray[C9X_ARY] = {0};
-/*
-0 = Aft Bearing
-1 = Aft Range
-2-4 = Debugging variables
-
-
-*/
-
-#endif
 #if defined(CPUARM)
 #define MIXER_STACK_SIZE    500
 #define MENUS_STACK_SIZE    1000
@@ -86,7 +72,9 @@ char modelNames[MAX_MODELS][sizeof(g_model.name)];
 
 #if defined(SPLASH)
 const pm_uchar splashdata[] PROGMEM = { 'S','P','S',0,
-#if defined(PCBX9D)
+#if defined(PCBACT)
+#include "splash_ACT.lbm"
+#elif defined(PCBX9D)
 #include "splash_X9D.lbm"
 #else
 #include "splash_9x.lbm"
@@ -303,7 +291,7 @@ void per10ms()
 
   // These moved here from perOut() to improve beep trigger reliability.
 #if defined(PWM_BACKLIGHT)
-  if (g_tmr10ms % 4 == 0)
+  if ((g_tmr10ms&0x03) == 0x00)  //  if (g_tmr10ms % 4 == 0) // (should be faster)
     fadeBacklight(); // increment or decrement brightness until target brightness is reached
 #endif
 
@@ -349,8 +337,8 @@ CurveInfo curveinfo(uint8_t idx)
   result.crv = curveaddress(idx);
   int8_t *next = curveaddress(idx+1);
   uint8_t size = next - result.crv;
-  if (size % 2 == 0) {
-    result.points = (size / 2) + 1;
+  if ((size & 1)==0) {  //  if (size % 2 == 0)  {
+	result.points = (size / 2) + 1; // result.points = (size >> 1) + 1; done by the compiler anyway 
     result.custom = true;
   }
   else {
@@ -450,63 +438,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0, 25 ,50, 75, 10
   return calc100toRESX(erg);
 }
 
-#if defined(CURVES) && defined(TRIG)
-int16_t applyCurve(int16_t x, int8_t idx)
-{
-  
-  //CombatTestFcn();
-	switch(idx) {
-    case CURVE_NONE:
-      return x;
-    case CURVE_X_GT0:
-      if (x < 0) x = 0; //x|x>0
-      return x;
-    case CURVE_X_LT0:
-      if (x > 0) x = 0; //x|x<0
-      return x;
-    case CURVE_ABS_X: // x|abs(x)
-      return abs(x);
-    case CURVE_F_GT0: //f|f>0
-      return x > 0 ? RESX : 0;
-    case CURVE_F_LT0: //f|f<0
-      return x < 0 ? -RESX : 0;
-	case CURVE_COS: //cos
-		x=INTCOS(x);
-      return x; // will add actual after verification of function of this change
-	case CURVE_SIN:
-		x=INTSIN(x);
-		//x=combatarray[2];
-		return x;
-	case CURVE_ACOS:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		x=INTACOS(x);
-		//x=combatarray[3];
-		return x;
-	case CURVE_ASIN:  // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/- 1024 It is obvious if you don't do that.
-		x=INTASIN(x);
-		//x=combatarray[4];
-		return x;
-	case CURVE_RNG:
-		
-		x=combatarray[C9X_T4R];
-		return x;
-	case CURVE_BTA:
-		TargetRange();
-		//GvarTestFcn(x);
-		x=combatarray[C9X_T4B];
-		return x;
-	case CURVE_BTV:
-		x=BETAVfcn(x);
-		return x;
-    case CURVE_ABS_F: //f|abs(f)
-      return x > 0 ? RESX : -RESX;
-  }
-  if (idx < 0) {
-    x = -x;
-    idx = -idx + CURVE_BASE - 1;
-  }
-  return intpol(x, idx - CURVE_BASE);
-}
-#elif defined(CURVES)
+#if defined(CURVES)
 int16_t applyCurve(int16_t x, int8_t idx)
 {
   /* already tried to have only one return at the end */
@@ -538,6 +470,11 @@ int16_t applyCurve(int16_t x, int8_t idx)
 #define applyCurve(x, idx) (x)
 #endif
 
+// maybe used in future?
+uint16_t divu100(uint32_t A) {
+    return (((A * 0x47AF) >> 16) + A) >> 7;
+}
+
 // expo-funktion:
 // ---------------
 // kmplot
@@ -546,6 +483,11 @@ int16_t applyCurve(int16_t x, int8_t idx)
 // f(x,k)=x*x*k/10 + x*(1-k/10) ;P[0,1,2,3,4,5,6,7,8,9,10]
 // f(x,k)=1+(x-1)*(x-1)*(x-1)*k/10 + (x-1)*(1-k/10) ;P[0,1,2,3,4,5,6,7,8,9,10]
 
+// input parameters; 
+//  x 0 to 1024;
+//  k 0 to 100;
+// return value = 1024 * (x/1024)^((101+k)/30)
+// return value  = exp(ln(x/1024)*exp(k/10))*1024
 uint16_t expou(uint16_t x, uint16_t k)
 {
   // previous function was this one:
@@ -559,7 +501,7 @@ uint16_t expou(uint16_t x, uint16_t k)
   value >>= 12;
   value += (uint32_t)(100-k)*x+50;
 
-  // return divu100(value);
+  // return divu100(value);  // would speed up further by needs more code
   return value/100;
 }
 
@@ -658,17 +600,66 @@ void applyExpos(int16_t *anas)
 }
 
 #if !defined(CPUARM)
-int16_t calc100toRESX(int8_t x)
+
+
+// #define CORRECT_NEGATIVE_SHIFTS
+// open.20.fsguruh; shift right operations do the rounding different for negative values compared to positive values
+// so all negative divisions round always further down, which give absolute values bigger compared to a usual division
+// this is noticable on the display, because instead of -100.0 -99.9 is shown; While in praxis I doublt somebody will notice a 
+// difference this is more a mental thing. Maybe people are distracted, because the easy calculations are obviously wrong
+// this define would correct this, but costs 34 bytes code for stock version
+
+int16_t calc100to256(int8_t x) // return x*2.56
+{
+    // y = 2*x + x/2 +x/16-x/512-x/2048
+    // 512 and 2048 are out of scope from int8 input --> forget it
+
+#ifdef CORRECT_NEGATIVE_SHIFTS
+    int16_t res=(int16_t)x<<1;
+    //int8_t  sign=(uint8_t) x>>7;
+    int8_t sign=(x<0?1:0);
+    
+    x-=sign;    
+    res+=(x>>1);
+    res+=sign;
+    res+=(x>>4);
+    res+=sign;
+    return res;
+#else    
+    return ((int16_t)x<<1)+(x>>1)+(x>>4);
+#endif
+    // in case of negative values the routine above always generates a too small value, this could be corrected with this
+    // I think it is not needed anyway
+    // if (x<0) return -calc100to256(-x);  
+    // else return ((int16_t)x<<1)+(x>>1)+(x>>4);
+}
+
+
+// return x*10.24
+int16_t calc100toRESX_16Bits(int16_t x)  // @@@ open.20.fsguruh
 {
   // return (int16_t)x*10 + x/4 - x/64;
-  return ((x*41)>>2) - x/64;
-}
+  return ((x*41)>>2) - (x>>6);  // this implementation saves a add but reduces valid range by factor 4!!! by carefull
+  // return (x*10)+(x>>2)-(x>>6);  // this would be the saver implementation
+} 
 
-int8_t calcRESXto100(int16_t x)
+int16_t calc100toRESX(int8_t x) // return x*10.24
 {
-  return (x*25) << 8;
+#ifdef CORRECT_NEGATIVE_SHIFTS
+  int16_t res= ((int16_t)x*41)>>2;
+  int8_t sign=(x<0?1:0);
+  //int8_t  sign=(uint8_t) x>>7;  
+  x-=sign;
+  res-=(x>>6);
+  res-=sign;
+  return res;
+#else
+  // return (int16_t)x*10 + x/4 - x/64;
+  return ((x*41)>>2) - (x>>6);
+#endif
 }
 
+// return x*1.024
 int16_t calc1000toRESX(int16_t x) // improve calc time by Pat MacKenzie
 {
   // return x + x/32 - x/128 + x/512;
@@ -679,45 +670,80 @@ int16_t calc1000toRESX(int16_t x) // improve calc time by Pat MacKenzie
   return x+(y>>2);
 }
 
-int16_t calcRESXto1000(int16_t x)
+int16_t calcRESXto1000(int16_t x)  // return x/1.024
 {
 // *1000/1024 = x - x/32 + x/128
   return (x - (x>>5) + (x>>7));
 }
 #endif
 
+
+// @@@2 open.20.fsguruh ; 
+// channel = channelnumber -1; 
+// value = outputvalue with 100 mulitplied usual range -102400 to 102400; output -1024 to 1024
+// changed rescaling from *100 to *256 to optimize performance
+// rescaled to -262144)) to 262144))
 int16_t applyLimits(uint8_t channel, int32_t value)
 {
   LimitData * limit = limitaddress(channel);
-  int16_t ofs = limit->offset;
-  int16_t lim_p = 10 * (limit->max + 100);
-  int16_t lim_n = 10 * (limit->min - 100); //multiply by 10 to get same range as ofs (-1000..1000)
+  int16_t ofs   = calc1000toRESX(limit->offset);   // multiply to 1.24 to get range (-1024..1024)
+  int16_t lim_p = calc100toRESX(limit->max + 100);
+  int16_t lim_n = calc100toRESX(limit->min - 100); //multiply by 10.24 to get same range (-1024..1024)
+  // int16_t ofs = limit->offset;
+  // int16_t lim_p = 10 * (limit->max + 100);
+  // int16_t lim_n = 10 * (limit->min - 100); //multiply by 10 to get same range as ofs (-1000..1000)  
   if (ofs > lim_p) ofs = lim_p;
   if (ofs < lim_n) ofs = lim_n;
 
 #if defined(PPM_LIMITS_SYMETRICAL)
   if (value) {
-    int32_t tmp;
+	int16_t tmp;
+    if (limit->symetrical)
+      tmp = (value > 0) ? (lim_p) : (-lim_n);
+    else
+      tmp = (value > 0) ? (lim_p - ofs) : (-lim_n + ofs);
+	value = (int32_t) value * tmp;   //  div by 1024*256 -> output = -1024..1024
+	tmp=value>>16;   // that's quite tricky: the shiftright 16 operation is assmbled just with addressmove; just forget the two least significant bytes; 
+	tmp>>=2;   // now one simple shift right for two bytes does the rest
+// too pedantic or really useful?		
+//	if ((tmp==-1) && (value&0x00020000)) tmp+=1; // check if negativ and least significant bit was set
+	// if we are pedantic; a -1 result is wrong if we devide with 262144)) (-0x40000) That's why a +1 is needed
+	ofs+=tmp;  // ofs can to added directly because already recalculated,
+
+/*    int32_t tmp;
     if (limit->symetrical)
       tmp = (value > 0) ? ((int32_t) lim_p) : ((int32_t) -lim_n);
     else
       tmp = (value > 0) ? ((int32_t) lim_p - ofs) : ((int32_t) -lim_n + ofs);
-    value = (value * tmp) / 100000;
+    value = (value * tmp) / 100000; */
   }
 #else
   if (value) {
-    int32_t tmp = (value > 0) ? ((int32_t) lim_p - ofs) : ((int32_t) -lim_n + ofs);
-    value = (value * tmp) / 100000; //div by 100000 -> output = -1024..1024
+    int16_t tmp = (value > 0) ? (lim_p - ofs) : (-lim_n + ofs);
+	value = (int32_t) value * tmp;   //  div by 1024*256 -> output = -1024..1024
+	tmp=value>>16;   // that's quite tricky: the shiftright 16 operation is assmbled just with addressmove; just forget the two least significant bytes; 
+	tmp>>=2;   // now one simple shift right for two bytes does the rest
+// too pedantic or really useful?		
+//	if ((tmp==-1) && (value&0x00020000)) tmp+=1; // check if negativ and least significant bit was set
+	// if we are pedantic; a -1 result is wrong if we devide with 262144)) (-0x40000) That's why a +1 is needed
+	ofs+=tmp;  // ofs can to added directly because already recalculated,
+	
+    // int32_t tmp = (value > 0) ? ((int32_t) lim_p - ofs) : ((int32_t) -lim_n + ofs);
+    // value = (value * tmp) / 100000; //div by 100000 -> output = -1024..1024
   }
 #endif
-
-  value += calc1000toRESX(ofs);
-  lim_p = calc1000toRESX(lim_p);
-  lim_n = calc1000toRESX(lim_n);
-  if (value > lim_p) value = lim_p;
-  if (value < lim_n) value = lim_n;
-
-  ofs = value; // we convert value to a 16bit value and reuse ofs
+  // ofs+=value;  // already done above
+  // lim_p, lim_n already recalculated
+  if (ofs > lim_p) ofs = lim_p;
+  if (ofs < lim_n) ofs = lim_n;  
+  
+  // value += calc1000toRESX(ofs);
+  // lim_p = calc1000toRESX(lim_p);
+  // lim_n = calc1000toRESX(lim_n);
+  // if (value > lim_p) value = lim_p;
+  // if (value < lim_n) value = lim_n;
+  // ofs = value; // we convert value to a 16bit value and reuse ofs
+  
   if (limit->revert) ofs = -ofs; // finally do the reverse.
 
   if (safetyCh[channel] != -128) // if safety channel available for channel check
@@ -733,10 +759,6 @@ int16_t ex_chans[NUM_CHNOUT] = {0}; // Outputs (before LIMITS) of the last perMa
 int16_t cyc_anas[3] = {0};
 #endif
 
-// TODO same naming convention than the putsMixerSource
-
-bool __getSwitch(int8_t swtch);
-
 int16_t getValue(uint8_t i)
 {
   /*srcRaw is shifted +1!*/
@@ -745,15 +767,9 @@ int16_t getValue(uint8_t i)
 #if defined(PCBGRUVIN9X) || defined(PCBSKY9X)
   else if (i<NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS) return getRotaryEncoder(i-(NUM_STICKS+NUM_POTS));
 #endif
+  else if (i<MIXSRC_TrimAil) return calc1000toRESX((int16_t)8 * getTrimValue(s_perout_flight_phase, i-(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS)));
   else if (i<MIXSRC_MAX) return 1024;
-  else if (i<MIXSRC_CYC3)
-#if defined(HELI)
-    return cyc_anas[i+1-MIXSRC_CYC1];
-#else
-    return 0;
-#endif
-  else if (i<MIXSRC_TrimAil) return calc1000toRESX((int16_t)8 * getTrimValue(s_perout_flight_phase, i+1-MIXSRC_TrimRud));
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
   else if (i<MIXSRC_SA) return (switchState(SW_SA0) ? -1024 : (switchState(SW_SA1) ? 0 : 1024));
   else if (i<MIXSRC_SB) return (switchState(SW_SB0) ? -1024 : (switchState(SW_SB1) ? 0 : 1024));
   else if (i<MIXSRC_SC) return (switchState(SW_SC0) ? -1024 : (switchState(SW_SC1) ? 0 : 1024));
@@ -762,48 +778,49 @@ int16_t getValue(uint8_t i)
   else if (i<MIXSRC_SF) return (switchState(SW_SF0) ? -1024 : 1024);
   else if (i<MIXSRC_SG) return (switchState(SW_SG0) ? -1024 : (switchState(SW_SG1) ? 0 : 1024));
   else if (i<MIXSRC_SH) return (switchState(SW_SH0) ? -1024 : 1024);
-  else if (i<MIXSRC_LAST_CSW) return __getSwitch(SWSRC_SW1+i-MIXSRC_SH) ? 1024 : -1024;
 #else
   else if (i<MIXSRC_3POS) return (switchState(SW_ID0) ? -1024 : (switchState(SW_ID1) ? 0 : 1024));
-#if defined(EXTRA_3POS)
-  else if (i<MIXSRC_3POS2) return (switchState(SW_ID3) ? -1024 : (switchState(SW_ID4) ? 0 : 1024));
+  // here the switches are skipped
+  else if (i<MIXSRC_3POS+3)
+#if defined(HELI)
+    return cyc_anas[i-MIXSRC_3POS];
+#else
+    return 0;
 #endif
-  else if (i<MIXSRC_LAST_CSW) return __getSwitch(SWSRC_THR+i+1-MIXSRC_SW1) ? 1024 : -1024;
 #endif
-  else if (i<MIXSRC_PPM1+NUM_CAL_PPM) return (g_ppmIns[i+1-MIXSRC_PPM1] - g_eeGeneral.trainer.calib[i+1-MIXSRC_PPM1])*2;
-  else if (i<MIXSRC_LAST_PPM) return g_ppmIns[i+1-MIXSRC_PPM1]*2;
-  else if (i<MIXSRC_LAST_CH) return ex_chans[i+1-MIXSRC_CH1];
-  else if (i<MIXSRC_LAST_CH+TELEM_TX_VOLTAGE) return g_vbat100mV;
-  else if (i<MIXSRC_LAST_CH+TELEM_TM2) return s_timerVal[i+1-MIXSRC_LAST_CH-TELEM_TM1];
+  else if(i<CSW_PPM_BASE+NUM_CAL_PPM) return (g_ppmIns[i-CSW_PPM_BASE] - g_eeGeneral.trainer.calib[i-CSW_PPM_BASE])*2;
+  else if(i<CSW_PPM_BASE+NUM_PPM) return g_ppmIns[i-CSW_PPM_BASE]*2;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT) return ex_chans[i-CSW_CHOUT_BASE];
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_TM2) return s_timerVal[i-CSW_CHOUT_BASE-NUM_CHNOUT];
 #if defined(FRSKY)
-  else if (i<MIXSRC_LAST_CH+TELEM_RSSI_TX) return frskyData.rssi[1].value;
-  else if(i<MIXSRC_LAST_CH+TELEM_RSSI_RX) return frskyData.rssi[0].value;
-  else if(i<MIXSRC_LAST_CH+TELEM_A2) return frskyData.analog[i+1-MIXSRC_LAST_CH-TELEM_A1].value;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_RSSI_TX) return frskyData.rssi[1].value;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_RSSI_RX) return frskyData.rssi[0].value;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_A2) return frskyData.analog[i-CSW_CHOUT_BASE-NUM_CHNOUT-4].value;
 #if defined(FRSKY_HUB) || defined(WS_HOW_HIGH)
-  else if(i<MIXSRC_LAST_CH+TELEM_ALT) return frskyData.hub.baroAltitude_bp;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ALT) return frskyData.hub.baroAltitude_bp;
 #endif
 #if defined(FRSKY_HUB)
-  else if (i<MIXSRC_LAST_CH+TELEM_RPM) return frskyData.hub.rpm;
-  else if (i<MIXSRC_LAST_CH+TELEM_FUEL) return frskyData.hub.fuelLevel;
-  else if (i<MIXSRC_LAST_CH+TELEM_T1) return frskyData.hub.temperature1;
-  else if (i<MIXSRC_LAST_CH+TELEM_T2) return frskyData.hub.temperature2;
-  else if (i<MIXSRC_LAST_CH+TELEM_SPEED) return frskyData.hub.gpsSpeed_bp;
-  else if (i<MIXSRC_LAST_CH+TELEM_DIST) return frskyData.hub.gpsDistance;
-  else if (i<MIXSRC_LAST_CH+TELEM_GPSALT) return frskyData.hub.gpsAltitude_bp;
-  else if (i<MIXSRC_LAST_CH+TELEM_CELL) return (int16_t)frskyData.hub.minCellVolts * 2;
-  else if (i<MIXSRC_LAST_CH+TELEM_CELLS_SUM) return (int16_t)frskyData.hub.cellsSum;
-  else if (i<MIXSRC_LAST_CH+TELEM_VFAS) return (int16_t)frskyData.hub.vfas;
-  else if (i<MIXSRC_LAST_CH+TELEM_CURRENT) return (int16_t)frskyData.hub.current;
-  else if (i<MIXSRC_LAST_CH+TELEM_CONSUMPTION) return frskyData.currentConsumption;
-  else if (i<MIXSRC_LAST_CH+TELEM_POWER) return frskyData.power;
-  else if (i<MIXSRC_LAST_CH+TELEM_ACCx) return frskyData.hub.accelX;
-  else if (i<MIXSRC_LAST_CH+TELEM_ACCy) return frskyData.hub.accelY;
-  else if (i<MIXSRC_LAST_CH+TELEM_ACCz) return frskyData.hub.accelZ;
-  else if (i<MIXSRC_LAST_CH+TELEM_HDG) return frskyData.hub.gpsCourse_bp;
-  else if (i<MIXSRC_LAST_CH+TELEM_VSPD) return frskyData.hub.varioSpeed;
-  else if (i<MIXSRC_LAST_CH+TELEM_MIN_A1) return frskyData.analog[0].min;
-  else if (i<MIXSRC_LAST_CH+TELEM_MIN_A2) return frskyData.analog[1].min;
-  else if (i<MIXSRC_LAST_CH+TELEM_MAX_CURRENT) return *(((int16_t*)(&frskyData.hub.minAltitude))+i+1-(MIXSRC_LAST_CH+TELEM_MAX_CURRENT));
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_RPM) return frskyData.hub.rpm;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_FUEL) return frskyData.hub.fuelLevel;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_T1) return frskyData.hub.temperature1;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_T2) return frskyData.hub.temperature2;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_SPEED) return frskyData.hub.gpsSpeed_bp;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_DIST) return frskyData.hub.gpsDistance;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_GPSALT) return frskyData.hub.gpsAltitude_bp;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CELL) return (int16_t)frskyData.hub.minCellVolts * 2;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CELLS_SUM) return (int16_t)frskyData.hub.cellsSum;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_VFAS) return (int16_t)frskyData.hub.vfas;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CURRENT) return (int16_t)frskyData.hub.current;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CONSUMPTION) return frskyData.currentConsumption;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_POWER) return frskyData.power;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ACCx) return frskyData.hub.accelX;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ACCy) return frskyData.hub.accelY;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ACCz) return frskyData.hub.accelZ;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_HDG) return frskyData.hub.gpsCourse_bp;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_VSPD) return frskyData.hub.varioSpeed;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MIN_A1) return frskyData.analog[0].min;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MIN_A2) return frskyData.analog[1].min;
+  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MAX_CURRENT) return *(((int16_t*)(&frskyData.hub.minAltitude))+i-(CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MIN_ALT-1));
 #endif
 #endif
   else return 0;
@@ -841,7 +858,7 @@ bool __getSwitch(int8_t swtch)
 
   uint8_t cs_idx = abs(swtch);
 
-  if (cs_idx == SWSRC_ON) {
+  if (cs_idx == SWITCH_ON) {
     result = true;
   }
   else if (cs_idx <= MAX_PSWITCH) {
@@ -849,21 +866,17 @@ bool __getSwitch(int8_t swtch)
   }
   else {
     cs_idx -= MAX_PSWITCH+1;
+    CustomSwData * cs = cswaddress(cs_idx);
+    if (cs->func == CS_OFF) return false;
 
-    GETSWITCH_RECURSIVE_TYPE mask = ((GETSWITCH_RECURSIVE_TYPE)1 << cs_idx);
-    if (s_last_switch_used & mask) {
-      result = (s_last_switch_value & mask);
-    }
-    else {
-      s_last_switch_used |= mask;
-
-      CustomSwData * cs = cswaddress(cs_idx);
-      uint8_t s = cs->andsw;
-      // TODO why? if (s > 8) s += 1;
-      if (cs->func == CS_OFF || (s && !__getSwitch(s))) {
-        result = false;
+    uint8_t s = CS_STATE(cs->func);
+    if (s == CS_VBOOL) {
+      GETSWITCH_RECURSIVE_TYPE mask = ((GETSWITCH_RECURSIVE_TYPE)1 << cs_idx);
+      if (s_last_switch_used & mask) {
+        result = (s_last_switch_value & mask);
       }
-      else if ((s=CS_STATE(cs->func)) == CS_VBOOL) {
+      else {
+        s_last_switch_used |= mask;
         bool res1 = __getSwitch(cs->v1);
         bool res2 = __getSwitch(cs->v2);
         switch (cs->func) {
@@ -879,114 +892,127 @@ bool __getSwitch(int8_t swtch)
             break;
         }
       }
-      else {
-        int16_t x = getValue(cs->v1-1);
-        int16_t y;
-        if (s == CS_VCOMP) {
-          y = getValue(cs->v2-1);
 
-          switch (cs->func) {
-            case CS_EQUAL:
-              result = (x==y);
-              break;
-            case CS_GREATER:
-              result = (x>y);
-              break;
-            default:
-              result = (x<y);
-              break;
-          }
-        }
-        else {
-#if defined(FRSKY)
-          // Telemetry
-          if (cs->v1 > MIXSRC_LAST_CH) {
-            if (frskyStreaming <= 0 && cs->v1 > MIXSRC_LAST_CH+MAX_TIMERS)
-              return swtch > 0 ? false : true;
-
-            y = convertCswTelemValue(cs);
-
-#if defined(FRSKY_HUB)
-            if (s == CS_VOFS) {
-              uint8_t idx = cs->v1-MIXSRC_LAST_CH-TELEM_ALT;
-              if (idx < THLD_MAX) {
-                // Fill the threshold array
-                barsThresholds[idx] = 128 + cs->v2;
-              }
-            }
-#endif
-          }
-          else {
-            y = calc100toRESX(cs->v2);
-          }
-#else
-          if (cs->v1 > MIXSRC_LAST_CH) {
-            y = cs->v2; // it's a timer
-          }
-          else {
-            y = calc100toRESX(cs->v2);
-          }
-#endif
-
-          switch (cs->func) {
-            case CS_VEQUAL:
-              result = (abs(x-y) < STICK_TOLERANCE);
-              break;
-            case CS_VPOS:
-              result = (x>y);
-              break;
-            case CS_VNEG:
-              result = (x<y);
-              break;
-            case CS_APOS:
-              result = (abs(x)>y);
-              break;
-            case CS_ANEG:
-              result = (abs(x)<y);
-              break;
-            default:
-            {
-              if (csLastValue[cs_idx] == -32668)
-                csLastValue[cs_idx] = x;
-              int16_t diff = x - csLastValue[cs_idx];
-              if (cs->func == CS_DIFFEGREATER)
-                result = (y >= 0 ? (diff >= y) : (diff <= y));
-              else
-                result = (abs(diff) >= y);
-              if (result)
-                csLastValue[cs_idx] = x;
-              break;
-            }
-          }
-        }
-      }
-
-#if defined(CPUARM)
-      if (cs->delay) {
-        if (result) {
-          if (cswDelays[cs_idx] > get_tmr10ms())
-            result = false;
-        }
-        else {
-          cswDelays[cs_idx] = get_tmr10ms() + (cs->delay*50);
-        }
-      }
-      if (cs->duration) {
-        if (result && !cswStates[cs_idx])
-          cswDurations[cs_idx] = get_tmr10ms() + (cs->duration*50);
-
-        cswStates[cs_idx] = result;
-
-        if (cswDurations[cs_idx] > get_tmr10ms()) {
-          result = true;
-          if (cs->delay) cswDelays[cs_idx] = get_tmr10ms() + (cs->delay*50);
-        }
-      }
-#endif
-
+#if !defined(CPUARM)
       if (result)
         s_last_switch_value |= ((GETSWITCH_RECURSIVE_TYPE)1<<cs_idx);
+#endif
     }
+    else {
+      int16_t x = getValue(cs->v1-1);
+      int16_t y;
+      if (s == CS_VCOMP) {
+        y = getValue(cs->v2-1);
+
+        switch (cs->func) {
+          case CS_EQUAL:
+            result = (x==y);
+            break;
+          case CS_NEQUAL:
+            result = (x!=y);
+            break;
+          case CS_GREATER:
+            result = (x>y);
+            break;
+          case CS_LESS:
+            result = (x<y);
+            break;
+          case CS_EGREATER:
+            result = (x>=y);
+            break;
+          // case CS_ELESS:
+          default:
+            result = (x<=y);
+            break;
+        }
+      }
+      else {
+#if defined(FRSKY)
+        // Telemetry
+        if (cs->v1 > CSW_CHOUT_BASE+NUM_CHNOUT) {
+          if (frskyStreaming <= 0 && cs->v1 > CSW_CHOUT_BASE+NUM_CHNOUT+MAX_TIMERS)
+            return swtch > 0 ? false : true;
+
+          y = convertCswTelemValue(cs);
+
+#if defined(FRSKY_HUB)
+          if (s == CS_VOFS) {
+            uint8_t idx = cs->v1-CSW_CHOUT_BASE-NUM_CHNOUT-TELEM_ALT;
+            if (idx < THLD_MAX) {
+              // Fill the threshold array
+              barsThresholds[idx] = 128 + cs->v2;
+            }
+          }
+#endif
+        }
+        else {
+          y = calc100toRESX(cs->v2);
+        }
+#else
+        if (cs->v1 > CSW_CHOUT_BASE+NUM_CHNOUT) {
+          y = cs->v2; // it's a timer
+        }
+        else {
+          y = calc100toRESX(cs->v2);
+        }
+#endif
+
+        switch (cs->func) {
+          case CS_VPOS:
+            result = (x>y);
+            break;
+          case CS_VNEG:
+            result = (x<y);
+            break;
+          case CS_APOS:
+            result = (abs(x)>y);
+            break;
+          case CS_ANEG:
+            result = (abs(x)<y);
+            break;
+          default:
+          {
+            if (csLastValue[cs_idx] == -32668)
+              csLastValue[cs_idx] = x;
+            int16_t diff = x - csLastValue[cs_idx];
+            if (cs->func == CS_DIFFEGREATER)
+              result = (y >= 0 ? (diff >= y) : (diff <= y));
+            else
+              result = (abs(diff) >= y);
+            if (result)
+              csLastValue[cs_idx] = x;
+            break;
+          }
+        }
+      }
+    }
+
+#if defined(CPUARM)
+    if (cs->delay) {
+      if (result) {
+        if (cswDelays[cs_idx] > get_tmr10ms())
+          result = false;
+      }
+      else {
+        cswDelays[cs_idx] = get_tmr10ms() + (cs->delay*50);
+      }
+    }
+    if (cs->duration) {
+      if (result && !cswStates[cs_idx])
+        cswDurations[cs_idx] = get_tmr10ms() + (cs->duration*50);
+
+      cswStates[cs_idx] = result;
+
+      if (cswDurations[cs_idx] > get_tmr10ms()) {
+        result = true;
+        if (cs->delay) cswDelays[cs_idx] = get_tmr10ms() + (cs->delay*50);
+      }
+    }
+
+    if (result)
+      s_last_switch_value |= ((GETSWITCH_RECURSIVE_TYPE)1<<cs_idx);
+#endif
+
   }
 
   return swtch > 0 ? result : !result;
@@ -1034,7 +1060,11 @@ int8_t getMovedSwitch()
     bool prev;
     swstate_t mask = 0;
     if (i <= 3) {
-      prev = ((switches_states & 0x03) == (i-1));
+      mask = (1<<(i-1));
+      prev = (switches_states & mask);
+    }
+    else if (i <= 6) {
+      prev = ((switches_states & 0x18) == ((i-4) << 3));
     }
     else {
       mask = (1<<(i-2));
@@ -1046,9 +1076,8 @@ int8_t getMovedSwitch()
         result = next ? i : -i;
       if (mask)
         switches_states ^= mask;
-      else {
-        switches_states = (switches_states & 0x8C) | (i-1);
-      }
+      else
+        switches_states = (switches_states & 0xE7) | ((i-4) << 3);
     }
   }
 #endif
@@ -1271,12 +1300,13 @@ void putsTelemetryValue(xcoord_t x, uint8_t y, lcdint_t val, uint8_t unit, uint8
 }
 #endif
 
+#define INAC_DEV_SHIFT 9   // @@@ shift right value for stick movement
 #define INAC_DEVISOR 512   // Bypass splash screen with stick movement
 uint16_t stickMoveValue()
 {
   uint16_t sum = 0;
   for (uint8_t i=0; i<4; i++)
-    sum += anaIn(i)/INAC_DEVISOR;
+    sum += (anaIn(i)>>INAC_DEV_SHIFT); // sum += anaIn(i)/INAC_DEVISOR;
   return sum;
 }
 
@@ -1483,9 +1513,9 @@ void checkSwitches()
       uint8_t x = 2;
       for (uint8_t i=1; i<8; i++) {
         uint8_t attr = (states & (1 << i)) == (switches_states & (1 << i)) ? 0 : INVERS;
-        putsSwitches(x, 5*FH, (i>2?(i+1):1+((states>>4)&0x3)), attr);
-        if (i == 1 && attr) i++;
-        if (i != 1) x += 3*FW+FW/2;
+        putsSwitches(x, 5*FH, (i>5?(i+1):(i>=4?(4+((states>>4)&0x3)):i)), attr);
+        if (i == 4 && attr) i++;
+        if (i != 4) x += 3*FW+FW/2;
       }
 #endif
       lcdRefresh();
@@ -1829,7 +1859,7 @@ static uint8_t lastSwPos[2] = {0, 0};
 static uint16_t s_cnt[2] = {0, 0};
 static uint16_t s_sum[2] = {0, 0};
 static uint8_t sw_toggled[2] = {false, false};
-static uint16_t s_time_cum_16[2] = {0, 0};
+// static uint16_t s_time_cum_16[2] = {0, 0};  no longer needed using s_sum instead
 
 #if defined(THRTRACE)
 uint8_t s_traceBuf[MAXTRACE];
@@ -1880,7 +1910,8 @@ FORCEINLINE void evalTrims()
       if (g_eeGeneral.throttleReversed)
         trim = -trim;
       int16_t v = anas[i];
-      int32_t vv = ((int32_t)trim-TRIM_MIN)*(RESX-v)/(2*RESX);
+	  int32_t vv = ((int32_t)trim-TRIM_MIN)*(RESX-v)>>(RESX_SHIFT+1);
+      // int32_t vv = ((int32_t)trim-TRIM_MIN)*(RESX-v)/(2*RESX);	  
       trim = vv;
     }
     else if (trimsCheckTimer > 0) {
@@ -1900,7 +1931,8 @@ BeepANACenter evalSticks(uint8_t mode)
   if (g_model.swashR.value) {
     uint32_t v = (int32_t(calibratedStick[ELE_STICK])*calibratedStick[ELE_STICK] +
         int32_t(calibratedStick[AIL_STICK])*calibratedStick[AIL_STICK]);
-    uint32_t q = int32_t(RESX)*g_model.swashR.value/100;
+	uint32_t q = calc100toRESX(g_model.swashR.value);
+    // uint32_t q = int32_t(RESX)*g_model.swashR.value/100;	
     q *= q;
     if (v>q)
       d = isqrt32(v);
@@ -1978,7 +2010,8 @@ BeepANACenter evalSticks(uint8_t mode)
 
 #ifdef HELI
       if(d && (ch==ELE_STICK || ch==AIL_STICK))
-        v = int32_t(v)*g_model.swashR.value*RESX/(int32_t(d)*100);
+	    v = (int32_t(v)*calc100toRESX(g_model.swashR.value))/int32_t(d);
+      //  v = int32_t(v)*g_model.swashR.value*RESX/(int32_t(d)*100);
 #endif
 
       rawAnas[ch] = v;
@@ -2016,29 +2049,23 @@ tmr10ms_t lastFunctionTime[NUM_CFN] = { 0 };
 PLAY_FUNCTION(playValue, uint8_t idx)
 {
   int16_t val = getValue(idx);
-
-  // TODO add the MIXSRC_TELEM_TM1 and so on.
-
   switch (idx) {
-    case MIXSRC_LAST_CH+TELEM_TX_VOLTAGE-1:
-      PLAY_NUMBER(val, 1+UNIT_VOLTS, PREC1);
-      break;
-    case MIXSRC_LAST_CH+TELEM_TM1-1:
-    case MIXSRC_LAST_CH+TELEM_TM2-1:
+    case NUM_XCHNRAW+TELEM_TM1-1:
+    case NUM_XCHNRAW+TELEM_TM2-1:
       PLAY_DURATION(val);
       break;
 #if defined(FRSKY)
-    case MIXSRC_LAST_CH+TELEM_RSSI_TX-1:
-    case MIXSRC_LAST_CH+TELEM_RSSI_RX-1:
+    case NUM_XCHNRAW+TELEM_RSSI_TX-1:
+    case NUM_XCHNRAW+TELEM_RSSI_RX-1:
       PLAY_NUMBER(val, 1+UNIT_DBM, 0);
       break;
-    case MIXSRC_LAST_CH+TELEM_MIN_A1-1:
-    case MIXSRC_LAST_CH+TELEM_MIN_A2-1:
+    case NUM_XCHNRAW+TELEM_MIN_A1-1:
+    case NUM_XCHNRAW+TELEM_MIN_A2-1:
       idx -= TELEM_MIN_A1-TELEM_A1;
       // no break
-    case MIXSRC_LAST_CH+TELEM_A1-1:
-    case MIXSRC_LAST_CH+TELEM_A2-1:
-      idx -= (MIXSRC_LAST_CH+TELEM_A1-1);
+    case NUM_XCHNRAW+TELEM_A1-1:
+    case NUM_XCHNRAW+TELEM_A2-1:
+      idx -= (NUM_XCHNRAW+TELEM_A1-1);
         // A1 and A2
       {
         uint8_t att = 0;
@@ -2050,41 +2077,41 @@ PLAY_FUNCTION(playValue, uint8_t idx)
         break;
       }
 
-    case MIXSRC_LAST_CH+TELEM_CELL-1:
+    case NUM_XCHNRAW+TELEM_CELL-1:
       PLAY_NUMBER(val/10, 1+UNIT_VOLTS, PREC1);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_VFAS-1:
-    case MIXSRC_LAST_CH+TELEM_CELLS_SUM-1:
+    case NUM_XCHNRAW+TELEM_VFAS-1:
+    case NUM_XCHNRAW+TELEM_CELLS_SUM-1:
       PLAY_NUMBER(val, 1+UNIT_VOLTS, PREC1);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_CURRENT-1:
-    case MIXSRC_LAST_CH+TELEM_MAX_CURRENT-1:
+    case NUM_XCHNRAW+TELEM_CURRENT-1:
+    case NUM_XCHNRAW+TELEM_MAX_CURRENT-1:
       PLAY_NUMBER(val, 1+UNIT_AMPS, PREC1);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_ACCx-1:
-    case MIXSRC_LAST_CH+TELEM_ACCy-1:
-    case MIXSRC_LAST_CH+TELEM_ACCz-1:
+    case NUM_XCHNRAW+TELEM_ACCx-1:
+    case NUM_XCHNRAW+TELEM_ACCy-1:
+    case NUM_XCHNRAW+TELEM_ACCz-1:
       PLAY_NUMBER(val/10, 1+UNIT_G, PREC1);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_VSPD-1:
+    case NUM_XCHNRAW+TELEM_VSPD-1:
       PLAY_NUMBER(val/10, 1+UNIT_METERS_PER_SECOND, PREC1);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_CONSUMPTION-1:
+    case NUM_XCHNRAW+TELEM_CONSUMPTION-1:
       PLAY_NUMBER(val, 1+UNIT_MAH, 0);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_POWER-1:
+    case NUM_XCHNRAW+TELEM_POWER-1:
       PLAY_NUMBER(val, 1+UNIT_WATTS, 0);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_ALT-1:
-    case MIXSRC_LAST_CH+TELEM_MIN_ALT-1:
-    case MIXSRC_LAST_CH+TELEM_MAX_ALT-1:
+    case NUM_XCHNRAW+TELEM_ALT-1:
+    case NUM_XCHNRAW+TELEM_MIN_ALT-1:
+    case NUM_XCHNRAW+TELEM_MAX_ALT-1:
 #if defined(IMPERIAL_UNITS)
       if (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH)
         PLAY_NUMBER(val, 1+UNIT_FEET, 0);
@@ -2093,24 +2120,24 @@ PLAY_FUNCTION(playValue, uint8_t idx)
         PLAY_NUMBER(val, 1+UNIT_METERS, 0);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_RPM-1:
-    case MIXSRC_LAST_CH+TELEM_MAX_RPM-1:
+    case NUM_XCHNRAW+TELEM_RPM-1:
+    case NUM_XCHNRAW+TELEM_MAX_RPM-1:
       PLAY_NUMBER(val, 1+UNIT_RPMS, 0);
       break;
 
-    case MIXSRC_LAST_CH+TELEM_HDG-1:
+    case NUM_XCHNRAW+TELEM_HDG-1:
       PLAY_NUMBER(val, 1+UNIT_DEGREES, 0);
       break;
 
     default:
     {
       uint8_t unit = 1;
-      if (idx < MIXSRC_LAST_CH+TELEM_TM1-1)
-        val = calcRESXto100(val);
-      if (idx >= MIXSRC_LAST_CH+TELEM_ALT-1 && idx <= MIXSRC_LAST_CH+TELEM_GPSALT-1)
-        unit = idx - (MIXSRC_LAST_CH+TELEM_ALT-1);
-      else if (idx >= MIXSRC_LAST_CH+TELEM_MAX_T1-1 && idx <= MIXSRC_LAST_CH+TELEM_MAX_DIST-1)
-        unit = 3 + idx - (MIXSRC_LAST_CH+TELEM_MAX_T1-1);
+      if (idx < NUM_XCHNRAW+TELEM_TM1-1)
+        val = (val * 25) / 256;
+      if (idx >= NUM_XCHNRAW+TELEM_ALT-1 && idx <= NUM_XCHNRAW+TELEM_GPSALT-1)
+        unit = idx - (NUM_XCHNRAW+TELEM_ALT-1);
+      else if (idx >= NUM_XCHNRAW+TELEM_MAX_T1-1 && idx <= NUM_XCHNRAW+TELEM_MAX_DIST-1)
+        unit = 3 + idx - (NUM_XCHNRAW+TELEM_MAX_T1-1);
 
       unit = pgm_read_byte(bchunit_ar+unit);
 #if !defined(IMPERIAL_UNITS)
@@ -2284,24 +2311,16 @@ void evalFunctions()
 
         if (sd->func == FUNC_RESET) {
           switch (CFN_PARAM(sd)) {
-            case FUNC_RESET_TIMER1:
-            case FUNC_RESET_TIMER2:
+            case 0:
+            case 1:
               resetTimer(CFN_PARAM(sd));
               break;
-            case FUNC_RESET_ALL:
+            case 2:
               resetAll();
               break;
 #if defined(FRSKY)
-            case FUNC_RESET_TELEMETRY:
+            case 3:
               resetTelemetry();
-              break;
-#endif
-#if ROTARY_ENCODERS > 0
-            case FUNC_RESET_ROTENC1:
-#if ROTARY_ENCODERS > 1
-            case FUNC_RESET_ROTENC2:
-#endif
-              g_rotenc[CFN_PARAM(sd)-FUNC_RESET_ROTENC1] = 0;
               break;
 #endif
           }
@@ -2427,13 +2446,18 @@ void perOut(uint8_t mode, uint8_t tick10ms)
   if(g_model.swashR.value)
   {
     uint32_t v = ((int32_t)anas[ELE_STICK]*anas[ELE_STICK] + (int32_t)anas[AIL_STICK]*anas[AIL_STICK]);
-    uint32_t q = (int32_t)RESX*g_model.swashR.value/100;
+    // uint32_t q = (int32_t)RESX*g_model.swashR.value/100;
+	uint32_t q = calc100toRESX(g_model.swashR.value);		
     q *= q;
     if(v>q)
     {
       uint16_t d = isqrt32(v);
-      anas[ELE_STICK] = (int32_t)anas[ELE_STICK]*g_model.swashR.value*RESX/((int32_t)d*100);
-      anas[AIL_STICK] = (int32_t)anas[AIL_STICK]*g_model.swashR.value*RESX/((int32_t)d*100);
+	  // @@@ open.20.fsguruh
+      // anas[ELE_STICK] = (int32_t)anas[ELE_STICK]*g_model.swashR.value*RESX/((int32_t)d*100);
+      // anas[AIL_STICK] = (int32_t)anas[AIL_STICK]*g_model.swashR.value*RESX/((int32_t)d*100);
+	  int16_t tmp = calc100toRESX(g_model.swashR.value);
+      anas[ELE_STICK] = (int32_t) anas[ELE_STICK]*tmp/d; 
+      anas[AIL_STICK] = (int32_t) anas[AIL_STICK]*tmp/d; 
     }
   }
 
@@ -2531,30 +2555,31 @@ void perOut(uint8_t mode, uint8_t tick10ms)
       else {
         if (k < NUM_STICKS)
           v = md->noExpo ? rawAnas[k] : anas[k]; //Switch is on. MAX=FULL=512 or value.
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
         else {
           v = getValue(k);
-          if (k >= MIXSRC_SA-1 && k <= MIXSRC_LAST_CSW-1) {
-            if (v < 0 && !md->swtch) sw = false;
-          }
-          if (k>=MIXSRC_CH1-1 && k<=MIXSRC_LAST_CH-1 && md->destCh != k-MIXSRC_CH1+1) {
+          // TODO switches: if (v < 0 && !md->swtch) sw = false;
+          if (k>=MIXSRC_CH1-1 && k<=MIXSRC_CHMAX-1 && md->destCh != k-MIXSRC_CH1+1) {
             if (dirtyChannels & ((bitfield_channels_t)1 << (k-MIXSRC_CH1+1)) & (passDirtyChannels|~(((bitfield_channels_t) 1 << md->destCh)-1)))
               passDirtyChannels |= (bitfield_channels_t) 1 << md->destCh;
             if (k-MIXSRC_CH1+1 < md->destCh || pass > 0)
-              v = chans[k-MIXSRC_CH1+1] / 100;
+			  v = chans[k-MIXSRC_CH1+1] >> 8;  // remove factor 256 from old mix loop; was 100 before
+              // v = chans[k-MIXSRC_CH1+1] / 100;			  
           }
         }
 #else
+        else if (k >= MIXSRC_THR-1 && k <= MIXSRC_SWC-1) {
+          v = getSwitch(k-MIXSRC_THR+1+1, 0) ? +1024 : -1024;
+          if (v < 0 && !md->swtch) sw = false;
+        }
         else {
-          v = getValue(k);
-          if (k >= MIXSRC_THR-1 && k <= MIXSRC_LAST_CSW-1) {
-            if (v < 0 && !md->swtch) sw = false;
-          }
-          else if (k>=MIXSRC_CH1-1 && k<=MIXSRC_LAST_CH-1 && md->destCh != k-MIXSRC_CH1+1) {
+          v = getValue(k<=MIXSRC_3POS ? k : k-MAX_SWITCH);
+          if (k>=MIXSRC_CH1-1 && k<=MIXSRC_CHMAX-1 && md->destCh != k-MIXSRC_CH1+1) {
             if (dirtyChannels & ((bitfield_channels_t)1 << (k-MIXSRC_CH1+1)) & (passDirtyChannels|~(((bitfield_channels_t) 1 << md->destCh)-1)))
               passDirtyChannels |= (bitfield_channels_t) 1 << md->destCh;
             if (k-MIXSRC_CH1+1 < md->destCh || pass > 0)
-              v = chans[k-MIXSRC_CH1+1] / 100;
+			  v = chans[k-MIXSRC_CH1+1] >> 8;  // remove factor 256 from old mix loop; was 100 before
+			  // v = chans[k-MIXSRC_CH1+1] / 100;
           }
         }
 #endif
@@ -2647,46 +2672,68 @@ void perOut(uint8_t mode, uint8_t tick10ms)
 
       int16_t weight = GET_GVAR(MD_WEIGHT(md), -500, 500, s_perout_flight_phase);
 
-      //========== SPEED ===============
-      if (mode == e_perout_mode_normal && (md->speedUp || md->speedDown)) { // there are delay values
-      
-#define DEL_MULT 256
-
-        int16_t diff = v - act[i] / DEL_MULT;
-
-        if (diff) {
-          //rate = steps/sec => 32*1024/100*md->speedUp/Down
-          //act[i] += diff>0 ? (32768)/((int16_t)100*md->speedUp) : -(32768)/((int16_t)100*md->speedDown);
-          //-100..100 => 32768 ->  100*83886/256 = 32768,   For MAX we divide by 2 since it's asymmetrical
-          if (tick10ms) {
-            int32_t rate = (int32_t) DEL_MULT * 2048 * 100 * tick10ms;
-            if (weight) rate /= abs(weight);
-
-            act[i] = (diff>0) ? ((md->speedUp>0)   ? act[i]+(rate)/((int16_t)(100/SLOW_STEP)*md->speedUp)   :  (int32_t)v*DEL_MULT) :
-                                ((md->speedDown>0) ? act[i]-(rate)/((int16_t)(100/SLOW_STEP)*md->speedDown) :  (int32_t)v*DEL_MULT) ;
-          }
-
-          {
-            int32_t tmp = act[i] / DEL_MULT;
-            if (((diff > 0) && (v < tmp)) || ((diff < 0) && (v > tmp))) act[i] = (int32_t) v * DEL_MULT; //deal with overflow
-          }
-
-          v = act[i] / DEL_MULT;
-        }
-      }
-
       //========== WEIGHT ===============
-      int32_t dv = (int32_t) v * weight;
+	  // @@@2 recalculate weight to a 256 basis which ease the calculation later a lot
+      int32_t dv = (int32_t) v * calc100to256(weight);
 
       //========== DIFFERENTIAL =========
       if (md->curveMode == MODE_DIFFERENTIAL) {
-        int8_t curveParam = GET_GVAR(md->curveParam, -100, 100, s_perout_flight_phase);
+/*        int8_t curveParam = GET_GVAR(md->curveParam, -100, 100, s_perout_flight_phase);
         if (curveParam > 0 && dv < 0)
           dv = (dv * (100 - curveParam)) / 100;
         else if (curveParam < 0 && dv > 0)
-          dv = (dv * (100 + curveParam)) / 100;
+          dv = (dv * (100 + curveParam)) / 100; */
+		  
+	    // @@@2 also recalculate curveParam to a 256 basis which ease the calculation later a lot
+		int16_t curveParam=calc100to256(GET_GVAR(md->curveParam, -100, 100, s_perout_flight_phase));
+        if (curveParam > 0 && dv < 0)
+          dv = (dv * (256 - curveParam)) >> 8;
+        else if (curveParam < 0 && dv > 0)
+          dv = (dv * (256 + curveParam)) >> 8;		  
       }
 
+      //========== SPEED ===============
+      if (mode == e_perout_mode_normal && (md->speedUp || md->speedDown)) { // there are delay values
+      
+#define DEL_MULT_SHIFT 8
+        // we are lucky, the MULT_SHIFT factor actually fits to the weight recalculation; Therefore no adaption needed
+        // so weight is 256 and MULT factor is the same
+
+        int32_t diff=dv-act[i];
+        if (diff) {
+          // open.20.fsguruh: speed is defined in % movement per second; In menu we specify the full movement (-100% to 100%) = 200% in total
+          // the unit of the stored value is the value from md->speedUp or md->speedDown divide SLOW_STEP seconds; e.g. value 4 means 4/SLOW_STEP = 2 seconds for CPU64
+          // because we get a tick each 10msec, we need 100 ticks for one second
+          // the value in md->speedXXX gives the time it should take to do a full movement from -100 to 100 therefore 200%. This equals 2048 in recalculated internal range
+          if (tick10ms) {
+            // only if already time is passed add or substract a value according the speed configured
+                    
+            // codesaving 44 bytes          
+			int32_t rate = (int32_t) tick10ms << (DEL_MULT_SHIFT+11);  // = DEL_MULT*2048*tick10ms
+            // rate equals a full range for one second; if less time is passed rate is accordingly smaller
+            // if one second passed, rate would be 2048 (full motion)*256(recalculated weight)*100(100 ticks needed for one second)
+
+            int32_t currentValue=dv;
+            if (diff>0) {
+              if (md->speedUp>0) {
+                // if a speed upwards is defined recalculate the new value according configured speed; the higher the speed the smaller the add value is
+                int32_t newValue = act[i]+rate/((int16_t)(100/SLOW_STEP)*md->speedUp); 
+                if (newValue<currentValue) currentValue=newValue; // Endposition; prevent toggling around the destination
+              }
+            } else {  // if is <0 because ==0 is not possible
+              if (md->speedDown>0) {
+                // see explanation in speedUp
+                int32_t newValue = act[i]-rate/((int16_t)(100/SLOW_STEP)*md->speedDown); 
+                if (newValue>currentValue) currentValue=newValue; // Endposition; prevent toggling around the destination
+              }            
+            } //endif diff>0
+            act[i] = currentValue;
+            // open.20.fsguruh: this implementation would save about 50 bytes code
+          } // endif tick10ms ; in case no time passed assign the old value, not the current value from source
+          dv = act[i];
+        } //endif diff
+      } //endif speed
+      
       int32_t *ptr = &chans[md->destCh]; // Save calculating address several times
 
       if (i == 0 || md->destCh != (md - 1)->destCh)
@@ -2701,9 +2748,10 @@ void perOut(uint8_t mode, uint8_t tick10ms)
 #endif
           break;
         case MLTPX_MUL:
-          dv /= 100;
+		  // @@@2 we have to remove the weight factor of 256 in case of 100%; now we use the new base of 256
+          dv >>= 8;		
           dv *= *ptr;
-          dv /= RESXl;
+		  dv >>= RESX_SHIFT;   // same as dv /= RESXl;
           *ptr = dv;
           break;
         default: // MLTPX_ADD
@@ -2740,7 +2788,9 @@ void doMixerCalculations()
   static tmr10ms_t lastTMR;
 
   tmr10ms_t tmr10ms = get_tmr10ms();
-  uint8_t tick10ms = (tmr10ms >= lastTMR ? tmr10ms - lastTMR : 1);
+  uint8_t tick10ms = (tmr10ms >= lastTMR ? tmr10ms - lastTMR : 1);  // handle tick10ms overrun
+  //@@@ open.20.fsguruh: correct overflow handling costs a lot of code; happens only each 11 min;
+  // therefore forget the exact calculation and use only 1 instead; good compromise
   lastTMR = tmr10ms;
 
 #if defined(BOLD_FONT)
@@ -2767,7 +2817,7 @@ void doMixerCalculations()
   static ACTIVE_PHASES_TYPE s_fade_flight_phases = 0;
   static uint8_t s_last_phase = 255; // TODO reinit everything here when the model changes, no???
   uint8_t phase = getFlightPhase();
-  int32_t weight = 0;
+  int32_t weight; // = 0; will be initilized below not needed here even compiler complains -> saves 6 bytes
 
   if (s_last_phase != phase) {
     if (s_last_phase != 255) PLAY_PHASE_OFF(s_last_phase);
@@ -2794,13 +2844,14 @@ void doMixerCalculations()
 
   if (s_fade_flight_phases) {
     memclear(sum_chans512, sizeof(sum_chans512));
-    weight = 0;
+    weight = 0;  // unfortunately removing this instead of initialization do not save even 1 bytes of code, that's why it's here
     for (uint8_t p=0; p<MAX_PHASES; p++) {
       if (s_fade_flight_phases & ((ACTIVE_PHASES_TYPE)1 << p)) {
         s_perout_flight_phase = p;
         perOut(e_perout_mode_normal, tick10ms);
         for (uint8_t i=0; i<NUM_CHNOUT; i++)
-          sum_chans512[i] += (chans[i] / 16) * fp_act[p];
+          sum_chans512[i] += (chans[i]>>4) * fp_act[p];  // @@@ use shift right instead of division
+		  // sum_chans512[i] += (chans[i] / 16) * fp_act[p];		
         weight += fp_act[p];
       }
     }
@@ -2811,14 +2862,16 @@ void doMixerCalculations()
     s_perout_flight_phase = phase;
     perOut(e_perout_mode_normal, tick10ms);
   }
-
+  
+  // @@@ open.20.fsguruh according to bsongis and also my this should be done here, hopefully tick10ms is set the first round; later on this should occur max each 10msec
   if (tick10ms) {
-#if defined(CPUARM)
+  #if defined(CPUARM)
     requiredSpeakerVolume = g_eeGeneral.speakerVolume + VOLUME_LEVEL_DEF;
-#endif
+  #endif
 
-    evalFunctions();
-  }
+    // the reason this needs to be done before limits is the applyLimit function; it checks for safety switches which would be not initialized otherwise
+    evalFunctions();  
+  } 
 
   //========== LIMITS ===============
   for (uint8_t i=0; i<NUM_CHNOUT; i++) {
@@ -2827,10 +2880,13 @@ void doMixerCalculations()
     // at the end chans[i] = chans[i]/100 =>  -1024..1024
     // interpolate value with min/max so we get smooth motion from center to stop
     // this limits based on v original values and min=-1024, max=1024  RESX=1024
-    int32_t q = (s_fade_flight_phases ? (sum_chans512[i] / weight) * 16 : chans[i]);
-    ex_chans[i] = q / 100; // for the next perMain
+	
+    // int32_t q = (s_fade_flight_phases ? (sum_chans512[i] / weight) * 16 : chans[i]);
+	int32_t q = (s_fade_flight_phases ? (sum_chans512[i] / weight) << 4 : chans[i]);
+	// @@@2 now remove the internal 256 100% basis by a simple shift operation
+	ex_chans[i]=q>>8; // for the next perMain	
 
-    int16_t value = applyLimits(i, q);
+    int16_t value = applyLimits(i, q);  // applyLimits will remove the 256 100% basis
 
     cli();
     g_chans512[i] = value;  // copy consistent word to int-level
@@ -2866,53 +2922,30 @@ void doMixerCalculations()
     if (g_model.limitData[ch].symetrical)
       val -= calc1000toRESX(g_model.limitData[ch].offset);
 #endif
-    val = val * 10 / (10+(g_model.limitData[ch].max-g_model.limitData[ch].min)/20);
+    // @@@ open.20.fsguruh  optimized calculation; now *16 /16 instead of 10 base
+    val = (val << 4) / (16+((g_model.limitData[ch].max-g_model.limitData[ch].min)>>5));
+	if (val<0) val=0;  // prevent val be negative, which would corrupt throttle trace and timers; could occur if safetyswitch is smaller than limits
+	// val = val * 10 / (10+(g_model.limitData[ch].max-g_model.limitData[ch].min)/20);
   }
   else {
     val = RESX + calibratedStick[g_model.thrTraceSrc == 0 ? THR_STICK : g_model.thrTraceSrc+NUM_STICKS-1];
   }
 
-  val /= (RESX/16); // calibrate it
-
-  static tmr10ms_t s_time_tot;
-  static uint8_t s_cnt_1s;
-  static uint16_t s_sum_1s;
-#if defined(THRTRACE)
-  static tmr10ms_t s_time_trace;
-  static uint16_t s_cnt_10s;
-  static uint16_t s_sum_10s;
+#ifndef CPUM64
+  //  code cost is about 16 bytes for higher throttle accuracy for timer 
+  //  would not be noticable anyway, because all version up to this change had only 16 steps; 
+  //  now it has already 32  steps; this define would increase to 128 steps
+  #define ACCURAT_THROTTLE_TIMER
 #endif
 
-  s_cnt_1s++;
-  s_sum_1s += val;
-
-  if ((tmr10ms_t)(tmr10ms - s_time_tot) >= 100) { // 1sec
-    s_time_tot += 100;
-    s_timeCumTot += 1;
-
-    val = s_sum_1s / s_cnt_1s;
-    s_timeCum16ThrP += val / 2;
-    if (val) s_timeCumThr += 1;
-
-#if defined(THRTRACE)
-    s_cnt_10s += s_cnt_1s;
-    s_sum_10s += s_sum_1s;
-
-    if ((tmr10ms_t)(tmr10ms - s_time_trace) >= 1000) { // 10s
-      s_time_trace += 1000;
-      val = s_sum_10s / s_cnt_10s;
-      s_sum_10s = 0;
-      s_cnt_10s = 0;
-
-      s_traceBuf[s_traceWr++] = val;
-      if (s_traceWr >= MAXTRACE) s_traceWr = 0;
-      if (s_traceCnt >= 0) s_traceCnt++;
-    }
-#endif
-
-    s_cnt_1s = 0;
-    s_sum_1s = 0;
-  }
+  
+#if defined(ACCURAT_THROTTLE_TIMER)
+  val >>= (RESX_SHIFT-6); // increase resolution by factor 4
+#else
+  val >>= (RESX_SHIFT-4); // calibrate it @@@ open.20.fsguruh
+  // val /= (RESX/16); // calibrate it
+#endif  
+  
 
   // Timers start
   for (uint8_t i=0; i<2; i++) {
@@ -2924,7 +2957,7 @@ void doMixerCalculations()
         s_timerState[i] = TMR_RUNNING;
         s_cnt[i] = 0;
         s_sum[i] = 0;
-        s_time_cum_16[i] = 0;
+        // s_time_cum_16[i] = 0;  open.20.fsguruh: we have s_sum, that's enough
       }
 
       uint8_t atm = (tm >= 0 ? tm : TMR_VAROFS-tm-1);
@@ -2955,16 +2988,21 @@ void doMixerCalculations()
           if (val) s_timerVal[i]++;
         }
         else if (atm==TMRMODE_THR_REL) {
-          if (s_cnt[i]) {
-            val       = s_sum[i]/s_cnt[i];
-            s_sum[i] -= val*s_cnt[i]; //rest
-            s_cnt[i]  = 0;
-            s_time_cum_16[i] += val/2;
-            if (s_time_cum_16[i] >= 16) {
-              s_timerVal[i] ++;
-              s_time_cum_16[i] -= 16;
-            }
+          // @@@ open.20.fsguruh: why so complicated? we have already a s_sum field; use it for the half seconds (not showable) as well
+          // check for s_cnt[i]==0 is not needed because we are shure it is at least 1
+#if defined(ACCURAT_THROTTLE_TIMER)
+          if ((s_sum[i]/s_cnt[i])>=128) {  // throttle was normalized to 0 to 128 value (throttle/64*2 (because - range is added as well)
+            s_timerVal[i]++;  // add second used of throttle
+            s_sum[i]-=128*s_cnt[i];
           }
+		  s_cnt[i]=0;
+#else
+          if ((s_sum[i]/s_cnt[i])>=32) {  // throttle was normalized to 0 to 32 value (throttle/16*2 (because - range is added as well)
+            s_timerVal[i]++;  // add second used of throttle
+            s_sum[i]-=32*s_cnt[i];
+          }
+		  s_cnt[i]=0;
+#endif
         }
         else if (atm==TMRMODE_THR_TRG) {
           if (val || s_timerVal[i] > 0)
@@ -2992,6 +3030,58 @@ void doMixerCalculations()
     }
   };
 
+  static tmr10ms_t s_time_tot;
+  static uint8_t s_cnt_1s;
+  static uint16_t s_sum_1s;
+#if defined(THRTRACE)
+  static tmr10ms_t s_time_trace;
+  static uint16_t s_cnt_10s;
+  static uint16_t s_sum_10s;
+#endif
+
+  s_cnt_1s++;
+  s_sum_1s += val;
+  
+  // @@@ open.20.fsguruh: moved code here; at least val variable conflicts with caculations above, safer here?
+  // even reduced code size about 8 bytes, why ever?
+  if ((tmr10ms_t)(tmr10ms - s_time_tot) >= 100) { // 1sec
+    s_time_tot += 100;
+    s_timeCumTot += 1;
+
+#if defined(ACCURAT_THROTTLE_TIMER)
+    val = s_sum_1s / s_cnt_1s;
+    s_timeCum16ThrP += (val>>3);  // s_timeCum16ThrP would overrun if we would store throttle value with higher accuracy; therefore stay with 16 steps
+    if (val) s_timeCumThr += 1;
+    s_sum_1s>>=2;  // correct better accuracy now, because trace graph can show this information; in case thrtrace is not active, the compile should remove this
+#else    
+    val = s_sum_1s / s_cnt_1s;
+    s_timeCum16ThrP += (val>>1);  
+    if (val) s_timeCumThr += 1;
+#endif    
+    
+#if defined(THRTRACE)
+    // throttle trace is done every 10 seconds; Tracebuffer is adjusted to screen size.
+    // in case buffer runs out, it wraps around
+    // resolution for y axis is only 32, therefore no higher value makes sense
+    s_cnt_10s += s_cnt_1s;
+    s_sum_10s += s_sum_1s;
+
+    if ((tmr10ms_t)(tmr10ms - s_time_trace) >= 1000) { // 10s
+      s_time_trace += 1000;
+      val = s_sum_10s / s_cnt_10s;
+      s_sum_10s = 0;
+      s_cnt_10s = 0;
+
+      s_traceBuf[s_traceWr++] = val;
+      if (s_traceWr >= MAXTRACE) s_traceWr = 0;
+      if (s_traceCnt >= 0) s_traceCnt++;
+    }
+#endif
+
+    s_cnt_1s = 0;
+    s_sum_1s = 0;
+  }
+  
   static int16_t last_tmr;
   if (last_tmr != s_timerVal[0]) { // beep only if seconds advance
     if (s_timerState[0] == TMR_RUNNING) {
@@ -3002,8 +3092,8 @@ void doMixerCalculations()
         if(s_timerVal[0]<= 3) AUDIO_TIMER_LT3(s_timerVal[0]);
       }
 
-      if (g_eeGeneral.minuteBeep && (s_timerVal[0] % 60)==0) { // short beep every minute
-        AUDIO_TIMER_MINUTE(s_timerVal[0]);
+      if (g_eeGeneral.minuteBeep && (((g_model.timers[0].start ? g_model.timers[0].start-s_timerVal[0] : s_timerVal[0])%60)==0)) { // short beep every minute
+        AUDIO_MINUTE_BEEP();
       }
     }
     else if(s_timerState[0] == TMR_BEEPING) {
@@ -3038,6 +3128,14 @@ void doMixerCalculations()
     }
   }
 
+/*  as proposed by bsongis, this is done now shortly before limits
+#if defined(CPUARM)
+  requiredSpeakerVolume = g_eeGeneral.speakerVolume + VOLUME_LEVEL_DEF;
+#endif
+
+  evalFunctions();
+*/
+
 #if defined(DSM2)
   if (s_rangecheck_mode) AUDIO_PLAY(AU_FRSKY_CHEEP);
 #endif
@@ -3054,9 +3152,26 @@ void perMain()
 #elif !defined(CPUARM)
   uint16_t t0 = getTmr16KHz();
   int16_t delta = (nextMixerEndTime - lastMixerDuration) - t0;
-  if (delta > 0 && delta < MAX_MIXER_DELTA) return;
+  if (delta > 0 && delta < MAX_MIXER_DELTA)  {
+    // @@@ open.20.fsguruh
+    // SLEEP();   // wouldn't that make sense? should save a lot of battery power!!!
+/*  for future use; currently very very beta...
+	ADCSRA&=0x7F;   // disable ADC for power saving
+	ACSR&=0xF7;   // disable ACIE Interrupts
+	ACSR|=0x80;   // disable Analog Comparator
+	
+	MCUCR|=0x24;  // enable Sleep (bit5) enable ADC Noise Reduction (bit2)
+	asm volatile(" sleep        \n\t");  // if _SLEEP() is not defined use this
+	MCUCR&=0x00;  // disable sleep
+	ADCSRA|=0x80;  // enable ADC
+    */
+    return;
+  }  
 
   nextMixerEndTime = t0 + MAX_MIXER_DELTA;
+  // this is a very tricky implementation; lastMixerEndTime is just like a default value not to stop mixcalculations totally;
+  // the real value for lastMixerEndTime is calculated inside pulses_XXX.cpp which aligns the timestamp to the pulses generated
+  // nextMixerEndTime is actually defined inside pulses_XXX.h  
 
   doMixerCalculations();
 
@@ -3900,7 +4015,7 @@ int main(void)
 #endif
   lcd_clear() ;
   lcdRefresh() ;
-  pwrOff(); // Only turn power off if necessary
+  pwrOff();            // Only turn power off if necessary
   wdt_disable();
   while(1); // never return from main() - there is no code to return back, if any delays occurs in physical power it does dead loop.
 #endif

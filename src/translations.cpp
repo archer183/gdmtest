@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -314,16 +312,11 @@ const pm_char STR_CURRENT[] PROGMEM = TR_CURRENT;
 const pm_char STR_CURRENT_CALIB[] PROGMEM = TR_CURRENT_CALIB;
 #endif
 
-#if defined(NAVIGATION_MENUS)
+#if defined(SDCARD)
 const pm_char STR_SELECT_MODEL[] PROGMEM = TR_SELECT_MODEL;
 const pm_char STR_CREATE_MODEL[] PROGMEM = TR_CREATE_MODEL;
-const pm_char STR_COPY_MODEL[] PROGMEM = TR_COPY_MODEL;
-const pm_char STR_MOVE_MODEL[] PROGMEM = TR_MOVE_MODEL;
-const pm_char STR_DELETE_MODEL[] PROGMEM = TR_DELETE_MODEL;
-#endif
-
-#if defined(SDCARD)
 const pm_char STR_BACKUP_MODEL[] PROGMEM = TR_BACKUP_MODEL;
+const pm_char STR_DELETE_MODEL[] PROGMEM = TR_DELETE_MODEL;
 const pm_char STR_RESTORE_MODEL[] PROGMEM = TR_RESTORE_MODEL;
 const pm_char STR_SDCARD_ERROR[] PROGMEM = TR_SDCARD_ERROR;
 const pm_char STR_NO_SDCARD[] PROGMEM = TR_NO_SDCARD;

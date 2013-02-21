@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Martin Hotar
  * - Michael Blandford
  * - Michal Hlavinka
@@ -103,10 +101,10 @@ enum SlovakPrompts {
 
 #if defined(VOICE)
 
-#if defined(CPUARM)
-#define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u), id)
-#else
+#if defined(PCBSTD)
 #define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u))
+#else
+#define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u), id)
 #endif
 
 #define MUZSKY 0x80

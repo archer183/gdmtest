@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -41,11 +39,7 @@
 #define BACKLIGHT_BIT           0x04
 #define SPARE_BIT               0x08
 
-#if defined(CPUM64)
-  #define VOICE_Q_LENGTH        8
-#else
-  #define VOICE_Q_LENGTH        16
-#endif
+#define VOICE_Q_LENGTH          8
 
 // Voice states
 #define V_STARTUP               0

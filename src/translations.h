@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -402,31 +400,26 @@ extern const pm_char STR_CURRENT[];
 #endif
 
 #if defined(CPUARM)
-  extern const pm_char STR_CURRENT_CALIB[];
-  #define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
+extern const pm_char STR_CURRENT_CALIB[];
+#define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
 #else
-  #define LEN_CALIB_FIELDS PSIZE(TR_BATT_CALIB)
-#endif
-
-#if defined(NAVIGATION_MENUS)
-  extern const pm_char STR_SELECT_MODEL[];
-  extern const pm_char STR_CREATE_MODEL[];
-  extern const pm_char STR_COPY_MODEL[];
-  extern const pm_char STR_MOVE_MODEL[];
-  extern const pm_char STR_DELETE_MODEL[];
+#define LEN_CALIB_FIELDS PSIZE(TR_BATT_CALIB)
 #endif
 
 #if defined(SDCARD)
-  extern const pm_char STR_BACKUP_MODEL[];
-  extern const pm_char STR_RESTORE_MODEL[];
-  extern const pm_char STR_SDCARD_ERROR[];
-  extern const pm_char STR_NO_SDCARD[];
-  extern const pm_char STR_INCOMPATIBLE[];
-  extern const pm_char STR_LOGS_PATH[];
-  extern const pm_char STR_LOGS_EXT[];
-  extern const pm_char STR_MODELS_PATH[];
-  extern const pm_char STR_MODELS_EXT[];
-  #define STR_UPDATE_LIST STR_DELAYDOWN
+extern const pm_char STR_SELECT_MODEL[];
+extern const pm_char STR_CREATE_MODEL[];
+extern const pm_char STR_BACKUP_MODEL[];
+extern const pm_char STR_DELETE_MODEL[];
+extern const pm_char STR_RESTORE_MODEL[];
+extern const pm_char STR_SDCARD_ERROR[];
+extern const pm_char STR_NO_SDCARD[];
+extern const pm_char STR_INCOMPATIBLE[];
+extern const pm_char STR_LOGS_PATH[];
+extern const pm_char STR_LOGS_EXT[];
+extern const pm_char STR_MODELS_PATH[];
+extern const pm_char STR_MODELS_EXT[];
+#define STR_UPDATE_LIST STR_DELAYDOWN
 #endif
 
 extern const pm_uchar font_5x7[];
@@ -492,20 +485,20 @@ extern const pm_char STR_DATE[];
 extern const pm_char STR_CHANNELS_MONITOR[];
 
 #if defined(VOICE)
-  PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);
-  PLAY_FUNCTION(playDuration, int16_t seconds);
+PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);
+PLAY_FUNCTION(playDuration, int16_t seconds);
 #endif
 
 #if LCD_W >= 212
-  extern const pm_char STR_MODELNAME[];
-  extern const pm_char STR_PHASENAME[];
-  extern const pm_char STR_MIXNAME[];
-  extern const pm_char STR_EXPONAME[];
+extern const pm_char STR_MODELNAME[];
+extern const pm_char STR_PHASENAME[];
+extern const pm_char STR_MIXNAME[];
+extern const pm_char STR_EXPONAME[];
 #else
-  #define STR_MODELNAME STR_NAME
-  #define STR_PHASENAME STR_NAME
-  #define STR_MIXNAME   STR_NAME
-  #define STR_EXPONAME  STR_NAME
+#define STR_MODELNAME STR_NAME
+#define STR_PHASENAME STR_NAME
+#define STR_MIXNAME   STR_NAME
+#define STR_EXPONAME  STR_NAME
 #endif
 
 #endif

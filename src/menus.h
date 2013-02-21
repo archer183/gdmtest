@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -39,6 +37,8 @@
 
 #define NO_HI_LEN 25
 
+// RESX range is used for internal calculation; The menu says -100.0 to 100.0; internally it is -1024 to 1024 to allow some optimizations
+#define RESX_SHIFT 10
 #define RESX    1024
 #define RESXu   1024u
 #define RESXul  1024ul
@@ -233,70 +233,52 @@ void displayBox();
 void displayPopup(const pm_char * pstr);
 void displayWarning(uint8_t event);
 
-#if defined(SDCARD) || (defined(ROTARY_ENCODER_NAVIGATION) && !defined(CPUM64))
-  #define NAVIGATION_MENUS
-  #define MENU_ADD_ITEM(s) s_menu[s_menu_count++] = s
-  #if defined(SDCARD) && defined(ROTARY_ENCODER_NAVIGATION)
-    #define MENU_MAX_LINES 6
-  #else
-    #define MENU_MAX_LINES 4
-  #endif
-  #if defined(SDCARD)
-    #define MENU_ADD_SD_ITEM(s) MENU_ADD_ITEM(s)
-  #else
-    #define MENU_ADD_SD_ITEM(s)
-  #endif
-  #if defined(ROTARY_ENCODER_NAVIGATION)
-    #define MENU_ADD_NAVIGATION_ITEM(s) MENU_ADD_ITEM(s)
-  #else
-    #define MENU_ADD_NAVIGATION_ITEM(s)
-  #endif
-  #define MENU_LINE_LENGTH (LEN_MODEL_NAME+1)
-  extern const char *s_menu[MENU_MAX_LINES];
-  extern uint16_t s_menu_count;
-  extern uint8_t s_menu_flags;
-  extern uint16_t s_menu_offset;
-  const char * displayMenu(uint8_t event);
-#else
-  #define s_menu_count 0
-#endif
-
 #if defined(SDCARD)
-  #define STATUS_LINE_LENGTH 32
-  extern char statusLineMsg[STATUS_LINE_LENGTH];
-  void showStatusLine();
-  void drawStatusLine();
+#define MENU_MAX_LINES 4
+#define MENU_LINE_LENGTH (LEN_MODEL_NAME+1)
+extern const char *s_menu[MENU_MAX_LINES];
+extern uint16_t s_menu_count;
+extern uint8_t s_menu_flags;
+extern uint16_t s_menu_offset;
+const char * displayMenu(uint8_t event);
+
+#define STATUS_LINE_LENGTH 32
+extern char statusLineMsg[STATUS_LINE_LENGTH];
+void showStatusLine();
+void drawStatusLine();
 #else
-  #define drawStatusLine()
+#define s_menu_count 0
+#define drawStatusLine()
 #endif
 
 void menuChannelsMonitor(uint8_t event);
 
 #define LABEL(...) (uint8_t)-1
 
-#if defined(PCBX9D)
+#if defined(PCBX9D) || defined(PCBACT)
   #define KEY_MOVE_UP    KEY_PLUS
   #define KEY_MOVE_DOWN  KEY_MINUS
-  #define CURSOR_MOVED_LEFT(event)  (EVT_KEY_MASK(event) == KEY_PLUS)
-  #define CURSOR_MOVED_RIGHT(event) (EVT_KEY_MASK(event) == KEY_MINUS)
-  #define CASE_EVT_ROTARY_MOVE_RIGHT CASE_EVT_ROTARY_LEFT
-  #define CASE_EVT_ROTARY_MOVE_LEFT  CASE_EVT_ROTARY_RIGHT
-  #define IS_ROTARY_MOVE_RIGHT       IS_ROTARY_LEFT
-  #define IS_ROTARY_MOVE_LEFT        IS_ROTARY_RIGHT
 #else
   #define KEY_MOVE_UP    KEY_UP
   #define KEY_MOVE_DOWN  KEY_DOWN
-  #define CURSOR_MOVED_LEFT(event)  (IS_ROTARY_LEFT(event) || EVT_KEY_MASK(event) == KEY_LEFT)
-  #define CURSOR_MOVED_RIGHT(event) (IS_ROTARY_RIGHT(event) || EVT_KEY_MASK(event) == KEY_RIGHT)
-  #define CASE_EVT_ROTARY_MOVE_RIGHT CASE_EVT_ROTARY_RIGHT
-  #define CASE_EVT_ROTARY_MOVE_LEFT  CASE_EVT_ROTARY_LEFT
-  #define IS_ROTARY_MOVE_RIGHT       IS_ROTARY_RIGHT
-  #define IS_ROTARY_MOVE_LEFT        IS_ROTARY_LEFT
 #endif
 
+#define CURSOR_MOVED_LEFT(event)  (IS_ROTARY_LEFT(event) || EVT_KEY_MASK(event) == KEY_LEFT)
+#define CURSOR_MOVED_RIGHT(event) (IS_ROTARY_RIGHT(event) || EVT_KEY_MASK(event) == KEY_RIGHT)
+
 #if defined(PCBX9D)
-  #define REPEAT_LAST_CURSOR_MOVE() { if (CURSOR_MOVED_LEFT(event) || CURSOR_MOVED_RIGHT(event)) putEvent(event); else m_posHorz = 0; }
-#elif defined(ROTARY_ENCODER_NAVIGATION)
+#define CASE_EVT_ROTARY_MOVE_RIGHT CASE_EVT_ROTARY_LEFT
+#define CASE_EVT_ROTARY_MOVE_LEFT  CASE_EVT_ROTARY_RIGHT
+#define IS_ROTARY_MOVE_RIGHT       IS_ROTARY_LEFT
+#define IS_ROTARY_MOVE_LEFT        IS_ROTARY_RIGHT
+#else
+#define CASE_EVT_ROTARY_MOVE_RIGHT CASE_EVT_ROTARY_RIGHT
+#define CASE_EVT_ROTARY_MOVE_LEFT  CASE_EVT_ROTARY_LEFT
+#define IS_ROTARY_MOVE_RIGHT       IS_ROTARY_RIGHT
+#define IS_ROTARY_MOVE_LEFT        IS_ROTARY_LEFT
+#endif
+
+#if defined(ROTARY_ENCODER_NAVIGATION) || defined(PCBX9D)
   #define REPEAT_LAST_CURSOR_MOVE() { if (EVT_KEY_MASK(event) >= 0x0e) putEvent(event); else m_posHorz = 0; }
 #else
   #define REPEAT_LAST_CURSOR_MOVE() m_posHorz = 0;

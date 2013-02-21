@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -72,10 +70,10 @@ enum EnglishPrompts {
 
 #if defined(VOICE)
 
-#if defined(CPUARM)
-#define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u), id)
-#else
+#if defined(PCBSTD)
 #define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u))
+#else
+#define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u), id)
 #endif
 
 PLAY_FUNCTION(pushUnitPrompt, int16_t number, uint8_t unitprompt)

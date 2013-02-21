@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -117,7 +115,7 @@ void readKeysAndTrims()
   }
 }
 
-bool switchState(EnumKeys enuk)
+uint32_t switchState(EnumKeys enuk)
 {
   register uint32_t a = GPIOA->IDR;
   register uint32_t b = GPIOB->IDR;
@@ -206,7 +204,11 @@ bool switchState(EnumKeys enuk)
       break;
   }
 
-  return xxx;
+  if (xxx) {
+    return 1;
+  }
+
+  return 0;
 }
 
 #if !defined(SIMU)

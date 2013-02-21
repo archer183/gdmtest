@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -145,21 +143,23 @@ extern "C" void TIM1_CC_IRQHandler()
 
   setupPulses() ;
 
-  if (s_current_protocol == PROTO_PXX) {
-    DMA2_Stream1->CR &= ~DMA_SxCR_EN ;              // Disable DMA
-    DMA2->LIFCR = DMA_LIFCR_CTCIF1 | DMA_LIFCR_CHTIF1 | DMA_LIFCR_CTEIF1 | DMA_LIFCR_CDMEIF1 | DMA_LIFCR_CFEIF1 ; // Write ones to clear bits
-    DMA2_Stream1->M0AR = CONVERT_PTR(&pxxStream[1]);
-    DMA2_Stream1->CR |= DMA_SxCR_EN ;               // Enable DMA
-    TIM1->CCR1 = pxxStream[0] ;
-    TIM1->DIER |= TIM_DIER_CC2IE ;  // Enable this interrupt
-  }
-  else {
+  if (s_current_protocol == PROTO_PPM)
+  {
     ppmStreamPtr = ppmStream ;
 
     TIM1->DIER |= TIM_DIER_UDE ;
 
     TIM1->SR &= ~TIM_SR_UIF ;                                       // Clear this flag
     TIM1->DIER |= TIM_DIER_UIE ;                            // Enable this interrupt
+  }
+  else if (s_current_protocol == PROTO_PXX)
+  {
+    DMA2_Stream1->CR &= ~DMA_SxCR_EN ;              // Disable DMA
+    DMA2->LIFCR = DMA_LIFCR_CTCIF1 | DMA_LIFCR_CHTIF1 | DMA_LIFCR_CTEIF1 | DMA_LIFCR_CDMEIF1 | DMA_LIFCR_CFEIF1 ; // Write ones to clear bits
+    DMA2_Stream1->M0AR = CONVERT_PTR(&pxxStream[1]);
+    DMA2_Stream1->CR |= DMA_SxCR_EN ;               // Enable DMA
+    TIM1->CCR1 = pxxStream[0] ;
+    TIM1->DIER |= TIM_DIER_CC2IE ;  // Enable this interrupt
   }
 }
 

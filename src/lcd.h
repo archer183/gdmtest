@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -109,6 +107,7 @@
 #define ROUND         0x08
 
 /* switches flags */
+#define SWONOFF       0x10 /* means inlude ON OFF in switches */
 #define SWCONDENSED   0x20 /* means that THRm will be displayed as THR */
 
 /* telemetry flags */
@@ -182,7 +181,8 @@ extern void putsTrimMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdF
 void putsRotaryEncoderMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdFlags att);
 #endif
 
-#define putsChn(x, y, idx, att) putsMixerSource(x, y, MIXSRC_CH1+idx-1, att)
+extern void putsChnRaw(xcoord_t x, uint8_t y, uint8_t idx1, LcdFlags att);
+#define putsChn(x, y, idx, att) putsChnRaw(x, y, (idx)+(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM), att)
 extern void putsChnLetter(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags attr);
 
 extern void putsVolts(xcoord_t x, uint8_t y, uint16_t volts, LcdFlags att);
@@ -203,7 +203,7 @@ extern void lcd_plot(xcoord_t x, uint8_t y, LcdFlags att=0);
 extern void lcd_hline(xcoord_t x, uint8_t y, xcoord_t w, LcdFlags att=0);
 extern void lcd_hlineStip(xcoord_t x, uint8_t y, xcoord_t w, uint8_t pat, LcdFlags att=0);
 extern void lcd_vline(xcoord_t x, int8_t y, int8_t h);
-#if defined(CPUM64)
+#if defined(PCBSTD)
 extern void lcd_vlineStip(xcoord_t x, int8_t y, int8_t h, uint8_t pat);
 #else
 extern void lcd_vlineStip(xcoord_t x, int8_t y, int8_t h, uint8_t pat, LcdFlags att=0);

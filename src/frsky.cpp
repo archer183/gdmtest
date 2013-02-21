@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -62,6 +60,7 @@ uint8_t frskyTxBuffer[FRSKY_TX_PACKET_SIZE];   // Ditto for transmit buffer
 #if !defined(CPUARM)
 uint8_t frskyTxBufferCount = 0;
 #endif
+uint8_t FrskyRxBufferReady = 0;
 int8_t frskyStreaming = -1;
 #if defined(WS_HOW_HIGH)
 uint8_t frskyUsrStreaming = 0;
@@ -387,6 +386,8 @@ void processFrskyPacket(uint8_t *packet)
       break;
 #endif
   }
+
+  FrskyRxBufferReady = 0;
 }
 
 // Receive buffer state machine state enum
@@ -442,85 +443,89 @@ NOINLINE void processSerialData(uint8_t stat, uint8_t data)
 #if !defined(CPUARM)
   if (stat & ((1 << FE0) | (1 << DOR0) | (1 << UPE0))) {
     // discard buffer and start fresh on any comms error
+    FrskyRxBufferReady = 0;
     numPktBytes = 0;
   }
   else
 #endif
   {
-    switch (dataState)
+    if (FrskyRxBufferReady == 0) // can't get more data if the buffer hasn't been cleared
     {
-      case STATE_DATA_START:
-        if (data == START_STOP) break; // Remain in userDataStart if possible 0x7e,0x7e doublet found.
+      switch (dataState)
+      {
+        case STATE_DATA_START:
+          if (data == START_STOP) break; // Remain in userDataStart if possible 0x7e,0x7e doublet found.
 
-        if (numPktBytes < FRSKY_RX_PACKET_SIZE)
-          frskyRxBuffer[numPktBytes++] = data;
-        dataState = STATE_DATA_IN_FRAME;
-        break;
-
-      case STATE_DATA_IN_FRAME:
-        if (data == BYTESTUFF)
-        {
-            dataState = STATE_DATA_XOR; // XOR next byte
-            break;
-        }
-        if (data == START_STOP) // end of frame detected
-        {
-          processFrskyPacket(frskyRxBuffer);
-          dataState = STATE_DATA_IDLE;
+          if (numPktBytes < FRSKY_RX_PACKET_SIZE)
+            frskyRxBuffer[numPktBytes++] = data;
+          dataState = STATE_DATA_IN_FRAME;
           break;
-        }
-        if (numPktBytes < FRSKY_RX_PACKET_SIZE)
-          frskyRxBuffer[numPktBytes++] = data;
-        break;
 
-      case STATE_DATA_XOR:
-        if (numPktBytes < FRSKY_RX_PACKET_SIZE)
-          frskyRxBuffer[numPktBytes++] = data ^ STUFF_MASK;
-        dataState = STATE_DATA_IN_FRAME;
-        break;
-
-      case STATE_DATA_IDLE:
-        if (data == START_STOP) {
-          numPktBytes = 0;
-          dataState = STATE_DATA_START;
-        }
-#if defined(TELEMETREZ)
-        if (data == PRIVATE) {
-          dataState = STATE_DATA_PRIVATE_LEN;
-        }
-#endif
-        break;
-
-#if defined(TELEMETREZ)
-      case STATE_DATA_PRIVATE_LEN:
-        dataState = STATE_DATA_PRIVATE_VALUE;
-        privateDataLen = data; // Count of bytes to receive
-        privateDataPos = 0;
-        break;
-
-      case STATE_DATA_PRIVATE_VALUE :
-        if (privateDataPos == 0) {
-          // Process first private data byte
-          // PC6, PC7
-          if ((data & 0x3F) == 0) {// Check byte is valid
-            DDRC |= 0xC0;          // Set as outputs
-            PORTC = ( PORTC & 0x3F ) | ( data & 0xC0 ); // update outputs
+        case STATE_DATA_IN_FRAME:
+          if (data == BYTESTUFF)
+          {
+              dataState = STATE_DATA_XOR; // XOR next byte
+              break;
           }
-        }
+          if (data == START_STOP) // end of frame detected
+          {
+            processFrskyPacket(frskyRxBuffer); // FrskyRxBufferReady = 1;
+            dataState = STATE_DATA_IDLE;
+            break;
+          }
+          if (numPktBytes < FRSKY_RX_PACKET_SIZE)
+            frskyRxBuffer[numPktBytes++] = data;
+          break;
+
+        case STATE_DATA_XOR:
+          if (numPktBytes < FRSKY_RX_PACKET_SIZE)
+            frskyRxBuffer[numPktBytes++] = data ^ STUFF_MASK;
+          dataState = STATE_DATA_IN_FRAME;
+          break;
+
+        case STATE_DATA_IDLE:
+          if (data == START_STOP) {
+            numPktBytes = 0;
+            dataState = STATE_DATA_START;
+          }
+#if defined(TELEMETREZ)
+          if (data == PRIVATE) {
+            dataState = STATE_DATA_PRIVATE_LEN;
+          }
+#endif
+          break;
+
+#if defined(TELEMETREZ)
+        case STATE_DATA_PRIVATE_LEN:
+          dataState = STATE_DATA_PRIVATE_VALUE;
+          privateDataLen = data; // Count of bytes to receive
+          privateDataPos = 0;
+          break;
+
+        case STATE_DATA_PRIVATE_VALUE :
+          if (privateDataPos == 0) {
+            // Process first private data byte
+            // PC6, PC7
+            if ((data & 0x3F) == 0) {// Check byte is valid
+              DDRC |= 0xC0;          // Set as outputs
+              PORTC = ( PORTC & 0x3F ) | ( data & 0xC0 ); // update outputs
+            }
+          }
 #if defined(ROTARY_ENCODER_NAVIGATION)
-        if (privateDataPos == 1) {
-          TrotCount = data;
-        }
-        if (privateDataPos == 2) { // rotary encoder switch
-          RotEncoder = data;
-        }
+          if (privateDataPos == 1) {
+            TrotCount = data;
+          }
+          if (privateDataPos == 2) { // rotary encoder switch
+            RotEncoder = data;
+          }
 #endif
-        if (++privateDataPos == privateDataLen) {
-          dataState = STATE_DATA_IDLE;
-        }
-        break;
+          if (++privateDataPos == privateDataLen) {
+            dataState = STATE_DATA_IDLE;
+          }
+          break;
 #endif
-    } // switch
+      } // switch
+    } // if (FrskyRxBufferReady == 0)
   }
 }
 
@@ -1039,9 +1044,9 @@ int16_t convertCswTelemValue(CustomSwData * cs)
 {
   int16_t val;
   if (CS_STATE(cs->func)==CS_VOFS)
-    val = convertTelemValue(cs->v1 - MIXSRC_LAST_CH, 128+cs->v2);
+    val = convertTelemValue(cs->v1 - (CSW_CHOUT_BASE+NUM_CHNOUT), 128+cs->v2);
   else
-    val = convertTelemValue(cs->v1 - MIXSRC_LAST_CH, 128+cs->v2) - convertTelemValue(cs->v1 - MIXSRC_LAST_CH, 128);
+    val = convertTelemValue(cs->v1 - (CSW_CHOUT_BASE+NUM_CHNOUT), 128+cs->v2) - convertTelemValue(cs->v1 - (CSW_CHOUT_BASE+NUM_CHNOUT), 128);
   return val;
 }
 
@@ -1092,8 +1097,7 @@ void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, 
     case TELEM_CELL-1:
       putsTelemetryValue(x, y, val, UNIT_VOLTS, att|PREC2);
       break;
-
-    case TELEM_TX_VOLTAGE-1:
+      
     case TELEM_VFAS-1:
     case TELEM_CELLS_SUM-1:
       putsTelemetryValue(x, y, val, UNIT_VOLTS, att|PREC1);
@@ -1286,7 +1290,7 @@ void menuTelemetryFrsky(uint8_t event)
             uint8_t y = barHeight+6+i*(barHeight+6);
             lcd_putsiAtt(0, y+barHeight-5, STR_VTELEMCHNS, source, 0);
             lcd_rect(25, y, 101, barHeight+2);
-            int16_t value = getValue(MIXSRC_LAST_CH+source-1);
+            int16_t value = getValue(CSW_CHOUT_BASE+NUM_CHNOUT+source-1);
             int16_t threshold = 0;
             uint8_t thresholdX = 0;
             if (source <= TELEM_TM2)
@@ -1359,7 +1363,7 @@ void menuTelemetryFrsky(uint8_t event)
             }
             if (field) {
               fields_count++;
-              int16_t value = getValue(MIXSRC_LAST_CH+field-1);
+              int16_t value = getValue(CSW_CHOUT_BASE+NUM_CHNOUT+field-1);
               uint8_t att = (i==3 ? NO_UNIT : DBLSIZE|NO_UNIT);
               if (field <= TELEM_TM2) {
                 uint8_t x = (i==3 ? j?80:20 : j?74:10);

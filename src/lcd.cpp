@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -563,7 +561,7 @@ void lcd_hline(xcoord_t x, uint8_t y, xcoord_t w, LcdFlags att)
   lcd_hlineStip(x, y, w, 0xff, att);
 }
 
-#if defined(CPUM64)
+#if defined(PCBSTD)
 void lcd_vlineStip(xcoord_t x, int8_t y, int8_t h, uint8_t pat)
 {
   if (x >= LCD_W) return;
@@ -754,25 +752,37 @@ void putsStrIdx(xcoord_t x, uint8_t y, const pm_char *str, uint8_t idx, LcdFlags
   lcd_putsAtt(x, y, str, att);
 }
 
+void putsChnRaw(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags att)
+{
+  if (idx==0)
+    lcd_putsiAtt(x, y, STR_MMMINV, 0, att);
+  else if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC)
+    lcd_putsiAtt(x, y, STR_VSRCRAW, idx-1, att);
+  else if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM)
+    putsStrIdx(x, y, STR_PPM, idx - (NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC), att);
+  else if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM+NUM_CHNOUT)
+    putsStrIdx(x, y, STR_CH, idx - (NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM), att);
+  else
+    lcd_putsiAtt(x, y, STR_VTELEMCHNS, idx-(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM+NUM_CHNOUT), att);
+}
+
 void putsMixerSource(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags att)
 {
-#if defined(PCBX9D)
-  if (idx < MIXSRC_SW1)
-    lcd_putsiAtt(x, y, STR_VSRCRAW, idx, att);
-  else if (idx < MIXSRC_PPM1)
-    putsSwitches(x, y, SWSRC_SW1+idx-MIXSRC_SW1, att);
-#else
-  if (idx < MIXSRC_THR)
-    lcd_putsiAtt(x, y, STR_VSRCRAW, idx, att);
-  else if (idx < MIXSRC_PPM1)
-    putsSwitches(x, y, idx-MIXSRC_THR+1+3*(1/*+EXTRA_3POS*/), att);
-#endif
-  else if (idx < MIXSRC_CH1)
-    putsStrIdx(x, y, STR_PPM, idx-MIXSRC_PPM1+1, att);
-  else if (idx <= MIXSRC_LAST_CH)
-    putsStrIdx(x, y, STR_CH, idx-MIXSRC_CH1+1, att);
+#if defined(PCBX9D) || defined(PCBACT)
+  if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW)
+    putsChnRaw(x, y, idx, att);
+  else if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CSW)
+    putsSwitches(x, y, MAX_PSWITCH + idx-(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW), att);
   else
-    lcd_putsiAtt(x, y, STR_VTELEMCHNS, idx-MIXSRC_LAST_CH, att);
+    putsChnRaw(x, y, idx-NUM_CSW, att);
+#else
+  if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW)
+    putsChnRaw(x, y, idx, att);
+  else if (idx<=NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+MAX_SWITCH)
+    putsSwitches(x, y, idx-(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW), att);
+  else
+    putsChnRaw(x, y, idx-MAX_SWITCH, att);
+#endif
 }
 
 void putsChnLetter(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags attr)
@@ -794,43 +804,25 @@ void putsModelName(xcoord_t x, uint8_t y, char *name, uint8_t id, LcdFlags att)
 
 void putsSwitches(xcoord_t x, uint8_t y, int8_t idx, LcdFlags att)
 {
-  if (idx == SWSRC_NONE)
+  if (idx == 0)
     return lcd_putsiAtt(x, y, STR_MMMINV, 0, att);
-  if (idx == SWSRC_ON)
-    return lcd_putsiAtt(x, y, STR_OFFON, 1, att);
-  if (idx == SWSRC_OFF)
-    return lcd_putsiAtt(x, y, STR_OFFON, 0, att);
+  if (att & SWONOFF) {
+    if (idx == SWITCH_ON)
+      return lcd_putsiAtt(x, y, STR_OFFON, 1, att);
+    if (idx == SWITCH_OFF)
+      return lcd_putsiAtt(x, y, STR_OFFON, 0, att);
+  }
   if (idx < 0) {
     lcd_vlineStip(x-2, y, 8, 0x5E/*'!'*/);
     idx = -idx;
   }
-
-#if ROTARY_ENCODERS > 0
-  if (idx >= SWSRC_FIRST_ROTENC_SWITCH) {
-    if (idx <= SWSRC_LAST_ROTENC_SWITCH) {
-      idx -= SWSRC_FIRST_ROTENC_SWITCH;
-      char suffix;
-      if (idx < ROTARY_ENCODERS) {
-        suffix = 's';
-      }
-      else {
-        idx -= ROTARY_ENCODERS;
-        suffix = 'l';
-      }
-      lcd_putcAtt(x+3*FW, y, suffix, att);
-      return lcd_putsiAtt(x, y, STR_VRENCODERS, idx, att);
-    }
-    idx -= 2*ROTARY_ENCODERS;
-  }
-#endif
-
-  if (idx > SWSRC_ON) {
-    idx -= SWSRC_ON;
+  if (idx > MAX_SWITCH) {
+    idx -= ((att & SWONOFF) ? MAX_SWITCH+1 : MAX_SWITCH);
     char suffix = 'm';
 #if defined(CPUARM)
-    if (idx > SWSRC_ON) {
+    if (idx > MAX_SWITCH+1) {
       suffix = 's';
-      idx -= SWSRC_ON;
+      idx -= MAX_SWITCH+1;
       if (idx > MAX_PSWITCH) {
         suffix = 'l';
         idx -= MAX_PSWITCH;

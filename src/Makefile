@@ -26,7 +26,7 @@ DATA_DIR = /tmp
 BACKUP_FLASH = YES
 
 # Backup the old EEPROM (YES, NO)
-BACKUP_EEPROM = NO
+BACKUP_EEPROM = YES
 
 # Restore EEPROM to 9x (YES, NO) (will set BACKUP_EEPROM to YES).
 RESTORE_EEPROM = NO
@@ -70,7 +70,7 @@ HELI = NO
 
 # Enable templates menu
 # Values = YES, NO
-TEMPLATES = NO
+TEMPLATES = YES
 
 # Enable navigation with Pots / Rotary encoders
 # Values = NO
@@ -111,7 +111,7 @@ PWM_BACKLIGHT = NO
 
 # SPLASH on START
 # Values = YES, NO, FIXED
-SPLASH = NO
+SPLASH = YES
 
 # GRAPHICS (sliders / checkboxes / bold)
 GRAPHICS = YES
@@ -122,7 +122,7 @@ THR_TRACE = YES
 
 # PPM center adjustable
 # Values = YES, NO
-PPM_CENTER_ADJUSTABLE = YES
+PPM_CENTER_ADJUSTABLE = NO
 
 # PPM symetrical limits
 # Values = YES, NO
@@ -205,11 +205,7 @@ XCURVES = YES
 
 # Global Vars
 # Values = YES, NO
-GVARS = YES
-
-#trig and combat math.
-# Values = Yes , No
-TRIG = YES
+GVARS = NO
 
 # Enable another 3 positions switch to replace a pot
 # Values = NO, POT1, POT2, POT3,
@@ -419,10 +415,6 @@ ifeq ($(EXT), STD)
   CPPDEFS += -DEXTSTD
 endif
 
-#trig and combat math
-ifeq ($(TRIG), YES)
-  CPPDEFS += -DTRIG
-endif
 # If ARDUPILOT-Support is enabled
 ifeq ($(EXT), ARDUPILOT)
   CPPDEFS += -DARDUPILOT
@@ -848,31 +840,31 @@ stamp_header:
 	@echo "//Automatically generated file (Makefile) - do not edit" > stamp-open9x.h
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" >> stamp-open9x.h
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x.h
-	@echo "#define SVN_STR  \"Combat9x$(SVNREV)\"" >> stamp-open9x.h
+	@echo "#define SVN_STR  \"open9x-r$(SVNREV)\"" >> stamp-open9x.h
 	@cat stamp-open9x.h
 
 stock-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-stock.txt
+	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock.txt
 	@cat stamp-open9x-stock.txt
 
 stock128-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-stock128.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-stock128.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-stock128.txt
+	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-stock128.txt
 	@cat stamp-open9x-stock128.txt
 
 v4-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-v4.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-v4.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-v4.txt
+	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-v4.txt
 	@cat stamp-open9x-v4.txt
 
 arm-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-open9x-arm.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-open9x-arm.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-open9x-arm.txt
+	@echo "#define SVN_VERS \"open9x-r$(SVNREV)\"" >> stamp-open9x-arm.txt
 	@cat stamp-open9x-arm.txt
 
 font.lbm: font.xbm font_extra.xbm translations/font_se.xbm translations/font_de.xbm translations/font_it.xbm translations/font_cz.xbm translations/font_fr.xbm translations/font_es.xbm
@@ -979,7 +971,6 @@ simu: stamp_header $(BOARDSRC) $(CPPSRC) Makefile simu.cpp simpgmspace.cpp *.h *
 
 eeprom.bin:
 	dd if=/dev/zero of=$@ bs=1 count=2048
-
 
 
 # Create final output files (.hex, .eep) from ELF output file.

@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -250,15 +248,15 @@ void displayVoltage()
 #endif
 
 #if defined(PCBX9D) || defined(PCBACT)
-  #define EVT_KEY_MODEL_MENU   EVT_KEY_BREAK(KEY_MENU)
-  #define EVT_KEY_GENERAL_MENU EVT_KEY_LONG(KEY_MENU)
-  #define EVT_KEY_TELEMETRY    EVT_KEY_LONG(KEY_PAGE)
-  #define EVT_KEY_STATISTICS   EVT_KEY_LONG(KEY_ENTER)
+#define EVT_KEY_MODEL_MENU   EVT_KEY_BREAK(KEY_MENU)
+#define EVT_KEY_GENERAL_MENU EVT_KEY_LONG(KEY_MENU)
+#define EVT_KEY_TELEMETRY    EVT_KEY_LONG(KEY_PAGE)
+#define EVT_KEY_STATISTICS   EVT_KEY_LONG(KEY_ENTER)
 #else
-  #define EVT_KEY_MODEL_MENU   EVT_KEY_LONG(KEY_RIGHT)
-  #define EVT_KEY_GENERAL_MENU EVT_KEY_LONG(KEY_LEFT)
-  #define EVT_KEY_TELEMETRY    EVT_KEY_LONG(KEY_DOWN)
-  #define EVT_KEY_STATISTICS   EVT_KEY_LONG(KEY_UP)
+#define EVT_KEY_MODEL_MENU   EVT_KEY_LONG(KEY_RIGHT)
+#define EVT_KEY_GENERAL_MENU EVT_KEY_LONG(KEY_LEFT)
+#define EVT_KEY_TELEMETRY    EVT_KEY_LONG(KEY_DOWN)
+#define EVT_KEY_STATISTICS   EVT_KEY_LONG(KEY_UP)
 #endif
 
 #if defined(PCBX9D) || defined(PCBACT)
@@ -481,7 +479,7 @@ void menuMainView(uint8_t event)
         uint8_t x = LCD_W/2+7*FW+col*FW;
         uint8_t y = LCD_H/2-7+line*8;
         lcd_putcAtt(x, y, sw>=9 ? 'A'+sw-9 : '1'+sw, SMLSIZE);
-        if (getSwitch(SWSRC_SW1+sw, 0))
+        if (getSwitch(DSW(SW_SW1+sw), 0))
           lcd_filled_rect(x-1, y-1, 6, 8);
         sw++;
       }
@@ -548,14 +546,10 @@ void menuMainView(uint8_t event)
       doMainScreenGraphics();
 
       // Switches
-      for (uint8_t i=SWSRC_THR; i<=SWSRC_TRN; i++) {
-        int8_t sw = (i == SWSRC_TRN ? (switchState(SW_ID0) ? SWSRC_ID0 : (switchState(SW_ID1) ? SWSRC_ID1 : SWSRC_ID2)) : i);
-        uint8_t x = 2*FW-2, y = i*FH+1;
-        if (i>=SWSRC_AIL) {
-          x = 17*FW-1;
-          y -= 3*FH;
-        }
-        putsSwitches(x, y, sw, getSwitch(i, 0) ? INVERS : 0);
+      for (uint8_t i=0; i<6; i++) {
+        int8_t sw1 = (i<3 ? 1+i : 4+i);
+        int8_t sw2 = (sw1 == 9 ? (getSwitch(4, 0) ? 4 : (getSwitch(5, 0) ? 5 : 6)) : sw1);
+        putsSwitches(i<3 ? 2*FW-2: 17*FW-1, (i%3)*FH+4*FH+1, sw2, getSwitch(sw1, 0) ? INVERS : 0);
       }
     }
     else {
@@ -576,23 +570,20 @@ void menuMainView(uint8_t event)
       // Curstom Switches
 #if defined(PCBSKY9X)
       for (uint8_t i=0; i<NUM_CSW; i++) {
-        int8_t len = getSwitch(SWSRC_SW1+i, 0) ? BAR_HEIGHT : 1;
+        int8_t len = getSwitch(DSW(SW_SW1)+i, 0) ? BAR_HEIGHT : 1;
         uint8_t x = VSWITCH_X(i);
         lcd_vline(x-1, VSWITCH_Y-len, len);
         lcd_vline(x,   VSWITCH_Y-len, len);
       }
 #elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
       for (uint8_t i=0; i<NUM_CSW; i++)
-        putsSwitches(2*FW-2 + (i/3)*(4*FW-2) + (i/3>1 ? 3*FW+6 : 0), 4*FH+1 + (i%3)*FH, SWSRC_SW1+i, getSwitch(SWSRC_SW1+i, 0) ? INVERS : 0);
+        putsSwitches(2*FW-2 + (i/3)*(4*FW-2) + (i/3>1 ? 3*FW+6 : 0), 4*FH+1 + (i%3)*FH, 10+i, getSwitch(10+i, 0) ? INVERS : 0);
 #elif defined(PCBGRUVIN9X)
       for (uint8_t i=0; i<NUM_CSW; i++)
-        putsSwitches(2*FW-2 + (i/3)*(4*FW-2) + (i/3>1 ? 3*FW : 0), 4*FH+1 + (i%3)*FH, SWSRC_SW1+i, getSwitch(SWSRC_SW1+i, 0) ? INVERS : 0);
-#elif !defined(CPUM64)
-      for (uint8_t i=0; i<NUM_CSW; i++)
-        putsSwitches(2*FW-2 + (i/3)*(4*FW-1), 4*FH+1 + (i%3)*FH, SWSRC_SW1+i, getSwitch(SWSRC_SW1+i, 0) ? INVERS : 0);
+        putsSwitches(2*FW-2 + (i/3)*(4*FW) + (i/3>1 ? 3*FW : 0), 4*FH+1 + (i%3)*FH, 10+i, getSwitch(10+i, 0) ? INVERS : 0);
 #else
       for (uint8_t i=0; i<NUM_CSW; i++)
-        putsSwitches(2*FW-2 + (i/3)*(5*FW), 4*FH+1 + (i%3)*FH, SWSRC_SW1+i, getSwitch(SWSRC_SW1+i, 0) ? INVERS : 0);
+        putsSwitches(2*FW-2 + (i/3)*(5*FW), 4*FH+1 + (i%3)*FH, 10+i, getSwitch(10+i, 0) ? INVERS : 0);
 #endif
     }
   }

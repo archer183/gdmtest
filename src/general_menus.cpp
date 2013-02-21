@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -462,7 +460,7 @@ void menuGeneralSetup(uint8_t event)
 
       case ITEM_SETUP_STICK_MODE:
         lcd_putcAtt(2*FW, y, '1'+g_eeGeneral.stickMode, attr);
-        for (uint8_t i=0; i<4; i++) putsMixerSource((6+4*i)*FW, y, pgm_read_byte(modn12x3 + 4*g_eeGeneral.stickMode + i), 0);
+        for (uint8_t i=0; i<4; i++) putsChnRaw( (6+4*i)*FW, y, pgm_read_byte(modn12x3 + 4*g_eeGeneral.stickMode + i), 0);
         if (attr && s_editMode>0) {
           CHECK_INCDEC_GENVAR(event, g_eeGeneral.stickMode, 0, 3);
         }
@@ -761,7 +759,7 @@ void menuGeneralTrainer(uint8_t event)
       uint8_t chan = channel_order(i);
       volatile TrainerMix *td = &g_eeGeneral.trainer.mix[chan-1];
 
-      putsMixerSource(0, y, chan, 0);
+      putsChnRaw(0, y, chan, 0);
 
       for (uint8_t j=0; j<3; j++) {
 

@@ -1,14 +1,12 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -187,7 +185,7 @@ bool switchState(EnumKeys enuk)
       result = !(PINE & (1<<INP_E_ID2));
       break;
 
-#if defined(EXTRA_3POS)
+#if 0
     case SW_ID3:
       result = (calibratedStick[POT1+EXTRA_3POS-1] < 0);
       break;
