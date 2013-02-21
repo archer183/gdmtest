@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -36,6 +33,33 @@
 
 #include "open9x.h"
 
+#if defined(PCBARM)
+void hapticOff()
+{
+	PWM->PWM_DIS = PWM_DIS_CHID2 ;						// Disable channel 2
+	PWM->PWM_OOV &= ~0x00040000 ;	// Force low
+	PWM->PWM_OSS |= 0x00040000 ;	// Force low
+}
+
+// pwmPercent 0-100
+void hapticOn( uint32_t pwmPercent )
+{
+	register Pwm *pwmptr ;
+
+	pwmptr = PWM ;
+
+	if ( pwmPercent > 100 )
+	{
+		pwmPercent = 100 ;		
+	}
+	pwmptr->PWM_CH_NUM[2].PWM_CDTYUPD = pwmPercent ;		// Duty
+	pwmptr->PWM_ENA = PWM_ENA_CHID2 ;						// Enable channel 2
+	pwmptr->PWM_OSC = 0x00040000 ;	// Enable output
+}
+#endif
+
+
+
 hapticQueue::hapticQueue()
 {
   buzzTimeLeft = 0;
@@ -51,10 +75,11 @@ void hapticQueue::heartbeat()
 {
 #if defined(SIMU)
   return;
-#else
+#endif
+
   if (buzzTimeLeft > 0) {
     buzzTimeLeft--; // time gets counted down
-#if defined(PCBSKY9X)
+#if defined(PCBARM)
     hapticOn(g_eeGeneral.hapticStrength * 20);
 #else
     if (hapticTick-- > 0) {
@@ -75,18 +100,17 @@ void hapticQueue::heartbeat()
       buzzTimeLeft = queueHapticLength[t_queueRidx];
       buzzPause = queueHapticPause[t_queueRidx];
       if (!queueHapticRepeat[t_queueRidx]--) {
-        t_queueRidx = (t_queueRidx + 1) & (HAPTIC_QUEUE_LENGTH-1);
+        t_queueRidx = (t_queueRidx + 1) % HAPTIC_QUEUE_LENGTH;
       }
     }
   }
-#endif // defined(SIMU)
 }
 
 void hapticQueue::play(uint8_t tLen, uint8_t tPause, uint8_t tFlags)
 {
   tLen = getHapticLength(tLen);
 
-  if ((tFlags & PLAY_NOW) || (!busy() && empty())) {
+  if (tFlags & PLAY_NOW || (!busy() && empty())) {
     buzzTimeLeft = tLen;
     buzzPause = tPause;
     t_queueWidx = t_queueRidx;
@@ -97,7 +121,7 @@ void hapticQueue::play(uint8_t tLen, uint8_t tPause, uint8_t tFlags)
 
   tFlags &= 0x0f;
   if (tFlags) {
-    uint8_t next_queueWidx = (t_queueWidx + 1) & (HAPTIC_QUEUE_LENGTH-1);
+    uint8_t next_queueWidx = (t_queueWidx + 1) % HAPTIC_QUEUE_LENGTH;
     if (next_queueWidx != t_queueRidx) {
       queueHapticLength[t_queueWidx] = tLen;
       queueHapticPause[t_queueWidx] = tPause;
@@ -110,19 +134,23 @@ void hapticQueue::play(uint8_t tLen, uint8_t tPause, uint8_t tFlags)
 void hapticQueue::event(uint8_t e)
 {
   if (g_eeGeneral.hapticMode>0 || (g_eeGeneral.hapticMode==0 && e>=AU_WARNING1) || (g_eeGeneral.hapticMode>=-1 && e<=AU_ERROR)) {
-    if (e <= AU_ERROR)
-      play(15, 3, PLAY_NOW);
-    else if (e <= AU_TRIM_MOVE)
-      play(5, 0, PLAY_NOW);
-    else if (e <= AU_TIMER_LT3)
-      play(15, 3, PLAY_NOW);
-    else if (e < AU_FRSKY_FIRST)
-      play(15, 3, (e-AU_TIMER_10)|PLAY_NOW);
-    else if (e >= AU_FRSKY_LAST && empty()) {
-      play(30, 10, 0);
-      play(10,50-10*(e-AU_FRSKY_LAST),(e-AU_FRSKY_LAST));
-    }	
+    switch (e) {
+      case 0: // very little buzz for keys / trims
+        play(5, 0, PLAY_NOW);
+        break;
+      case AU_TIMER_20: // two buzz
+        play(10,2,1);
+        break;
+      case AU_TIMER_30: // three buzz
+        play(10,2,2);
+        break;
+      default:
+        play(10,2,0);
+        break;
+    }
   }
 }
 
 hapticQueue haptic;
+
+

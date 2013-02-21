@@ -31,13 +31,17 @@
  *
  */
 
+#if defined(PCBARM)
+#include "ersky9x/sound.h"
+#endif
+
 #if defined(PCBSTD)
 #define SPEAKER_ON   BUZZER_ON
-#define SPEAKER_OFF  toneFreq=0; BUZZER_OFF
+#define SPEAKER_OFF  BUZZER_OFF
 #endif
 
 //audio
-#define AUDIO_QUEUE_LENGTH (8)  // 8 seems to suit most alerts
+#define AUDIO_QUEUE_LENGTH (8)  //8 seems to suit most alerts
 #define BEEP_DEFAULT_FREQ  (70)
 #define BEEP_OFFSET        (10)
 #define BEEP_KEY_UP_FREQ   (BEEP_DEFAULT_FREQ+5)
@@ -50,14 +54,13 @@ class audioQueue
     audioQueue();
 
     void play(uint8_t tFreq, uint8_t tLen, uint8_t tPause, uint8_t tFlags=0, int8_t tFreqIncr=0);
-    void pause(uint8_t tLen);
-    
+
     inline bool busy() { return (toneTimeLeft > 0); }
 
     void event(uint8_t e, uint8_t f=BEEP_DEFAULT_FREQ);
 
     inline void driver() {
-      if (toneFreq) {
+      if (toneFreq && toneTimeLeft > 0) {
         toneCounter += toneFreq;
         if ((toneCounter & 0x80) == 0x80)
           BUZZER_ON;
@@ -69,6 +72,8 @@ class audioQueue
     // heartbeat is responsibile for issueing the audio tones and general square waves
     // it is essentially the life of the class.
     void heartbeat();
+
+    // bool freeslots(uint8_t slots);
 
     inline bool empty() {
       return (t_queueRidx == t_queueWidx);
@@ -113,40 +118,22 @@ void audioDefevent(uint8_t e);
 #define AUDIO_WARNING1()    audioDefevent(AU_WARNING1)
 #define AUDIO_WARNING2()    audioDefevent(AU_WARNING2)
 #define AUDIO_ERROR()       audioDefevent(AU_ERROR)
-#if defined(VOICE)
-#define AUDIO_TADA()        pushPrompt(PROMPT_SYSTEM_BASE+AU_TADA)
-#define AUDIO_TX_BATTERY_LOW() pushPrompt(PROMPT_SYSTEM_BASE+AU_TX_BATTERY_LOW)
-#define AUDIO_INACTIVITY()  pushPrompt(PROMPT_SYSTEM_BASE+AU_INACTIVITY)
-#define AUDIO_ERROR_MESSAGE(e) pushPrompt(PROMPT_SYSTEM_BASE+(e))
-#define AUDIO_TIMER_30()    pushPrompt(PROMPT_SYSTEM_BASE+AU_TIMER_30)
-#define AUDIO_TIMER_20()    pushPrompt(PROMPT_SYSTEM_BASE+AU_TIMER_20)
-#define AUDIO_TIMER_10()    pushPrompt(PROMPT_SYSTEM_BASE+AU_TIMER_10)
-#define AUDIO_TIMER_LT3(x)  pushPrompt(PROMPT_SYSTEM_BASE+AU_TIMER_LT3)
-#else
-#define AUDIO_TADA()
-#define AUDIO_TX_BATTERY_LOW() audioDefevent(AU_TX_BATTERY_LOW)
-#define AUDIO_INACTIVITY()  audioDefevent(AU_INACTIVITY)
-#define AUDIO_ERROR_MESSAGE(e) audioDefevent(AU_ERROR)
 #define AUDIO_TIMER_30()    audioDefevent(AU_TIMER_30)
 #define AUDIO_TIMER_20()    audioDefevent(AU_TIMER_20)
 #define AUDIO_TIMER_10()    audioDefevent(AU_TIMER_10)
-#define AUDIO_TIMER_LT3(x)  audioDefevent(AU_TIMER_LT3)
-#endif
-
+#define AUDIO_TIMER_LT3()   audioDefevent(AU_TIMER_LT3)
 #define AUDIO_MINUTE_BEEP() audioDefevent(AU_WARNING1)
+#define AUDIO_INACTIVITY()  audioDefevent(AU_INACTIVITY)
 #define AUDIO_MIX_WARNING_1() audioDefevent(AU_MIX_WARNING_1)
 #define AUDIO_MIX_WARNING_2() audioDefevent(AU_MIX_WARNING_2)
 #define AUDIO_MIX_WARNING_3() audioDefevent(AU_MIX_WARNING_3)
 #define AUDIO_POT_STICK_MIDDLE() audioDefevent(AU_POT_STICK_MIDDLE)
 #define AUDIO_VARIO_UP()    audioDefevent(AU_KEYPAD_UP)
 #define AUDIO_VARIO_DOWN()  audioDefevent(AU_KEYPAD_DOWN)
-#define AUDIO_TRIM_MIDDLE(f) audio.event(AU_TRIM_MIDDLE, f)
-#define AUDIO_TRIM_END(f)    AUDIO_TRIM_MIDDLE(f)
-#define AUDIO_TRIM(event, f) audio.event(AU_TRIM_MOVE, f)
-#define AUDIO_PLAY(p)       audio.event(p)
-#define AUDIO_VARIO(f, t)   audio.play(f, t, 0, PLAY_BACKGROUND)
+#define AUDIO_TRIM_MIDDLE() audioDefevent(AU_TRIM_MIDDLE)
+#define AUDIO_TELEMETRY_ALARM() audioDefevent(AU_WARNING1)
 
 #define AUDIO_DRIVER()      audio.driver()
 #define AUDIO_HEARTBEAT()   audio.heartbeat()
 #define IS_AUDIO_BUSY()     audio.busy()
-#define AUDIO_RESET()
+

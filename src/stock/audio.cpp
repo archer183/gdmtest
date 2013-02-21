@@ -31,7 +31,7 @@
  *
  */
 
-#include "../open9x.h"
+#include "open9x.h"
 
 audioQueue::audioQueue()
 {
@@ -50,22 +50,17 @@ void audioQueue::heartbeat()
 {
 #if defined(SIMU)
   return;
-#else
-  if (toneTimeLeft > 0) {
-    if (toneFreq == 0) {  //pause only events
-      SPEAKER_OFF;
-    }
-    else {
-#if defined(PCBGRUVIN9X)
-      if (toneFreq) {
-        OCR0A = (5000 / toneFreq); // sticking with old values approx 20(abs. min) to 90, 60 being the default tone(?).
-        SPEAKER_ON;
-      }
 #endif
-      toneFreq += toneFreqIncr;
-      // TODO tone2TimeLeft = 0?
+
+  if (toneTimeLeft > 0) {
+#if defined(PCBV4)
+    if (toneFreq) {
+      OCR0A = (5000 / toneFreq); // sticking with old values approx 20(abs. min) to 90, 60 being the default tone(?).
+      SPEAKER_ON;
     }
+#endif
     toneTimeLeft--; //time gets counted down
+    toneFreq += toneFreqIncr;
   }
   else {
     if (tonePause > 0) {
@@ -78,12 +73,12 @@ void audioQueue::heartbeat()
       toneFreqIncr = queueToneFreqIncr[t_queueRidx];
       tonePause = queueTonePause[t_queueRidx];
       if (!queueToneRepeat[t_queueRidx]--) {
-        t_queueRidx = (t_queueRidx + 1) & (AUDIO_QUEUE_LENGTH-1);
+        t_queueRidx = (t_queueRidx + 1) % AUDIO_QUEUE_LENGTH;
       }
     }
     else {
       if (tone2TimeLeft > 0) {
-#if defined(PCBGRUVIN9X)
+#if defined(PCBV4)
         if (tone2Freq) {
           OCR0A = (5000 / tone2Freq); // sticking with old values approx 20(abs. min) to 90, 60 being the default tone(?).
           SPEAKER_ON;
@@ -101,7 +96,6 @@ void audioQueue::heartbeat()
       }
     }
   }
-#endif // defined(SIMU)
 }
 
 inline uint8_t audioQueue::getToneLength(uint8_t tLen)
@@ -116,25 +110,18 @@ inline uint8_t audioQueue::getToneLength(uint8_t tLen)
   return result;
 }
 
-void audioQueue::pause(uint8_t tLen)
-{
-  play(0, tLen, 5); // a pause
-}
-
 void audioQueue::play(uint8_t tFreq, uint8_t tLen, uint8_t tPause,
     uint8_t tFlags, int8_t tFreqIncr)
 {
-  if (tFlags & PLAY_BACKGROUND) {
+  if (tFlags & PLAY_SOUND_VARIO) {
     tone2Freq = tFreq;
     tone2TimeLeft = tLen;
     tone2Pause = tPause;
   }
   else {
-    if (tFreq > 0) { //we dont add pitch if zero as this is a pause only event
-      tFreq += g_eeGeneral.speakerPitch + BEEP_OFFSET; // add pitch compensator
-    }
+    tFreq += g_eeGeneral.speakerPitch + BEEP_OFFSET; // add pitch compensator
     tLen = getToneLength(tLen);
-    if ((tFlags & PLAY_NOW) || (!busy() && empty())) {
+    if (tFlags & PLAY_NOW || (!busy() && empty())) {
       toneFreq = tFreq;
       toneTimeLeft = tLen;
       tonePause = tPause;
@@ -147,7 +134,7 @@ void audioQueue::play(uint8_t tFreq, uint8_t tLen, uint8_t tPause,
   
     tFlags &= 0x0f;
     if (tFlags) {
-      uint8_t next_queueWidx = (t_queueWidx + 1) & (AUDIO_QUEUE_LENGTH-1);
+      uint8_t next_queueWidx = (t_queueWidx + 1) % AUDIO_QUEUE_LENGTH;
       if (next_queueWidx != t_queueRidx) {
         queueToneFreq[t_queueWidx] = tFreq;
         queueToneLength[t_queueWidx] = tLen;
@@ -162,16 +149,10 @@ void audioQueue::play(uint8_t tFreq, uint8_t tLen, uint8_t tPause,
 
 void audioQueue::event(uint8_t e, uint8_t f)
 {
-#ifdef HAPTIC
-  haptic.event(e); //do this before audio to help sync timings
-#endif
+  if (g_eeGeneral.flashBeep && (e <= AU_ERROR || e >= AU_WARNING1))
+    g_LightOffCounter = FLASH_DURATION;
 
-  if (g_eeGeneral.flashBeep && (e <= AU_ERROR || e >= AU_WARNING1)) {
-    if (lightOffCounter < FLASH_DURATION)
-      lightOffCounter = FLASH_DURATION;
-  }
-
-  if (g_eeGeneral.beeperMode>0 || (g_eeGeneral.beeperMode==0 && e>=AU_TRIM_MOVE) || (g_eeGeneral.beeperMode>=-1 && e<=AU_ERROR)) {
+  if (g_eeGeneral.beeperMode>0 || (g_eeGeneral.beeperMode==0 && e>=AU_WARNING1) || (g_eeGeneral.beeperMode>=-1 && e<=AU_ERROR)) {
     if (e < AU_FRSKY_FIRST || empty()) {
       switch (e) {
         // inactivity timer alert
@@ -207,7 +188,7 @@ void audioQueue::event(uint8_t e, uint8_t f)
           break;
         // trim center
         case AU_TRIM_MIDDLE:
-          play(f, 10, 2, PLAY_NOW);
+          play(BEEP_DEFAULT_FREQ, 10, 2, PLAY_NOW);
           break;
         // warning one
         case AU_WARNING1:
@@ -220,6 +201,12 @@ void audioQueue::event(uint8_t e, uint8_t f)
         // warning three
         case AU_WARNING3:
           play(BEEP_DEFAULT_FREQ, 30, 1, PLAY_NOW);
+          break;
+        // startup tune
+        case AU_TADA:
+          play(50, 10, 5);
+          play(90, 10, 5);
+          play(110, 5, 4, 2);
           break;
         // pot/stick center
         case AU_POT_STICK_MIDDLE:
@@ -251,83 +238,58 @@ void audioQueue::event(uint8_t e, uint8_t f)
         case AU_TIMER_LT3:
           play(BEEP_DEFAULT_FREQ + 50, 15, 3, PLAY_NOW);
           break;
-        case AU_FRSKY_BEEP1:
-          play(BEEP_DEFAULT_FREQ,10,1,0);
-          pause(200);
-          break;
-        case AU_FRSKY_BEEP2:
-          play(BEEP_DEFAULT_FREQ,20,1,0);
-          pause(200);
-          break;
-        case AU_FRSKY_BEEP3:
-          play(BEEP_DEFAULT_FREQ,30,1,0);
-          pause(200);
-          break;
         case AU_FRSKY_WARN1:
           play(BEEP_DEFAULT_FREQ+20,15,5,2);
-          pause(200);
           break;
         case AU_FRSKY_WARN2:
           play(BEEP_DEFAULT_FREQ+30,15,5,2);
-          pause(200);
           break;
         case AU_FRSKY_CHEEP:
           play(BEEP_DEFAULT_FREQ+30,10,2,2,2);
-          pause(200);
           break;
         case AU_FRSKY_RING:
           play(BEEP_DEFAULT_FREQ+25,5,2,10);
           play(BEEP_DEFAULT_FREQ+25,5,10,1);
           play(BEEP_DEFAULT_FREQ+25,5,2,10);
-          pause(200);
           break;
         case AU_FRSKY_SCIFI:
           play(80,10,3,2,-1);
           play(60,10,3,2,1);
           play(70,10,1,0);
-          pause(200);
           break;
         case AU_FRSKY_ROBOT:
           play(70,5,1,1);
           play(50,15,2,1);
           play(80,15,2,1);
-          pause(200);
           break;
         case AU_FRSKY_CHIRP:
           play(BEEP_DEFAULT_FREQ+40,5,1,2);
           play(BEEP_DEFAULT_FREQ+54,5,1,3);
-          pause(200);
           break;
         case AU_FRSKY_TADA:
           play(50,5,5);
           play(90,5,5);
           play(110,3,4,2);
-          pause(200);
           break;
         case AU_FRSKY_CRICKET:
           play(80,5,10,3);
           play(80,5,20,1);
           play(80,5,10,3);
-          pause(200);
           break;
         case AU_FRSKY_SIREN:
           play(10,20,5,2,1);
-          pause(200);
           break;
         case AU_FRSKY_ALARMC:
           play(50,4,10,2);
           play(70,8,20,1);
           play(50,8,10,2);
           play(70,4,20,1);
-          pause(200);
           break;
         case AU_FRSKY_RATATA:
           play(BEEP_DEFAULT_FREQ+50,5,10,10);
-          pause(200);
           break;
         case AU_FRSKY_TICK:
           play(BEEP_DEFAULT_FREQ+50,5,50,2);
-          pause(200);
           break;
         default:
           break;
@@ -338,5 +300,8 @@ void audioQueue::event(uint8_t e, uint8_t f)
 
 void audioDefevent(uint8_t e)
 {
+#ifdef HAPTIC
+  haptic.event(e); //do this before audio to help sync timings
+#endif	
   audio.event(e);
 }

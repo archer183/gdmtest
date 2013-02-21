@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -39,7 +36,7 @@
 
 void NMEA_Init(void);
 void NMEA_EnableRXD (void);
-void menuTelemetryNMEA(uint8_t event);
+void menuProcNMEA(uint8_t event);
 
 #endif
 

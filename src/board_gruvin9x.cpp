@@ -32,7 +32,6 @@
  */
 
 #include "open9x.h"
-
 #ifndef SIMU
 inline void board_init()
 {
@@ -44,16 +43,7 @@ inline void board_init()
   DDRE = 0b00001010;  PORTE = 0b11110100; // 7:PPM_IN, 6: RENC1_B, 5:RENC1_A, 4:USB_DNEG, 3:BUZZER, 2:USB_DPOS, 1:TELEM_TX, 0:TELEM_RX(pull-up off)
   DDRF = 0x00;  PORTF = 0x00; // 7-4:JTAG, 3:ADC_REF_1.2V input, 2-0:ADC_SPARE_2-0
   DDRG = 0b00010000;  PORTG = 0xff; // 7-6:N/A, 5:GearSW, 4: Sim_Ctrl[out], 3:IDL1_Sw, 2:TCut_Sw, 1:RF_Power[in], 0: RudDr_Sw
-
-#if defined(DEBUG) && !defined(VOICE)
-  DDRH = 0b11111000;  PORTH = 0b11010111; // PORTH:7-6 enabled for timing analysis output ... see below ...
-#else
-  DDRH = 0b10111000;  PORTH = 0b11010111; // [7:0 DSM/PPM TX-caddy control. 1=PPM, 0=DSM ]
-                                          // [6:SOMO14D-BUSY 5:SOMO14D-DATA 4:SOMO14D-CLK 3:SOMO14D-RESET]
-                                          // [2:VIB_OPTION -- setting to input for now]
-                                          // [1:TxD 0:RxD Spare serial port]
-#endif
-
+  DDRH = 0b00110000;  PORTH = 0b11011111; // 7:0 Spare port [6:SOMO14D-BUSY 5:SOMO14D-DATA 4:SOMO14D-CLK] [2:VIB_OPTION -- setting to input for now]
   DDRJ = 0x00;  PORTJ = 0xff; // 7-0:Trim switch inputs
   DDRK = 0x00;  PORTK = 0x00; // anain. No pull-ups!
 #ifdef REV0
@@ -81,6 +71,19 @@ inline void board_init()
   TCCR0B  = (1<<WGM02) | (0b011 << CS00);
   TCCR0A  = (0b01<<WGM00);
 
+  // Initialise global unix timestamp with current time from RTC chip on SD card interface
+  RTC rtc = {0,0,0,0,0,0,0};
+  struct gtm utm;
+  rtc_gettime(&rtc);
+  utm.tm_year = rtc.year - 1900;
+  utm.tm_mon =  rtc.month - 1;
+  utm.tm_mday = rtc.mday;
+  utm.tm_hour = rtc.hour;
+  utm.tm_min =  rtc.min;
+  utm.tm_sec =  rtc.sec;
+  utm.tm_wday = rtc.wday - 1;
+  g_unixTime = mktime(&utm);
+
   /***************************************************/
   /* Rotary encoder interrupt set-up (V4 board only) */
 
@@ -96,32 +99,25 @@ inline void board_init()
   EICRA = (1<<ISC30) | (1<<ISC20); // do the same for encoder 1
   EIFR = (3<<INTF2);
 
-#if defined(EXTRA_ROTARY_ENCODERS)
-  EIMSK = (3<<INT5); // enable the ONE rot. enc. ext. int. pairs.
-#else
   EIMSK = (3<<INT5) | (3<<INT2); // enable the two rot. enc. ext. int. pairs.
-#endif
   /***************************************************/
 
-#if defined (VOICE)
   /*
    * SOMO set-up (V4 board only)
    */
-  OCR4A = 0x1F4; //2ms
+  OCR4A = 0x7d;
   TCCR4B = (1 << WGM42) | (3<<CS40); // CTC OCR1A, 16MHz / 64 (4us ticks)
-  TIMSK4 |= (1<<OCIE4A); // Start the interrupt so the unit reset can occur
-#endif
 
-#if defined(EXTRA_ROTARY_ENCODERS)
-  //configure uart1 here
-  DDRD &= ~(1 << 2);
-  PORTD &= ~(1 << 2);
+#ifdef EXTRA_ROTARY_ENCODERS
+  //configure uart2 here
+  DDRH &= ~(1 << 0);
+  PORTH &= ~(1 << 0);
   #define EXTRA_ROTARY_ENCODERS_USART_BAUD 9600UL
-  UBRR1 = F_CPU/(16*EXTRA_ROTARY_ENCODERS_USART_BAUD)-1;
+  UBRR2 = F_CPU/(16*EXTRA_ROTARY_ENCODERS_USART_BAUD)-1;
   //9 bit mode
-  UCSR1C = (1<<USBS1)|(3<<UCSZ10);
-  UCSR1B = (1<<RXEN1)|(0<<TXEN1)|(1<<UCSZ12);
-  UCSR1B |= 1 << RXCIE1; //enable interrupt on rx
+  UCSR2C = (1<<USBS2)|(3<<UCSZ20);
+  UCSR2B = (1<<RXEN2)|(0<<TXEN2)|(1<<UCSZ22);
+  UCSR2B |= 1 << RXCIE2; //enable interrupt on rx
 #endif //EXTRA_ROTARY_ENCODERS
 }
 
@@ -130,38 +126,39 @@ inline void board_init()
 uint8_t vpotToChange = 0;
 uint8_t vpot_mod_state = 0;
 
-ISR(USART1_RX_vect)
+ISR(USART2_RX_vect)
 {
-  //receive data from extension board
-  //bit 9 = 1 mean encoder number, following byte with bit 9 = 0 is increment value
+	//receive data from extension board
+	//bit 9 = 1 mean encoder number, following byte with bit 9 = 0 is increment value
   /* Get status and 9th bit, then data */
   /* from buffer */
-  uint16_t resh = UCSR1B;
-  uint16_t resl = UDR1;
+  //uint8_t status = UCSR2A;
+  uint16_t resh = UCSR2B;
+  uint16_t resl = UDR2;
   uint16_t res = 0;
+  //if ( status & (1<<FEn)|(1<<DORn)|(1<<UPEn) )
   
   /* Filter the 9th bit, then return */
   resh = (resh >> 1) & 0x01;
   res = ((resh << 8) | resl);  
-  if((res == 0x180) | (res == 0x1C0)){         //button REb filter
-    keys[BTN_REa].input((res & 0x1C0) == 0x1C0, BTN_REa);
-  } else if((res & 0x100) == 0x100){  //rotary filter
-    vpotToChange = res & 0xEF;
+  if((res & 0x100) == 0x100){
+    vpotToChange = res & 0xff;
     vpot_mod_state = 1;
   }
   else {
-    if(vpot_mod_state  & (vpotToChange < NUM_ROTARY_ENCODERS))
+    if(vpot_mod_state & (vpotToChange>0) & (vpotToChange<=NUM_EXTRA_ROTARY_ENCODERS))
     {
-      int8_t vpot_inc = res & 0xFF;
+      int8_t vpot_inc = res & 0xff;
       if(vpot_inc){
-        incRotaryEncoder(vpotToChange, vpot_inc);
+        incRotaryEncoder(NUM_ROTARY_ENCODERS-NUM_EXTRA_ROTARY_ENCODERS+vpotToChange-1, vpot_inc);
       }    
       vpot_mod_state = 0;
     }
   }
 }
-#endif // EXTRA_ROTARY_ENCODERS
-#endif // !SIMU
+#endif //EXTRA_ROTARY_ENCODERS
+
+#endif
 
 uint8_t check_soft_power()
 {
@@ -179,7 +176,10 @@ void soft_power_off()
 #endif
 }
 
-FORCEINLINE uint8_t keyDown()
+#ifndef SIMU
+FORCEINLINE
+#endif
+uint8_t keyDown()
 {
   return (~PINL) & 0x3F;
 }
@@ -192,15 +192,15 @@ bool keyState(EnumKeys enuk)
     return keys[enuk].state() ? 1 : 0;
 
   switch(enuk){
-    case SW_ELE:
+    case SW_ElevDR:
       result = PINC & (1<<INP_C_ElevDR);
       break;
 
-    case SW_AIL:
+    case SW_AileDR:
       result = PINC & (1<<INP_C_AileDR);
       break;
 
-    case SW_RUD:
+    case SW_RuddDR:
       result = PING & (1<<INP_G_RuddDR);
       break;
       //     INP_G_ID1 INP_B_ID2
@@ -219,15 +219,15 @@ bool keyState(EnumKeys enuk)
       result = !(PINB & (1<<INP_B_ID2));
       break;
 
-    case SW_GEA:
+    case SW_Gear:
       result = PING & (1<<INP_G_Gear);
       break;
 
-    case SW_THR:
+    case SW_ThrCt:
       result = PING & (1<<INP_G_ThrCt);
       break;
 
-    case SW_TRN:
+    case SW_Trainer:
       result = PINB & (1<<INP_B_Trainer);
       break;
 
@@ -238,7 +238,10 @@ bool keyState(EnumKeys enuk)
   return result;
 }
 
-FORCEINLINE void readKeysAndTrims()
+#ifndef SIMU
+FORCEINLINE
+#endif
+void readKeysAndTrims()
 {
   /* Original keys were connected to PORTB as follows:
 
@@ -255,9 +258,7 @@ FORCEINLINE void readKeysAndTrims()
 
   uint8_t enuk = KEY_MENU;
 
-#if !defined(EXTRA_ROTARY_ENCODERS)
   keys[BTN_REa].input(~PIND & 0x20, BTN_REa);
-#endif //!EXTRA_ROTARY_ENCODERS
   keys[BTN_REb].input(~PIND & 0x10, BTN_REb);
 
   uint8_t tin = ~PINL;
@@ -292,32 +293,3 @@ FORCEINLINE void readKeysAndTrims()
     ++enuk;
   }
 }
-
-#if defined(ROTARY_ENCODERS)
-
-#if !defined(EXTRA_ROTARY_ENCODERS)
-ISR(INT2_vect)
-{
-  uint8_t input = (PIND & 0x0C);
-  if (input == 0 || input == 0x0C) incRotaryEncoder(0, -1);
-}
-
-ISR(INT3_vect)
-{
-  uint8_t input = (PIND & 0x0C);
-  if (input == 0 || input == 0x0C) incRotaryEncoder(0, +1);
-}
-#endif // !defined(EXTRA_ROTARY_ENCODERS)
-
-ISR(INT5_vect)
-{
-  uint8_t input = (PINE & 0x60);
-  if (input == 0 || input == 0x60) incRotaryEncoder(1, +1);
-}
-
-ISR(INT6_vect)
-{
-  uint8_t input = (PINE & 0x60);
-  if (input == 0 || input == 0x60) incRotaryEncoder(1, -1);
-}
-#endif // defined(ROTARY_ENCODERS)
