@@ -1,3 +1,25 @@
+/*
+ * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
+ * - Bertrand Songis <bsongis@gmail.com>
+ *
+ * open9x is based on code named
+ * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
+ * er9x by Erez Raviv: http://code.google.com/p/er9x/,
+ * and the original (and ongoing) project by
+ * Thomas Husterer, th9x: http://code.google.com/p/th9x/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
+
 // NON ZERO TERMINATED STRINGS
 #define LEN_OFFON        "\003"
 #define TR_OFFON         "OFF""ON\0"
@@ -47,22 +69,36 @@
 #endif
 
 #define LEN_VPROTOS      "\006"
-#ifdef PXX
-#define TR_PXX  "PXX\0  "
+
+#if defined(PXX)
+  #define TR_PXX         "PXX\0  "
+#elif defined(DSM2) || defined(IRPROTOS)
+  #define TR_PXX         "[PXX]\0"
 #else
-#define TR_PXX  "[PXX]\0"
+  #define TR_PXX
 #endif
-#ifdef DSM2
-#define TR_DSM2 "DSM2\0 "
+
+#if defined(DSM2)
+  #define TR_DSM2        "LP45\0 ""DSM2\0 ""DSMX\0 "
+#elif defined(IRPROTOS)
+  #define TR_DSM2        "[LP45]""[DSM2]""[DSMX]"
 #else
-#define TR_DSM2 "[DSM2]"
+  #define TR_DSM2
 #endif
-#ifdef IRPROTOS
-#define TR_IRPROTOS "SILV  TRAC09PICZ  SWIFT\0"
+
+#if defined(IRPROTOS)
+  #define TR_IRPROTOS    "SILV  TRAC09PICZ  SWIFT\0"
 #else
-#define TR_IRPROTOS
+  #define TR_IRPROTOS
 #endif
-#define TR_VPROTOS       "PPM\0  ""PPM16\0""PPMsim" TR_PXX TR_DSM2 TR_IRPROTOS
+
+#if defined(CPUARM)
+  #define TR_XPPM
+#else
+  #define TR_XPPM              "PPM16\0""PPMsim"
+#endif
+
+#define TR_VPROTOS             "PPM\0  " TR_XPPM TR_PXX TR_DSM2 TR_IRPROTOS
 
 #define LEN_POSNEG       "\003"
 #define TR_POSNEG        "POS""NEG"
@@ -79,8 +115,8 @@
 #define LEN_VMIXTRIMS    "\003"
 #define TR_VMIXTRIMS     "OFF""ON\0""Dir""Prf""Gaz""Ail"
 
-#define LEN_VCSWFUNC     "\010"
-#define TR_VCSWFUNC      "----\0   ""v>ofs\0  ""v<ofs\0  ""|v|>ofs\0""|v|<ofs\0""ET\0     ""OU\0     ""OU Excl\0""v1==v2\0 ""v1!=v2\0 ""v1>v2\0  ""v1<v2\0  ""v1>=v2\0 ""v1<=v2\0 ""d>=ofs\0 ""|d|>=ofs"
+#define LEN_VCSWFUNC     "\006"
+#define TR_VCSWFUNC      "---\0  ""v1>x\0 ""v1<x\0 ""|v1|>x""|v1|<x""AND\0  ""OR\0   ""XOR\0  ""v1==v2""v1!=v2""v1>v2\0""v1<v2\0""v1>=v2""v1<=v2""d>=x\0 ""|d|>=x"
 
 #define LEN_VFSWFUNC     "\015"
 #if defined(VARIO)
@@ -111,33 +147,33 @@
 #else
 #define TR_SDCLOGS       "[Logs SD]\0   "
 #endif
-#define TR_FSW_VOLUME    "Volume\0      "
-#define TR_FSW_BG_MUSIC  "Musique\0     ""Pause Musique"
+#define TR_CFN_VOLUME    "Volume\0      "
+#define TR_CFN_BG_MUSIC  "Musique\0     ""Pause Musique"
 #elif defined(PCBGRUVIN9X)
 #if defined(SDCARD)
 #define TR_SDCLOGS       "Logs carte SD"
 #else
 #define TR_SDCLOGS       "[Logs SD]\0   "
 #endif
-#define TR_FSW_VOLUME
-#define TR_FSW_BG_MUSIC
+#define TR_CFN_VOLUME
+#define TR_CFN_BG_MUSIC
 #else
 #define TR_SDCLOGS
-#define TR_FSW_VOLUME
-#define TR_FSW_BG_MUSIC
+#define TR_CFN_VOLUME
+#define TR_CFN_BG_MUSIC
 #endif
 #ifdef GVARS
-#define TR_FSW_ADJUST_GVAR  "Ajuster\0     "
+#define TR_CFN_ADJUST_GVAR  "Ajuster\0     "
 #else
-#define TR_FSW_ADJUST_GVAR
+#define TR_CFN_ADJUST_GVAR
 #endif
 #ifdef DEBUG
-#define TR_FSW_TEST          "Test\0        "
+#define TR_CFN_TEST          "Test\0        "
 #else
-#define TR_FSW_TEST
+#define TR_CFN_TEST
 #endif
 
-#define TR_VFSWFUNC      "S\200cur.\0      ""Ecolage \0    ""Trim instant." TR_SOUND TR_HAPTIC "Remise \202 0\0  " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_FSW_VOLUME "R\200tro\200cl.\0   " TR_FSW_BG_MUSIC TR_FSW_ADJUST_GVAR TR_FSW_TEST
+#define TR_VFSWFUNC      "S\200cur.\0      ""Ecolage \0    ""Trim instant." TR_SOUND TR_HAPTIC "Remise \202 0\0  " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "R\200tro\200cl.\0   " TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
 
 #define LEN_VFSWRESET    "\006"
 #define TR_VFSWRESET     "Timer1""Timer2""Timers""T\200l\200m."
@@ -173,8 +209,8 @@
 #define LEN_VOLTSRC      "\003"
 #define TR_VOLTSRC       "---""A1\0""A2\0""FAS""Cel"
 
-#define LEN_VARIOSRC     "\004"
-#define TR_VARIOSRC      "Data""A1\0 ""A2\0"
+#define LEN_VARIOSRC     "\005"
+#define TR_VARIOSRC      "Alti\0""Alti+""Vario""A1\0  ""A2\0"
 
 #define LEN_VSCREEN      "\004"
 #define TR_VSCREEN       "Val.""Bars"
@@ -217,13 +253,19 @@
 #else
 #define TR_CYC_VSRCRAW "[C1]""[C2]""[C3]"
 #endif
-#define TR_VSRCRAW       "Dir\0""Prf\0""Gaz\0""Ail\0""P1\0 ""P2\0 ""P3\0 " TR_ROTARY_ENCODERS_VSRCRAW "TrmD" "TrmP" "TrmG" "TrmA" "MAX\0""3POS" TR_CYC_VSRCRAW
+
+#if EXTRA_3POS == 1
+  #define TR_VSRCRAW       "Dir\0""Prf\0""Gaz\0""Ail\0""3PO2""P2\0 ""P3\0 " TR_ROTARY_ENCODERS_VSRCRAW "TrmD" "TrmP" "TrmG" "TrmA" "MAX\0""3PO1" TR_CYC_VSRCRAW
+#elif EXTRA_3POS == 2
+  #define TR_VSRCRAW       "Dir\0""Prf\0""Gaz\0""Ail\0""P1\0 ""3PO2""P3\0 " TR_ROTARY_ENCODERS_VSRCRAW "TrmD" "TrmP" "TrmG" "TrmA" "MAX\0""3PO1" TR_CYC_VSRCRAW
+#elif EXTRA_3POS == 3
+  #define TR_VSRCRAW       "Dir\0""Prf\0""Gaz\0""Ail\0""P1\0 ""P2\0 ""3PO2" TR_ROTARY_ENCODERS_VSRCRAW "TrmD" "TrmP" "TrmG" "TrmA" "MAX\0""3PO1" TR_CYC_VSRCRAW
+#else
+  #define TR_VSRCRAW       "Dir\0""Prf\0""Gaz\0""Ail\0""P1\0 ""P2\0 ""P3\0 " TR_ROTARY_ENCODERS_VSRCRAW "TrmD" "TrmP" "TrmG" "TrmA" "MAX\0""3POS" TR_CYC_VSRCRAW
+#endif
 
 #define LEN_VTMRMODES    "\003"
 #define TR_VTMRMODES     "OFF""ABS""GZs""GZ%""GZt"
-
-#define LEN_DSM2MODE     "\007"
-#define TR_DSM2MODE      "LP4/LP5DSMseulDSMX   "
 
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
@@ -248,6 +290,7 @@
 #define TR_BEEPCTR             "Bips Centr"
 #define TR_PROTO               INDENT"Proto."
 #define TR_PPMFRAME            "Trame PPM"
+
 #define TR_MS                  "ms"
 #define TR_SWITCH              "Inter"
 #define TR_BITMAP              "Bitmap"
@@ -313,6 +356,8 @@
 #define TR_BEEPCOUNTDOWN       INDENT"Cpt. \202 rebours"
 #define TR_BACKLIGHT_LABEL     "R\200tro\200clairage"
 #define TR_BLDELAY             INDENT"Dur\200e"
+#define TR_BLONBRIGHTNESS      INDENT"Luminosit\200 ON"
+#define TR_BLOFFBRIGHTNESS     INDENT"Luminosit\200 OFF"
 #define TR_SPLASHSCREEN        "Ecran d'accueil"
 #define TR_THROTTLEWARNING     "Alerte Gaz"
 #define TR_SWITCHWARNING       "Alerte Int"
@@ -392,7 +437,6 @@
 #define TR_MENUDEBUG           "DEBUG"
 #define TR_RXNUM               "NumRx"
 #define TR_SYNCMENU            "Sync [MENU]"
-#define TR_BACK                "Ret."
 #define TR_LIMIT               INDENT"Limit"
 #define TR_MINRSSI             "RSSI Min."
 #define TR_LATITUDE            "Latitude"

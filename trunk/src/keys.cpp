@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -34,7 +36,7 @@
 
 #include "open9x.h"
 
-static uint8_t s_evt;
+uint8_t s_evt;
 void putEvent(uint8_t evt)
 {
   s_evt = evt;
@@ -64,11 +66,7 @@ uint8_t getEvent()
 }
 #endif
 
-#if defined(CPUARM)
 #define KEY_LONG_DELAY 32
-#else
-#define KEY_LONG_DELAY 24
-#endif
 
 Key keys[NUM_KEYS];
 void Key::input(bool val, EnumKeys enuk)
@@ -143,8 +141,16 @@ void pauseEvents(uint8_t event)
 
 void killEvents(uint8_t event)
 {
-  event = EVT_KEY_MASK(event);
-  if (event < (int)DIM(keys)) keys[event].killEvents();
+#if defined(ROTARY_ENCODER_NAVIGATION)
+  if (event == EVT_ROTARY_LONG) {
+    killEvents(BTN_REa + NAVIGATION_RE_IDX());
+  }
+  else
+#endif
+  {
+    event = EVT_KEY_MASK(event);
+    if (event < (int)DIM(keys)) keys[event].killEvents();
+  }
 }
 
 void clearKeyEvents()
@@ -153,11 +159,16 @@ void clearKeyEvents()
   CoTickDelay(100);  // 200ms
 #endif
 
+  // loop until all keys are up
+
 #if defined(SIMU)
   while (keyDown() && main_thread_running) sleep(1/*ms*/);
+#elif defined(PCBSTD) && defined(ROTARY_ENCODER_NAVIGATION) && !defined(TELEMETREZ)
+  while (keyDown()) { wdt_reset(); rotencPoll(); }
 #else
-  while (keyDown()) wdt_reset();  // loop until all keys are up
+  while (keyDown()) wdt_reset();
 #endif
+
   memclear(keys, sizeof(keys));
   putEvent(0);
 }

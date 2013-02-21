@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -71,11 +73,6 @@ class FrskyValueWithMinMax: public FrskyValueWithMin {
 #define EARTH_RADIUS ((uint32_t)111194)
 
 #define VARIO_QUEUE_LENGTH          5
-#define VARIO_SPEED_LIMIT           10 //m/s
-#define VARIO_SPEED_LIMIT_MUL       10 //to get 0.1m/s steps
-#define VARIO_SPEED_LIMIT_DOWN_OFF  (100+1) //100 steps + OFF
-#define VARIO_SPEED_LIMIT_UP_CENTER 10
-#define VARIO_SPEED_LIMIT_UP_MAX    (10+30)
 
 #if defined(FRSKY_HUB)
 PACK(struct FrskyHubData {
@@ -120,6 +117,8 @@ PACK(struct FrskyHubData {
   uint16_t current;          // 0x28   Current
   int16_t  varioAltitudeQueue[VARIO_QUEUE_LENGTH]; //circular buffer
   int32_t  varioAltitude_cm;
+  int16_t  varioSpeed;       // 0x30  Vertical speed in cm/s
+
   /* next fields must keep this order! */
   int16_t  minAltitude;
   int16_t  maxAltitude;
@@ -130,41 +129,56 @@ PACK(struct FrskyHubData {
   uint16_t maxGpsDistance;
   uint16_t maxCurrent;
   /* end */
-  int16_t  varioAcc1;
-  int16_t  varioAcc2;
+
+  uint16_t vfas;             // 0x39  Added to FrSky protocol for home made sensors with a better precision
   uint16_t volts_bp;         // 0x3A
   uint16_t volts_ap;         // 0x3B
   // end of FrSky Hub data
+
   uint16_t gpsDistance;
   int16_t  gpsAltitudeOffset;
   uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
   uint8_t  minCellIdx;
-  uint16_t cellsSum;
-  uint16_t vfas;
+  int16_t  cellsSum;
+
   // TODO later uint16_t minVfas;
 });
-
+#define FRSKY_HUB_DATA FrskyHubData hub;
 #elif defined(WS_HOW_HIGH)
-
-PACK(struct FrskyHubData {
+PACK(struct WSHowHighData {
   int16_t  baroAltitude_bp;     // 0..9,999 meters
   int16_t  baroAltitudeOffset;
   int16_t  minAltitude;
   int16_t  maxAltitude;
+#if defined(VARIO)
+  int16_t  varioAltitudeQueue[VARIO_QUEUE_LENGTH]; //circular buffer
+  uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
+  int32_t  varioAltitude_cm;
+  int16_t  varioSpeed;       // Vertical speed in cm/s
+#endif
 });
-
+#define FRSKY_HUB_DATA WSHowHighData hub;
+#elif defined(VARIO)
+PACK(struct VarioData {
+  int16_t  varioAltitudeQueue[VARIO_QUEUE_LENGTH]; //circular buffer
+  uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
+  int32_t  varioAltitude_cm;
+  int16_t  varioSpeed;       // Vertical speed in cm/s
+});
+#define FRSKY_HUB_DATA VarioData hub;
+#else
+#define FRSKY_HUB_DATA
 #endif
 
 struct FrskyData {
   FrskyValueWithMinMax analog[2];
   FrskyValueWithMin    rssi[2];
-#if defined(FRSKY_HUB) || defined(WS_HOW_HIGH)
-  FrskyHubData         hub;
-#endif
+
+  FRSKY_HUB_DATA
+
   uint16_t             currentConsumption;
   uint16_t             currentPrescale;
   uint16_t             power;
-  int16_t              varioSpeed;
 };
 
 #if defined(FRSKY_HUB)
@@ -191,7 +205,8 @@ extern int8_t frskyStreaming; // >0 (true) == data is streaming in. 0 = nodata d
 extern uint8_t frskyUsrStreaming;
 #endif
 
-#define SEND_MODEL_ALARMS 6
+#define SEND_RSSI_ALARMS  6
+#define SEND_MODEL_ALARMS 4
 extern uint8_t frskyAlarmsSendState;
 
 extern FrskyData frskyData;
@@ -200,11 +215,11 @@ extern uint8_t frskyTxBuffer[FRSKY_TX_PACKET_SIZE];
 extern uint8_t frskyTxBufferCount;
 
 void FRSKY_Init(void);
-NOINLINE void check_frsky(void);
+NOINLINE void telemetryPoll10ms(void);
 
-inline void FRSKY_setModelAlarms(void)
+inline void frskySendAlarms(void)
 {
-  frskyAlarmsSendState = SEND_MODEL_ALARMS;
+  frskyAlarmsSendState = SEND_RSSI_ALARMS;
 }
 
 bool FRSKY_alarmRaised(uint8_t idx);
@@ -216,8 +231,15 @@ int16_t convertCswTelemValue(CustomSwData * cs);
 NOINLINE uint8_t getRssiAlarmValue(uint8_t alarm);
 
 extern const pm_uint8_t bchunit_ar[];
-int16_t applyChannelRatio(uint8_t channel, int16_t val);
-void putsTelemetryChannel(uint8_t x, uint8_t y, uint8_t channel, int16_t val, uint8_t att);
+
+#if defined(CPUARM)
+#define FRSKY_MULTIPLIER_MAX 5
+#else
+#define FRSKY_MULTIPLIER_MAX 3
+#endif
+
+lcdint_t applyChannelRatio(uint8_t channel, lcdint_t val);
+void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, uint8_t att);
 
 #define IS_BARS_SCREEN(screenIndex) (g_model.frsky.screensType & (1<<(screenIndex)))
 

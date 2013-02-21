@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -35,8 +37,6 @@
 #ifndef audio_driver_h
 #define audio_driver_h
 
-#define NUM_VOL_LEVELS	24
-
 void audioInit( void ) ;
 void audioEnd( void ) ;
 
@@ -57,6 +57,8 @@ inline void dacStop()
   DACC->DACC_IDR = DACC_IDR_ENDTX ; // Disable interrupt
 }
 
+#define VOLUME_LEVEL_MAX  23
+#define VOLUME_LEVEL_DEF  12
 void setVolume(uint8_t volume);
 
 inline void dacFill(uint16_t *data, uint16_t size)

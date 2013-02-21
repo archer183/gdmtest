@@ -50,8 +50,9 @@ DELAY = 5
 #----------- BUILD OPTIONS ---------------------------
 
 # PCB version
-# Values: STD, STD128, GRUVIN9X, SKY9X, X9D, ACT
-PCB = STD
+# Values: 9X, 9X128, 9XR, 9XR128, GRUVIN9X, SKY9X, X9D
+# Old values STD and STD128 are mapped to 9X and 9X128 for compatibility
+PCB = 9X
 
 # PCB revision
 # Values: REVA, REVB
@@ -60,7 +61,7 @@ PCBREV =
 # Enable JETI-Telemetry or FrSky Telemetry reception on UART0
 # For this option you need to modify your hardware!
 # More information at [insertURLhere]
-# Values = STD, FRSKY, JETI, NMEA, ARDUPILOT, MAVLINK
+# Values = STD, FRSKY, JETI, NMEA, ARDUPILOT, MAVLINK, TELEMETREZ
 EXT = STD
 
 # Enable heli menu
@@ -77,6 +78,7 @@ TEMPLATES = NO
 #          POT2 (menus scroll),
 #          POT3 (cursor down/up),
 #          POTS (POT1, POT2, POT3),
+#          ROTENC (Rotary encoder)
 NAVIGATION = NO
 
 # Switches automatic selection
@@ -103,9 +105,9 @@ HAPTIC = NO
 # Values = YES, NO 
 SP22 = NO
 
-# TelemetrEZ
+# Fade Backlight using PWM
 # Values = YES, NO 
-TELEMETREZ = NO
+PWM_BACKLIGHT = NO
 
 # SPLASH on START
 # Values = YES, NO, FIXED
@@ -204,9 +206,14 @@ XCURVES = YES
 # Global Vars
 # Values = YES, NO
 GVARS = YES
+
 #trig and combat math.
 # Values = Yes , No
 TRIG = YES
+
+# Enable another 3 positions switch to replace a pot
+# Values = NO, POT1, POT2, POT3,
+3POS = NO
 
 #------- END BUILD OPTIONS ---------------------------
 
@@ -218,7 +225,7 @@ SVNREV = $(shell sh -c "svnversion | egrep -o '[[:digit:]]+[[:alpha:]]*$$'")
 CPPDEFS = 
 
 # MCU name
-ifeq ($(PCB), STD)
+ifeq ($(PCB), $(filter $(PCB), STD 9X 9XR))
   ARCH = AVR
   TRGT = avr-
   MCU = atmega64  
@@ -227,7 +234,7 @@ ifeq ($(PCB), STD)
   SDCARD = NO
 endif
 
-ifeq ($(PCB), STD128)
+ifeq ($(PCB), $(filter $(PCB), STD128 9X128 9XR128))
   ARCH = AVR
   TRGT = avr-
   MCU = atmega128
@@ -273,14 +280,6 @@ ifeq ($(PCB), X9D)
   MCU  = cortex-m3
   CPPDEFS += -DHSE_VALUE=12000000
   SDCARD = YES
-endif
-
-ifeq ($(PCB), ACT)
-  ARCH = ARM
-  LDSCRIPT = x9d/stm32_flash.ld
-  TRGT = arm-none-eabi-
-  MCU  = cortex-m3
-  SDCARD = NO
 endif
 
 CC      = $(TRGT)gcc
@@ -335,14 +334,14 @@ DBGFMT = dwarf-2
 #     For a directory that has spaces, enclose it in quotes.
 EXTRAINCDIRS = . translations
 
-# NOTE: PCB version now overrides all the earlier individual settings
-#       These individual settings work only for PCB=STD
-
 CPPDEFS += -DTRANSLATIONS_$(TRANSLATIONS)
 
 # TTS language
 CPPDEFS += -DTTS_$(TTS)
 
+GVARS_VARIANT  = +1 
+FRSKY_VARIANT  = +2
+3POS_VARIANT   = +4
 EEPROM_VARIANT = 0
 
 ifeq ($(UNITS), IMPERIAL)
@@ -362,13 +361,20 @@ endif
 ifeq ($(NAVIGATION), POTS)
   CPPDEFS += -DNAVIGATION_POT1 -DNAVIGATION_POT2 -DNAVIGATION_POT3
 endif
+ifeq ($(NAVIGATION), ROTENC)
+  CPPDEFS += -DROTARY_ENCODER_NAVIGATION
+endif
 
 ifeq ($(AUTOSWITCH), YES)
   CPPDEFS += -DAUTOSWITCH
 endif
 
 ifeq ($(DBLKEYS), YES)
-  CPPDEFS += -DDBLKEYS
+  ifeq ($(PCB), $(filter $(PCB), 9XR 9XR128))
+    $(warning Sorry, DBLKEYS doesnt work on 9XR)
+  else
+    CPPDEFS += -DDBLKEYS
+  endif
 endif
 
 ifeq ($(SPLASH), YES)
@@ -405,7 +411,7 @@ endif
 
 ifeq ($(GVARS), YES)
   CPPDEFS += -DGVARS
-  EEPROM_VARIANT += +1
+  EEPROM_VARIANT += ${GVARS_VARIANT}
 endif
 
 # If STD-Support is enabled
@@ -437,8 +443,12 @@ ifeq ($(EXT), MAVLINK)
  CPPSRC += mavlink.cpp rotarysw.cpp serial.cpp
 endif
 
+ifeq ($(EXT), TELEMETREZ)
+  CPPDEFS += -DTELEMETREZ
+endif
+
 # If FRSKY-Support is enabled
-ifeq ($(EXT), FRSKY)
+ifeq ($(EXT), $(filter $(EXT), FRSKY TELEMETREZ))
   CPPDEFS += -DFRSKY
   CPPSRC += frsky.cpp
   # If FRSKY-Hub is enabled
@@ -453,7 +463,7 @@ ifeq ($(EXT), FRSKY)
   ifeq ($(VARIO), YES)
     CPPDEFS += -DVARIO
   endif
-  EEPROM_VARIANT += +2
+  EEPROM_VARIANT += ${FRSKY_VARIANT}
 endif
 
 ifeq ($(DEBUG), YES)
@@ -471,26 +481,10 @@ endif
 
 RUN_FROM_FLASH = 1
 
-ifeq ($(PCB), ACT)
-  # ACT radio
-  OPT = 2
-  CPPDEFS += -DPCBACT -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DPXX -DDSM2 -DDSM2_PPM -DSTM32F10X_HD
-  EXTRAINCDIRS += sky9x CoOS/kernel CoOS/portable
-  EXTRAINCDIRS += act/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/STM32F10x_StdPeriph_Driver/inc act/STM32F10x_StdPeriph_Lib_V3.5.0/Libraries/CMSIS/CM3/DeviceSupport/ST/STM32F10x
-  BOARDSRC = act/board_act.cpp 
-  EXTRABOARDSRC += x9d/lcd_driver.cpp
-  SRC += CoOS/kernel/core.c CoOS/kernel/hook.c CoOS/kernel/task.c CoOS/kernel/event.c CoOS/kernel/time.c CoOS/kernel/timer.c CoOS/kernel/flag.c CoOS/kernel/mutex.c CoOS/kernel/serviceReq.c CoOS/portable/GCC/port.c CoOS/portable/arch.c
-  EEPROMSRC = eeprom_avr.cpp # TODO later eeprom_conversions.cpp
-  CPPSRC += x9d/pulses_driver.cpp act/keys_driver.cpp act/audio_driver.cpp
-  CPPSRC += audio_arm.cpp
-  PULSESSRC = pulses_arm.cpp
-  CPPSRC += monitors_views.cpp
-endif
-
 ifeq ($(PCB), X9D)
   # X9D radio
   OPT = 2
-  CPPDEFS += -DPCBX9D -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DPXX -DDSM2 -DDSM2_PPM
+  CPPDEFS += -DPCBX9D -DCPUARM -DEEPROM_VARIANT=0 -DAUDIO -DPXX
   EXTRAINCDIRS += CoOS/kernel CoOS/portable
   EXTRAINCDIRS += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Include
   BOARDSRC = x9d/board_x9d.cpp
@@ -597,7 +591,7 @@ ifeq ($(PCB), GRUVIN9X)
   CPPDEFS += -DROTARY_ENCODERS=${ROTARY_ENCODERS}
 endif
 
-ifeq ($(PCB), STD128)
+ifeq ($(PCB), $(filter $(PCB), STD128 9X128 9XR128))
   # 9x radio with Atmega 64 replace by Atmega 128
   OPT = 2
   CPPDEFS += -DPCBSTD -DCPUM128 -DEEPROM_VARIANT=0x8000
@@ -606,6 +600,12 @@ ifeq ($(PCB), STD128)
   EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp
+
+  ifeq ($(PCB), 9XR128)
+    CPPDEFS += -DPCB9XR128
+  else
+    CPPDEFS += -DPCB9X128
+  endif
     
   ifeq ($(AUDIO), YES)
     CPPDEFS += -DAUDIO
@@ -619,6 +619,14 @@ ifeq ($(PCB), STD128)
     CPPDEFS += -DVOICE
   endif
   
+  ifeq ($(PWM_BACKLIGHT), YES)
+    ifeq ($(VOICE), YES)
+      $(error Sorry, PWM_BACKLIGHT doesnt work on stock board with VOICE mod)
+    else
+      CPPDEFS += -DPWM_BACKLIGHT
+    endif
+  endif
+
   ifeq ($(HAPTIC), YES)
    CPPDEFS += -DHAPTIC
    CPPSRC += haptic.cpp
@@ -627,13 +635,9 @@ ifeq ($(PCB), STD128)
   ifeq ($(SP22), YES)
    CPPDEFS += -DSP22
   endif
-  
-  ifeq ($(TELEMETREZ), YES)
-   CPPDEFS += -DTELEMETREZ
-  endif
 endif
 
-ifeq ($(PCB), STD)
+ifeq ($(PCB), $(filter $(PCB), STD 9X 9XR))
   # 9x radio
   OPT = s
   EXTRAINCDIRS += stock
@@ -642,19 +646,33 @@ ifeq ($(PCB), STD)
   EXTRABOARDSRC += stock/lcd_driver.cpp
   EEPROMSRC = eeprom_avr.cpp
   PULSESSRC = pulses_avr.cpp
-   
+
+  ifeq ($(PCB), 9XR)
+    CPPDEFS += -DPCB9XR
+  else
+    CPPDEFS += -DPCB9X
+  endif
+    
   ifeq ($(AUDIO), YES)
     CPPDEFS += -DAUDIO
     CPPSRC += audio_avr.cpp
   else
     CPPSRC += beeper.cpp 
   endif
-  
+     
   ifeq ($(VOICE), YES)
     CPPSRC += stock/voice.cpp
     CPPDEFS += -DVOICE
   endif
-  
+   
+  ifeq ($(PWM_BACKLIGHT), YES)
+    ifeq ($(VOICE), YES)
+      $(error Sorry, PWM_BACKLIGHT doesnt work on stock board with VOICE mod)
+    else
+      CPPDEFS += -DPWM_BACKLIGHT
+    endif
+  endif
+
   ifeq ($(HAPTIC), YES)
    CPPDEFS += -DHAPTIC
    CPPSRC += haptic.cpp
@@ -663,10 +681,6 @@ ifeq ($(PCB), STD)
   ifeq ($(SP22), YES)
    CPPDEFS += -DSP22
   endif
-  
-  ifeq ($(TELEMETREZ), YES)
-   CPPDEFS += -DTELEMETREZ
-  endif
 endif
 
 ### Global Build-Option Directives ###
@@ -674,7 +688,6 @@ endif
 ifeq ($(PPM_CENTER_ADJUSTABLE), YES)
   CPPDEFS += -DPPM_CENTER_ADJUSTABLE
 endif
-
 
 ifeq ($(PPM_LIMITS_SYMETRICAL), YES)
   CPPDEFS += -DPPM_LIMITS_SYMETRICAL
@@ -719,6 +732,19 @@ endif
 
 ifeq ($(IRPROTOS), YES)
   CPPDEFS += -DIRPROTOS
+endif
+
+ifeq ($(3POS), POT1)
+  CPPDEFS += -DEXTRA_3POS=1
+  # EEPROM_VARIANT += ${3POS_VARIANT}
+endif
+ifeq ($(3POS), POT2)
+  CPPDEFS += -DEXTRA_3POS=2
+  # EEPROM_VARIANT += ${3POS_VARIANT}
+endif
+ifeq ($(3POS), POT3)
+  CPPDEFS += -DEXTRA_3POS=3
+  # EEPROM_VARIANT += ${3POS_VARIANT}
 endif
 
 #---------------- Compiler Options C++ ----------------
@@ -813,7 +839,7 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm splash_ACT.lbm asterisk.lbm
+lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm asterisk.lbm
 
 # Build stamp-file
 stamp_header:
@@ -897,15 +923,10 @@ splash_9x.lbm: splash_9x.xbm
 	@echo "Convert 9x splash from xbm to lbm:"
 	$(IMG2LBM) $< $@ img
 	
-splash_X9D.lbm: splash_X9D.xbm
+splash_X9D.lbm: splash_X9D.bmp
 	@echo
 	@echo "Convert X9D splash from xbm to lbm:"
-	$(IMG2LBM) $< $@ img
-
-splash_ACT.lbm: splash_ACT.xbm
-	@echo
-	@echo "Convert ACT splash from xbm to lbm:"
-	$(IMG2LBM) $< $@ largimg
+	$(IMG2LBM) $< $@ bmp
 
 asterisk.lbm: asterisk.xbm
 	@echo
@@ -958,6 +979,7 @@ simu: stamp_header $(BOARDSRC) $(CPPSRC) Makefile simu.cpp simpgmspace.cpp *.h *
 
 eeprom.bin:
 	dd if=/dev/zero of=$@ bs=1 count=2048
+
 
 
 # Create final output files (.hex, .eep) from ELF output file.

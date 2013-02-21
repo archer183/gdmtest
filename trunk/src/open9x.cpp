@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -84,9 +86,7 @@ char modelNames[MAX_MODELS][sizeof(g_model.name)];
 
 #if defined(SPLASH)
 const pm_uchar splashdata[] PROGMEM = { 'S','P','S',0,
-#if defined(PCBACT)
-#include "splash_ACT.lbm"
-#elif defined(PCBX9D)
+#if defined(PCBX9D)
 #include "splash_X9D.lbm"
 #else
 #include "splash_9x.lbm"
@@ -200,8 +200,6 @@ uint8_t zlen(const char *str, uint8_t size)
 
 char * strcat_zchar(char * dest, char * name, uint8_t size, const char *defaultName, uint8_t defaultNameSize, uint8_t defaultIdx)
 {
-  // TODO review if all if are needed
-
   int8_t len = 0;
 
   if (name) {
@@ -276,20 +274,39 @@ void per10ms()
 
   readKeysAndTrims();
 
-#if defined(MAVLINK) && !defined(CPUARM)
-  check_mavlink();
+#if defined(ROTARY_ENCODER_NAVIGATION)
+  if (IS_RE_NAVIGATION_ENABLE()) {
+    static rotenc_t rePreviousValue;
+    rotenc_t reNewValue = (g_rotenc[NAVIGATION_RE_IDX()] / ROTARY_ENCODER_GRANULARITY);
+    int8_t scrollRE = reNewValue - rePreviousValue;
+    if (scrollRE) {
+      rePreviousValue = reNewValue;
+      putEvent(scrollRE < 0 ? EVT_ROTARY_LEFT : EVT_ROTARY_RIGHT);
+    }
+    extern uint8_t s_evt;
+    uint8_t evt = s_evt;
+    if (EVT_KEY_MASK(evt) == BTN_REa + NAVIGATION_RE_IDX()) {
+      if (IS_KEY_BREAK(evt)) {
+        putEvent(EVT_ROTARY_BREAK);
+      }
+      else if (IS_KEY_LONG(evt)) {
+        putEvent(EVT_ROTARY_LONG);
+      }
+    }
+  }
 #endif
 
-#if defined(FRSKY) && !defined(CPUARM) && !(defined(PCBSTD) && (defined(AUDIO) || defined(VOICE)))
-#if defined(DSM2_SERIAL)
-  if (s_current_protocol != PROTO_DSM2)
-    check_frsky();
-#else
-  check_frsky();
-#endif
+#if (defined(FRSKY) || defined(MAVLINK) || defined(JETI)) && !defined(CPUARM) && !(defined(PCBSTD) && (defined(AUDIO) || defined(VOICE)))
+  if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol))
+    telemetryPoll10ms();
 #endif
 
   // These moved here from perOut() to improve beep trigger reliability.
+#if defined(PWM_BACKLIGHT)
+  if (g_tmr10ms % 4 == 0)
+    fadeBacklight(); // increment or decrement brightness until target brightness is reached
+#endif
+
   if(mixWarning & 1) if(((g_tmr10ms&0xFF)==  0)) AUDIO_MIX_WARNING_1();
   if(mixWarning & 2) if(((g_tmr10ms&0xFF)== 64) || ((g_tmr10ms&0xFF)== 72)) AUDIO_MIX_WARNING_2();
   if(mixWarning & 4) if(((g_tmr10ms&0xFF)==128) || ((g_tmr10ms&0xFF)==136) || ((g_tmr10ms&0xFF)==144)) AUDIO_MIX_WARNING_3();
@@ -399,17 +416,17 @@ void modelDefault(uint8_t id)
   applyDefaultTemplate();
 }
 
-int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 100
+int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0, 25 ,50, 75, 100
 {
   CurveInfo crv = curveinfo(idx);
   int16_t erg = 0;
 
   x+=RESXu;
   if (x < 0) {
-    erg = (int16_t)crv.crv[0] * (RESX/4);
+    erg = (int16_t)crv.crv[0];
   }
   else if (x >= (RESX*2)) {
-    erg = (int16_t)crv.crv[crv.points-1] * (RESX/4);
+    erg = (int16_t)crv.crv[crv.points-1];
   }
   else {
     uint16_t a=0, b=0;
@@ -417,7 +434,7 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
     if (crv.custom) {
       for (i=0; i<crv.points-1; i++) {
         a = b;
-        b = (i==crv.points-2 ? 2*RESX : (100 * (RESX/4) / 25 + crv.crv[crv.points+i] * (RESX/4) / 25));
+        b = (i==crv.points-2 ? 2*RESX : RESX + calc100toRESX(crv.crv[crv.points+i]));
         if ((uint16_t)x<=b) break;
       }
     }
@@ -427,10 +444,10 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 10
       a = i * d;
       b = a + d;
     }
-    erg = (int16_t)crv.crv[i]*(RESX/4) + ((int32_t)(x-a) * (crv.crv[i+1]-crv.crv[i]) * (RESX/4)) / ((b-a));
+    erg = (int16_t)crv.crv[i] + ((int32_t)(x-a) * (crv.crv[i+1]-crv.crv[i])) / (b-a);
   }
 
-  return erg / 25; // 100*D5/RESX;
+  return calc100toRESX(erg);
 }
 
 #if defined(CURVES) && defined(TRIG)
@@ -531,15 +548,26 @@ int16_t applyCurve(int16_t x, int8_t idx)
 
 uint16_t expou(uint16_t x, uint16_t k)
 {
+  // previous function was this one:
   // k*x*x*x + (1-k)*x
-  return ((unsigned long)x*x*x/0x10000*k/(RESXul*RESXul/0x10000) + (RESKul-k)*x+RESKul/2)/RESKul;
+  // return ((unsigned long)x*x*x/0x10000*k/(RESXul*RESXul/0x10000) + (RESKul-k)*x+RESKul/2)/RESKul;
+
+  uint32_t value = (uint32_t) x*x;
+  value *= (uint32_t)k;
+  value >>= 8;
+  value *= (uint32_t)x;
+  value >>= 12;
+  value += (uint32_t)(100-k)*x+50;
+
+  // return divu100(value);
+  return value/100;
 }
 
 int16_t expo(int16_t x, int16_t k)
 {
   if (k == 0) return x;
   int16_t y;
-  bool neg =  x < 0;
+  bool neg = x < 0;
   if (neg) x = -x;
   if (k<0) {
     y = RESXu-expou(RESXu-x, -k);
@@ -610,7 +638,7 @@ void applyExpos(int16_t *anas)
       continue;
     if (getSwitch(ed.swtch, 1)) {
       int16_t v = anas2[ed.chn];
-      if((v<0 && ed.mode&1) || (v>=0 && ed.mode&2)) {
+      if((v<0 && (ed.mode&1)) || (v>=0 && (ed.mode&2))) {
 #ifdef BOLD_FONT
         activeExpos |= ((ACTIVE_EXPOS_TYPE)1 << i);
 #endif
@@ -636,6 +664,11 @@ int16_t calc100toRESX(int8_t x)
   return ((x*41)>>2) - x/64;
 }
 
+int8_t calcRESXto100(int16_t x)
+{
+  return (x*25) << 8;
+}
+
 int16_t calc1000toRESX(int16_t x) // improve calc time by Pat MacKenzie
 {
   // return x + x/32 - x/128 + x/512;
@@ -649,7 +682,7 @@ int16_t calc1000toRESX(int16_t x) // improve calc time by Pat MacKenzie
 int16_t calcRESXto1000(int16_t x)
 {
 // *1000/1024 = x - x/32 + x/128
-  return (x - x/32 + x/128);
+  return (x - (x>>5) + (x>>7));
 }
 #endif
 
@@ -700,68 +733,77 @@ int16_t ex_chans[NUM_CHNOUT] = {0}; // Outputs (before LIMITS) of the last perMa
 int16_t cyc_anas[3] = {0};
 #endif
 
+// TODO same naming convention than the putsMixerSource
+
+bool __getSwitch(int8_t swtch);
+
 int16_t getValue(uint8_t i)
 {
   /*srcRaw is shifted +1!*/
 
-  if(i<NUM_STICKS+NUM_POTS) return calibratedStick[i];
+  if (i<NUM_STICKS+NUM_POTS) return calibratedStick[i];
 #if defined(PCBGRUVIN9X) || defined(PCBSKY9X)
-  else if(i<NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS) return getRotaryEncoder(i-(NUM_STICKS+NUM_POTS));
+  else if (i<NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS) return getRotaryEncoder(i-(NUM_STICKS+NUM_POTS));
 #endif
-  else if(i<MIXSRC_TrimAil) return calc1000toRESX((int16_t)8 * getTrimValue(s_perout_flight_phase, i-(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS)));
-  else if(i<MIXSRC_MAX) return 1024;
-#if defined(PCBX9D) || defined(PCBACT)
-  else if(i<MIXSRC_SA) return (switchState(SW_SA0) ? -1024 : (switchState(SW_SA1) ? 0 : 1024));  
-  else if(i<MIXSRC_SB) return (switchState(SW_SB0) ? -1024 : (switchState(SW_SB1) ? 0 : 1024));
-  else if(i<MIXSRC_SC) return (switchState(SW_SC0) ? -1024 : (switchState(SW_SC1) ? 0 : 1024));
-  else if(i<MIXSRC_SD) return (switchState(SW_SD0) ? -1024 : (switchState(SW_SD1) ? 0 : 1024));
-  else if(i<MIXSRC_SE) return (switchState(SW_SE0) ? -1024 : (switchState(SW_SE1) ? 0 : 1024));
-  else if(i<MIXSRC_SF) return (switchState(SW_SF0) ? -1024 : 1024);
-  else if(i<MIXSRC_SG) return (switchState(SW_SG0) ? -1024 : (switchState(SW_SG1) ? 0 : 1024));
-  else if(i<MIXSRC_SH) return (switchState(SW_SH0) ? -1024 : 1024);
-#else
-  else if(i<MIXSRC_3POS) return (switchState(SW_ID0) ? -1024 : (switchState(SW_ID1) ? 0 : 1024));
-  // here the switches are skipped
-  else if(i<MIXSRC_3POS+3)
+  else if (i<MIXSRC_MAX) return 1024;
+  else if (i<MIXSRC_CYC3)
 #if defined(HELI)
-    return cyc_anas[i-MIXSRC_3POS];
+    return cyc_anas[i+1-MIXSRC_CYC1];
 #else
     return 0;
 #endif
+  else if (i<MIXSRC_TrimAil) return calc1000toRESX((int16_t)8 * getTrimValue(s_perout_flight_phase, i+1-MIXSRC_TrimRud));
+#if defined(PCBX9D)
+  else if (i<MIXSRC_SA) return (switchState(SW_SA0) ? -1024 : (switchState(SW_SA1) ? 0 : 1024));
+  else if (i<MIXSRC_SB) return (switchState(SW_SB0) ? -1024 : (switchState(SW_SB1) ? 0 : 1024));
+  else if (i<MIXSRC_SC) return (switchState(SW_SC0) ? -1024 : (switchState(SW_SC1) ? 0 : 1024));
+  else if (i<MIXSRC_SD) return (switchState(SW_SD0) ? -1024 : (switchState(SW_SD1) ? 0 : 1024));
+  else if (i<MIXSRC_SE) return (switchState(SW_SE0) ? -1024 : (switchState(SW_SE1) ? 0 : 1024));
+  else if (i<MIXSRC_SF) return (switchState(SW_SF0) ? -1024 : 1024);
+  else if (i<MIXSRC_SG) return (switchState(SW_SG0) ? -1024 : (switchState(SW_SG1) ? 0 : 1024));
+  else if (i<MIXSRC_SH) return (switchState(SW_SH0) ? -1024 : 1024);
+  else if (i<MIXSRC_LAST_CSW) return __getSwitch(SWSRC_SW1+i-MIXSRC_SH) ? 1024 : -1024;
+#else
+  else if (i<MIXSRC_3POS) return (switchState(SW_ID0) ? -1024 : (switchState(SW_ID1) ? 0 : 1024));
+#if defined(EXTRA_3POS)
+  else if (i<MIXSRC_3POS2) return (switchState(SW_ID3) ? -1024 : (switchState(SW_ID4) ? 0 : 1024));
 #endif
-  else if(i<CSW_PPM_BASE+NUM_CAL_PPM) return (g_ppmIns[i-CSW_PPM_BASE] - g_eeGeneral.trainer.calib[i-CSW_PPM_BASE])*2;
-  else if(i<CSW_PPM_BASE+NUM_PPM) return g_ppmIns[i-CSW_PPM_BASE]*2;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT) return ex_chans[i-CSW_CHOUT_BASE];
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_TM2) return s_timerVal[i-CSW_CHOUT_BASE-NUM_CHNOUT];
+  else if (i<MIXSRC_LAST_CSW) return __getSwitch(SWSRC_THR+i+1-MIXSRC_SW1) ? 1024 : -1024;
+#endif
+  else if (i<MIXSRC_PPM1+NUM_CAL_PPM) return (g_ppmIns[i+1-MIXSRC_PPM1] - g_eeGeneral.trainer.calib[i+1-MIXSRC_PPM1])*2;
+  else if (i<MIXSRC_LAST_PPM) return g_ppmIns[i+1-MIXSRC_PPM1]*2;
+  else if (i<MIXSRC_LAST_CH) return ex_chans[i+1-MIXSRC_CH1];
+  else if (i<MIXSRC_LAST_CH+TELEM_TX_VOLTAGE) return g_vbat100mV;
+  else if (i<MIXSRC_LAST_CH+TELEM_TM2) return s_timerVal[i+1-MIXSRC_LAST_CH-TELEM_TM1];
 #if defined(FRSKY)
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_RSSI_TX) return frskyData.rssi[1].value;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_RSSI_RX) return frskyData.rssi[0].value;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_A2) return frskyData.analog[i-CSW_CHOUT_BASE-NUM_CHNOUT-4].value;
+  else if (i<MIXSRC_LAST_CH+TELEM_RSSI_TX) return frskyData.rssi[1].value;
+  else if(i<MIXSRC_LAST_CH+TELEM_RSSI_RX) return frskyData.rssi[0].value;
+  else if(i<MIXSRC_LAST_CH+TELEM_A2) return frskyData.analog[i+1-MIXSRC_LAST_CH-TELEM_A1].value;
 #if defined(FRSKY_HUB) || defined(WS_HOW_HIGH)
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ALT) return frskyData.hub.baroAltitude_bp;
+  else if(i<MIXSRC_LAST_CH+TELEM_ALT) return frskyData.hub.baroAltitude_bp;
 #endif
 #if defined(FRSKY_HUB)
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_RPM) return frskyData.hub.rpm;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_FUEL) return frskyData.hub.fuelLevel;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_T1) return frskyData.hub.temperature1;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_T2) return frskyData.hub.temperature2;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_SPEED) return frskyData.hub.gpsSpeed_bp;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_DIST) return frskyData.hub.gpsDistance;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_GPSALT) return frskyData.hub.gpsAltitude_bp;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CELL) return (int16_t)frskyData.hub.minCellVolts * 2;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CELLS_SUM) return (int16_t)frskyData.hub.cellsSum;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_VFAS) return (int16_t)frskyData.hub.vfas;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CURRENT) return (int16_t)frskyData.hub.current;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_CONSUMPTION) return frskyData.currentConsumption;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_POWER) return frskyData.power;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ACCx) return frskyData.hub.accelX;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ACCy) return frskyData.hub.accelY;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_ACCz) return frskyData.hub.accelZ;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_HDG) return frskyData.hub.gpsCourse_bp;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_VSPD) return frskyData.varioSpeed;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MIN_A1) return frskyData.analog[0].min;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MIN_A2) return frskyData.analog[1].min;
-  else if(i<CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MAX_CURRENT) return *(((int16_t*)(&frskyData.hub.minAltitude))+i-(CSW_CHOUT_BASE+NUM_CHNOUT+TELEM_MIN_ALT-1));
+  else if (i<MIXSRC_LAST_CH+TELEM_RPM) return frskyData.hub.rpm;
+  else if (i<MIXSRC_LAST_CH+TELEM_FUEL) return frskyData.hub.fuelLevel;
+  else if (i<MIXSRC_LAST_CH+TELEM_T1) return frskyData.hub.temperature1;
+  else if (i<MIXSRC_LAST_CH+TELEM_T2) return frskyData.hub.temperature2;
+  else if (i<MIXSRC_LAST_CH+TELEM_SPEED) return frskyData.hub.gpsSpeed_bp;
+  else if (i<MIXSRC_LAST_CH+TELEM_DIST) return frskyData.hub.gpsDistance;
+  else if (i<MIXSRC_LAST_CH+TELEM_GPSALT) return frskyData.hub.gpsAltitude_bp;
+  else if (i<MIXSRC_LAST_CH+TELEM_CELL) return (int16_t)frskyData.hub.minCellVolts * 2;
+  else if (i<MIXSRC_LAST_CH+TELEM_CELLS_SUM) return (int16_t)frskyData.hub.cellsSum;
+  else if (i<MIXSRC_LAST_CH+TELEM_VFAS) return (int16_t)frskyData.hub.vfas;
+  else if (i<MIXSRC_LAST_CH+TELEM_CURRENT) return (int16_t)frskyData.hub.current;
+  else if (i<MIXSRC_LAST_CH+TELEM_CONSUMPTION) return frskyData.currentConsumption;
+  else if (i<MIXSRC_LAST_CH+TELEM_POWER) return frskyData.power;
+  else if (i<MIXSRC_LAST_CH+TELEM_ACCx) return frskyData.hub.accelX;
+  else if (i<MIXSRC_LAST_CH+TELEM_ACCy) return frskyData.hub.accelY;
+  else if (i<MIXSRC_LAST_CH+TELEM_ACCz) return frskyData.hub.accelZ;
+  else if (i<MIXSRC_LAST_CH+TELEM_HDG) return frskyData.hub.gpsCourse_bp;
+  else if (i<MIXSRC_LAST_CH+TELEM_VSPD) return frskyData.hub.varioSpeed;
+  else if (i<MIXSRC_LAST_CH+TELEM_MIN_A1) return frskyData.analog[0].min;
+  else if (i<MIXSRC_LAST_CH+TELEM_MIN_A2) return frskyData.analog[1].min;
+  else if (i<MIXSRC_LAST_CH+TELEM_MAX_CURRENT) return *(((int16_t*)(&frskyData.hub.minAltitude))+i+1-(MIXSRC_LAST_CH+TELEM_MAX_CURRENT));
 #endif
 #endif
   else return 0;
@@ -779,8 +821,9 @@ volatile GETSWITCH_RECURSIVE_TYPE s_last_switch_value;
 /* recursive function. stack as of today (16/03/2012) grows by 8bytes at each call, which is ok! */
 
 #if defined(CPUARM)
-uint32_t delays[NUM_CSW];
-uint32_t durations[NUM_CSW];
+uint32_t cswDelays[NUM_CSW];
+uint32_t cswDurations[NUM_CSW];
+uint8_t  cswStates[NUM_CSW];
 #endif
 
 int16_t csLastValue[NUM_CSW];
@@ -798,7 +841,7 @@ bool __getSwitch(int8_t swtch)
 
   uint8_t cs_idx = abs(swtch);
 
-  if (cs_idx == SWITCH_ON) {
+  if (cs_idx == SWSRC_ON) {
     result = true;
   }
   else if (cs_idx <= MAX_PSWITCH) {
@@ -806,17 +849,21 @@ bool __getSwitch(int8_t swtch)
   }
   else {
     cs_idx -= MAX_PSWITCH+1;
-    CustomSwData * cs = cswaddress(cs_idx);
-    if (cs->func == CS_OFF) return false;
 
-    uint8_t s = CS_STATE(cs->func);
-    if (s == CS_VBOOL) {
-      GETSWITCH_RECURSIVE_TYPE mask = ((GETSWITCH_RECURSIVE_TYPE)1 << cs_idx);
-      if (s_last_switch_used & mask) {
-        result = (s_last_switch_value & mask);
+    GETSWITCH_RECURSIVE_TYPE mask = ((GETSWITCH_RECURSIVE_TYPE)1 << cs_idx);
+    if (s_last_switch_used & mask) {
+      result = (s_last_switch_value & mask);
+    }
+    else {
+      s_last_switch_used |= mask;
+
+      CustomSwData * cs = cswaddress(cs_idx);
+      uint8_t s = cs->andsw;
+      // TODO why? if (s > 8) s += 1;
+      if (cs->func == CS_OFF || (s && !__getSwitch(s))) {
+        result = false;
       }
-      else {
-        s_last_switch_used |= mask;
+      else if ((s=CS_STATE(cs->func)) == CS_VBOOL) {
         bool res1 = __getSwitch(cs->v1);
         bool res2 = __getSwitch(cs->v2);
         switch (cs->func) {
@@ -832,127 +879,114 @@ bool __getSwitch(int8_t swtch)
             break;
         }
       }
-
-#if !defined(CPUARM)
-      if (result)
-        s_last_switch_value |= ((GETSWITCH_RECURSIVE_TYPE)1<<cs_idx);
-#endif
-    }
-    else {
-      int16_t x = getValue(cs->v1-1);
-      int16_t y;
-      if (s == CS_VCOMP) {
-        y = getValue(cs->v2-1);
-
-        switch (cs->func) {
-          case CS_EQUAL:
-            result = (x==y);
-            break;
-          case CS_NEQUAL:
-            result = (x!=y);
-            break;
-          case CS_GREATER:
-            result = (x>y);
-            break;
-          case CS_LESS:
-            result = (x<y);
-            break;
-          case CS_EGREATER:
-            result = (x>=y);
-            break;
-          // case CS_ELESS:
-          default:
-            result = (x<=y);
-            break;
-        }
-      }
       else {
-#if defined(FRSKY)
-        // Telemetry
-        if (cs->v1 > CSW_CHOUT_BASE+NUM_CHNOUT) {
-          if (frskyStreaming <= 0 && cs->v1 > CSW_CHOUT_BASE+NUM_CHNOUT+MAX_TIMERS)
-            return swtch > 0 ? false : true;
+        int16_t x = getValue(cs->v1-1);
+        int16_t y;
+        if (s == CS_VCOMP) {
+          y = getValue(cs->v2-1);
 
-          y = convertCswTelemValue(cs);
+          switch (cs->func) {
+            case CS_EQUAL:
+              result = (x==y);
+              break;
+            case CS_GREATER:
+              result = (x>y);
+              break;
+            default:
+              result = (x<y);
+              break;
+          }
+        }
+        else {
+#if defined(FRSKY)
+          // Telemetry
+          if (cs->v1 > MIXSRC_LAST_CH) {
+            if (frskyStreaming <= 0 && cs->v1 > MIXSRC_LAST_CH+MAX_TIMERS)
+              return swtch > 0 ? false : true;
+
+            y = convertCswTelemValue(cs);
 
 #if defined(FRSKY_HUB)
-          if (s == CS_VOFS) {
-            uint8_t idx = cs->v1-CSW_CHOUT_BASE-NUM_CHNOUT-TELEM_ALT;
-            if (idx < THLD_MAX) {
-              // Fill the threshold array
-              barsThresholds[idx] = 128 + cs->v2;
+            if (s == CS_VOFS) {
+              uint8_t idx = cs->v1-MIXSRC_LAST_CH-TELEM_ALT;
+              if (idx < THLD_MAX) {
+                // Fill the threshold array
+                barsThresholds[idx] = 128 + cs->v2;
+              }
+            }
+#endif
+          }
+          else {
+            y = calc100toRESX(cs->v2);
+          }
+#else
+          if (cs->v1 > MIXSRC_LAST_CH) {
+            y = cs->v2; // it's a timer
+          }
+          else {
+            y = calc100toRESX(cs->v2);
+          }
+#endif
+
+          switch (cs->func) {
+            case CS_VEQUAL:
+              result = (abs(x-y) < STICK_TOLERANCE);
+              break;
+            case CS_VPOS:
+              result = (x>y);
+              break;
+            case CS_VNEG:
+              result = (x<y);
+              break;
+            case CS_APOS:
+              result = (abs(x)>y);
+              break;
+            case CS_ANEG:
+              result = (abs(x)<y);
+              break;
+            default:
+            {
+              if (csLastValue[cs_idx] == -32668)
+                csLastValue[cs_idx] = x;
+              int16_t diff = x - csLastValue[cs_idx];
+              if (cs->func == CS_DIFFEGREATER)
+                result = (y >= 0 ? (diff >= y) : (diff <= y));
+              else
+                result = (abs(diff) >= y);
+              if (result)
+                csLastValue[cs_idx] = x;
+              break;
             }
           }
-#endif
-        }
-        else {
-          y = calc100toRESX(cs->v2);
-        }
-#else
-        if (cs->v1 > CSW_CHOUT_BASE+NUM_CHNOUT) {
-          y = cs->v2; // it's a timer
-        }
-        else {
-          y = calc100toRESX(cs->v2);
-        }
-#endif
-
-        switch (cs->func) {
-          case CS_VPOS:
-            result = (x>y);
-            break;
-          case CS_VNEG:
-            result = (x<y);
-            break;
-          case CS_APOS:
-            result = (abs(x)>y);
-            break;
-          case CS_ANEG:
-            result = (abs(x)<y);
-            break;
-          default:
-          {
-            if (csLastValue[cs_idx] == -32668)
-              csLastValue[cs_idx] = x;
-            int16_t diff = x - csLastValue[cs_idx];
-            if (cs->func == CS_DIFFEGREATER)
-              result = (y >= 0 ? (diff >= y) : (diff <= y));
-            else
-              result = (abs(diff) >= y);
-            if (result)
-              csLastValue[cs_idx] = x;
-            break;
-          }
         }
       }
-    }
 
 #if defined(CPUARM)
-    if (cs->delay) {
-      if (result) {
-        if (delays[cs_idx] > get_tmr10ms())
-          result = false;
-      }
-      else {
-        delays[cs_idx] = get_tmr10ms() + (cs->delay*50);
-      }
-    }
-    if (cs->duration) {
-      if (!result) {
-        if (durations[cs_idx] > get_tmr10ms()) {
-          result = true;
-          if (cs->delay) delays[cs_idx] = get_tmr10ms() + (cs->delay*50);
+      if (cs->delay) {
+        if (result) {
+          if (cswDelays[cs_idx] > get_tmr10ms())
+            result = false;
+        }
+        else {
+          cswDelays[cs_idx] = get_tmr10ms() + (cs->delay*50);
         }
       }
-      else {
-        durations[cs_idx] = get_tmr10ms() + (cs->duration*50);
-      }
-    }
+      if (cs->duration) {
+        if (result && !cswStates[cs_idx])
+          cswDurations[cs_idx] = get_tmr10ms() + (cs->duration*50);
 
-    if (result)
-      s_last_switch_value |= ((GETSWITCH_RECURSIVE_TYPE)1<<cs_idx);
+        cswStates[cs_idx] = result;
+
+        if (cswDurations[cs_idx] > get_tmr10ms()) {
+          result = true;
+          if (cs->delay) cswDelays[cs_idx] = get_tmr10ms() + (cs->delay*50);
+        }
+      }
 #endif
 
+      if (result)
+        s_last_switch_value |= ((GETSWITCH_RECURSIVE_TYPE)1<<cs_idx);
+    }
   }
 
   return swtch > 0 ? result : !result;
@@ -1000,11 +1034,7 @@ int8_t getMovedSwitch()
     bool prev;
     swstate_t mask = 0;
     if (i <= 3) {
-      mask = (1<<(i-1));
-      prev = (switches_states & mask);
-    }
-    else if (i <= 6) {
-      prev = ((switches_states & 0x18) == ((i-4) << 3));
+      prev = ((switches_states & 0x03) == (i-1));
     }
     else {
       mask = (1<<(i-2));
@@ -1016,8 +1046,9 @@ int8_t getMovedSwitch()
         result = next ? i : -i;
       if (mask)
         switches_states ^= mask;
-      else
-        switches_states = (switches_states & 0xE7) | ((i-4) << 3);
+      else {
+        switches_states = (switches_states & 0x8C) | (i-1);
+      }
     }
   }
 #endif
@@ -1137,28 +1168,21 @@ uint8_t s_gvar_timer = 0;
 uint8_t s_gvar_last = 0;
 
 #if defined(CPUM64)
-int16_t getGVarValue(int8_t x, int16_t min, int16_t max)
+int16_t getGVarValue(int16_t x, int16_t min, int16_t max)
 {
-  return (x >= 126 || x <= -126) ? limit(min, GVAR_VALUE((uint8_t)x - 126, -1), max) : x;
+  if (x > max) {
+    int8_t idx = (max <= 100 ? x - GV1_SMALL : x - GV1_LARGE);
+    int8_t mul = 1;
 
-
-  if (x >= -125 && x <= 120)
-    return x;
-
-  int8_t idx = (uint8_t)x - 126;
-  int8_t mul = 1;
-  if (idx <= 0) {
-    if (max <= 120) {
-      idx = 1-idx; mul = -1;
+    if (idx < 0) {
+      idx = -1-idx;
+      mul = -1;
     }
-    else {
-      return x;
-    }
+
+    x = GVAR_VALUE(idx, -1) * mul;
   }
 
-  return limit(min, GVAR_VALUE(idx, -1), max) * mul;
-
-
+  return limit(min, x, max);
 }
 
 void setGVarValue(uint8_t idx, int8_t value)
@@ -1184,23 +1208,21 @@ uint8_t getGVarFlightPhase(uint8_t phase, uint8_t idx)
   return 0;
 }
 
-int16_t getGVarValue(int8_t x, int16_t min, int16_t max, int8_t phase)
+int16_t getGVarValue(int16_t x, int16_t min, int16_t max, int8_t phase)
 {
-  if (x >= -125 && x <= 120)
-    return x;
+  if (x > max) {
+    int8_t idx = (max <= 100 ? x - GV1_SMALL : x - GV1_LARGE);
+    int8_t mul = 1;
 
-  int8_t idx = (uint8_t)x - 126;
-  int8_t mul = 1;
-  if (idx <= 0) {
-    if (max <= 120) {
-      idx = 1-idx; mul = -1;
+    if (idx < 0) {
+      idx = 1-idx;
+      mul = -1;
     }
-    else {
-      return x;
-    }
+
+    x = GVAR_VALUE(idx, getGVarFlightPhase(phase, idx)) * mul;
   }
 
-  return limit(min, GVAR_VALUE(idx, getGVarFlightPhase(phase, idx)), max) * mul;
+  return limit(min, x, max);
 }
 
 void setGVarValue(uint8_t idx, int8_t value, int8_t phase)
@@ -1218,7 +1240,7 @@ void setGVarValue(uint8_t idx, int8_t value, int8_t phase)
 #endif
 
 #if defined(FRSKY) || defined(CPUARM)
-void putsTelemetryValue(uint8_t x, uint8_t y, int16_t val, uint8_t unit, uint8_t att)
+void putsTelemetryValue(xcoord_t x, uint8_t y, lcdint_t val, uint8_t unit, uint8_t att)
 {
 #ifdef IMPERIAL_UNITS
   if (unit == UNIT_DEGREES) {
@@ -1262,6 +1284,10 @@ void checkBacklight()
 {
   static uint8_t tmr10ms ;
 
+#if defined(PCBSTD) && defined(ROTARY_ENCODER_NAVIGATION)
+  rotencPoll();
+#endif
+
   if (tmr10ms != g_blinkTmr10ms) {
     tmr10ms = g_blinkTmr10ms;
     uint16_t tsum = stickMoveValue();
@@ -1295,7 +1321,11 @@ void backlightOn()
 inline void Splash()
 {
   lcd_clear();
+#if defined(PCBX9D)
+  lcd_bmp(0, 0, splash_lbm);
+#else
   lcd_img(0, 0, splash_lbm, 0, 0);
+#endif
   lcdRefresh();
 }
 
@@ -1366,7 +1396,6 @@ void checkAll()
 
   checkTHR();
   checkSwitches();
-
   clearKeyEvents();
 }
 
@@ -1441,7 +1470,7 @@ void checkSwitches()
 
     // first - display warning
     if (last_bad_switches != switches_states) {
-      MESSAGE(STR_SWITCHWARN, NULL, STR_PRESSANYKEYTOSKIP, AU_SWITCH_ALERT);
+      MESSAGE(STR_SWITCHWARN, NULL, STR_PRESSANYKEYTOSKIP, last_bad_switches == 0xff ? AU_SWITCH_ALERT : AU_NONE);
 #if defined(PCBX9D)
       for (uint8_t i=0; i<NUM_SWITCHES-1; i++) {
         swstate_t mask = (0x03 << (1+i*2));
@@ -1454,9 +1483,9 @@ void checkSwitches()
       uint8_t x = 2;
       for (uint8_t i=1; i<8; i++) {
         uint8_t attr = (states & (1 << i)) == (switches_states & (1 << i)) ? 0 : INVERS;
-        putsSwitches(x, 5*FH, (i>5?(i+1):(i>=4?(4+((states>>4)&0x3)):i)), attr);
-        if (i == 4 && attr) i++;
-        if (i != 4) x += 3*FW+FW/2;
+        putsSwitches(x, 5*FH, (i>2?(i+1):1+((states>>4)&0x3)), attr);
+        if (i == 1 && attr) i++;
+        if (i != 1) x += 3*FW+FW/2;
       }
 #endif
       lcdRefresh();
@@ -1836,7 +1865,7 @@ uint16_t inacCounter = 0;
 uint16_t inacSum = 0;
 BeepANACenter bpanaCenter = 0;
 
-int16_t  sDelay[MAX_MIXERS] = {0};
+uint16_t sDelay[MAX_MIXERS] = {0};
 int32_t  act   [MAX_MIXERS] = {0};
 uint8_t  swOn  [MAX_MIXERS] = {0};
 uint8_t mixWarning;
@@ -1901,14 +1930,24 @@ BeepANACenter evalSticks(uint8_t mode)
     if(v < -RESX) v = -RESX;
     if(v >  RESX) v =  RESX;
     	
- #if defined(PCBX9D)
-    // TODO constants
-    if(i == 2 || i == 3 || i == 4 || i == 6)
-    	v = -v;
- #endif
+#if defined(PCBX9D)
+    if (i == POT1 || i == SLIDER1)
+      v = -v;
+#endif
 
     if (g_eeGeneral.throttleReversed && ch==THR_STICK)
       v = -v;
+
+#if defined(EXTRA_3POS)
+    if (i == POT1+EXTRA_3POS-1) {
+      if (v < -RESX/2)
+        v = -RESX;
+      else if (v > +RESX/2)
+        v = +RESX;
+      else
+        v = 0;
+    }
+#endif
 
     if (i < NUM_STICKS+NUM_POTS) {
       calibratedStick[ch] = v; //for show in expo
@@ -1968,30 +2007,38 @@ void testFunc()
 }
 #endif
 
-MASK_FUNC_TYPE activeFunctions = 0;
-MASK_FSW_TYPE activeFunctionSwitches = 0;
+MASK_FUNC_TYPE activeFunctions  = 0;
+MASK_CFN_TYPE  activeSwitches   = 0;
+MASK_CFN_TYPE  activeFnSwitches = 0;
+tmr10ms_t lastFunctionTime[NUM_CFN] = { 0 };
 
 #if defined(VOICE)
 PLAY_FUNCTION(playValue, uint8_t idx)
 {
   int16_t val = getValue(idx);
+
+  // TODO add the MIXSRC_TELEM_TM1 and so on.
+
   switch (idx) {
-    case NUM_XCHNRAW+TELEM_TM1-1:
-    case NUM_XCHNRAW+TELEM_TM2-1:
+    case MIXSRC_LAST_CH+TELEM_TX_VOLTAGE-1:
+      PLAY_NUMBER(val, 1+UNIT_VOLTS, PREC1);
+      break;
+    case MIXSRC_LAST_CH+TELEM_TM1-1:
+    case MIXSRC_LAST_CH+TELEM_TM2-1:
       PLAY_DURATION(val);
       break;
 #if defined(FRSKY)
-    case NUM_XCHNRAW+TELEM_RSSI_TX-1:
-    case NUM_XCHNRAW+TELEM_RSSI_RX-1:
+    case MIXSRC_LAST_CH+TELEM_RSSI_TX-1:
+    case MIXSRC_LAST_CH+TELEM_RSSI_RX-1:
       PLAY_NUMBER(val, 1+UNIT_DBM, 0);
       break;
-    case NUM_XCHNRAW+TELEM_MIN_A1-1:
-    case NUM_XCHNRAW+TELEM_MIN_A2-1:
+    case MIXSRC_LAST_CH+TELEM_MIN_A1-1:
+    case MIXSRC_LAST_CH+TELEM_MIN_A2-1:
       idx -= TELEM_MIN_A1-TELEM_A1;
       // no break
-    case NUM_XCHNRAW+TELEM_A1-1:
-    case NUM_XCHNRAW+TELEM_A2-1:
-      idx -= (NUM_XCHNRAW+TELEM_A1-1);
+    case MIXSRC_LAST_CH+TELEM_A1-1:
+    case MIXSRC_LAST_CH+TELEM_A2-1:
+      idx -= (MIXSRC_LAST_CH+TELEM_A1-1);
         // A1 and A2
       {
         uint8_t att = 0;
@@ -2003,41 +2050,41 @@ PLAY_FUNCTION(playValue, uint8_t idx)
         break;
       }
 
-    case NUM_XCHNRAW+TELEM_CELL-1:
+    case MIXSRC_LAST_CH+TELEM_CELL-1:
       PLAY_NUMBER(val/10, 1+UNIT_VOLTS, PREC1);
       break;
 
-    case NUM_XCHNRAW+TELEM_VFAS-1:
-    case NUM_XCHNRAW+TELEM_CELLS_SUM-1:
+    case MIXSRC_LAST_CH+TELEM_VFAS-1:
+    case MIXSRC_LAST_CH+TELEM_CELLS_SUM-1:
       PLAY_NUMBER(val, 1+UNIT_VOLTS, PREC1);
       break;
 
-    case NUM_XCHNRAW+TELEM_CURRENT-1:
-    case NUM_XCHNRAW+TELEM_MAX_CURRENT-1:
+    case MIXSRC_LAST_CH+TELEM_CURRENT-1:
+    case MIXSRC_LAST_CH+TELEM_MAX_CURRENT-1:
       PLAY_NUMBER(val, 1+UNIT_AMPS, PREC1);
       break;
 
-    case NUM_XCHNRAW+TELEM_ACCx-1:
-    case NUM_XCHNRAW+TELEM_ACCy-1:
-    case NUM_XCHNRAW+TELEM_ACCz-1:
+    case MIXSRC_LAST_CH+TELEM_ACCx-1:
+    case MIXSRC_LAST_CH+TELEM_ACCy-1:
+    case MIXSRC_LAST_CH+TELEM_ACCz-1:
       PLAY_NUMBER(val/10, 1+UNIT_G, PREC1);
       break;
 
-    case NUM_XCHNRAW+TELEM_VSPD-1:
+    case MIXSRC_LAST_CH+TELEM_VSPD-1:
       PLAY_NUMBER(val/10, 1+UNIT_METERS_PER_SECOND, PREC1);
       break;
 
-    case NUM_XCHNRAW+TELEM_CONSUMPTION-1:
+    case MIXSRC_LAST_CH+TELEM_CONSUMPTION-1:
       PLAY_NUMBER(val, 1+UNIT_MAH, 0);
       break;
 
-    case NUM_XCHNRAW+TELEM_POWER-1:
+    case MIXSRC_LAST_CH+TELEM_POWER-1:
       PLAY_NUMBER(val, 1+UNIT_WATTS, 0);
       break;
 
-    case NUM_XCHNRAW+TELEM_ALT-1:
-    case NUM_XCHNRAW+TELEM_MIN_ALT-1:
-    case NUM_XCHNRAW+TELEM_MAX_ALT-1:
+    case MIXSRC_LAST_CH+TELEM_ALT-1:
+    case MIXSRC_LAST_CH+TELEM_MIN_ALT-1:
+    case MIXSRC_LAST_CH+TELEM_MAX_ALT-1:
 #if defined(IMPERIAL_UNITS)
       if (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH)
         PLAY_NUMBER(val, 1+UNIT_FEET, 0);
@@ -2046,24 +2093,24 @@ PLAY_FUNCTION(playValue, uint8_t idx)
         PLAY_NUMBER(val, 1+UNIT_METERS, 0);
       break;
 
-    case NUM_XCHNRAW+TELEM_RPM-1:
-    case NUM_XCHNRAW+TELEM_MAX_RPM-1:
+    case MIXSRC_LAST_CH+TELEM_RPM-1:
+    case MIXSRC_LAST_CH+TELEM_MAX_RPM-1:
       PLAY_NUMBER(val, 1+UNIT_RPMS, 0);
       break;
 
-    case NUM_XCHNRAW+TELEM_HDG-1:
+    case MIXSRC_LAST_CH+TELEM_HDG-1:
       PLAY_NUMBER(val, 1+UNIT_DEGREES, 0);
       break;
 
     default:
     {
       uint8_t unit = 1;
-      if (idx < NUM_XCHNRAW+TELEM_TM1-1)
-        val = (val * 25) / 256;
-      if (idx >= NUM_XCHNRAW+TELEM_ALT-1 && idx <= NUM_XCHNRAW+TELEM_GPSALT-1)
-        unit = idx - (NUM_XCHNRAW+TELEM_ALT-1);
-      else if (idx >= NUM_XCHNRAW+TELEM_MAX_T1-1 && idx <= NUM_XCHNRAW+TELEM_MAX_DIST-1)
-        unit = 3 + idx - (NUM_XCHNRAW+TELEM_MAX_T1-1);
+      if (idx < MIXSRC_LAST_CH+TELEM_TM1-1)
+        val = calcRESXto100(val);
+      if (idx >= MIXSRC_LAST_CH+TELEM_ALT-1 && idx <= MIXSRC_LAST_CH+TELEM_GPSALT-1)
+        unit = idx - (MIXSRC_LAST_CH+TELEM_ALT-1);
+      else if (idx >= MIXSRC_LAST_CH+TELEM_MAX_T1-1 && idx <= MIXSRC_LAST_CH+TELEM_MAX_DIST-1)
+        unit = 3 + idx - (MIXSRC_LAST_CH+TELEM_MAX_T1-1);
 
       unit = pgm_read_byte(bchunit_ar+unit);
 #if !defined(IMPERIAL_UNITS)
@@ -2090,19 +2137,27 @@ PLAY_FUNCTION(playValue, uint8_t idx)
 #if defined(CPUARM)
 uint8_t currentSpeakerVolume = 255;
 uint8_t requiredSpeakerVolume;
-uint8_t fnSwitchDuration[NUM_FSW] = { 0 };
-#define FSW_PRESSLONG_DURATION   100
-#define COMPLEX_SWITCH (momentary || shrt || lng)
-#else
-#define COMPLEX_SWITCH (momentary)
+uint8_t fnSwitchDuration[NUM_CFN] = { 0 };
+#define CFN_PRESSLONG_DURATION   100
+
+inline void playCustomFunctionFile(CustomFnData *sd, uint8_t id)
+{
+  char lfn[] = SOUNDS_PATH "/xxxxxx.wav";
+  strncpy(lfn+sizeof(SOUNDS_PATH), sd->param, sizeof(sd->param));
+  lfn[sizeof(SOUNDS_PATH)+sizeof(sd->param)] = '\0';
+  strcat(lfn+sizeof(SOUNDS_PATH), SOUNDS_EXT);
+  PLAY_FILE(lfn, sd->func==FUNC_BACKGND_MUSIC ? PLAY_BACKGROUND : 0, id);
+}
+
 #endif
 
 void evalFunctions()
 {
-  MASK_FUNC_TYPE newActiveFunctions = 0;
+  MASK_FUNC_TYPE newActiveFunctions  = 0;
+  MASK_CFN_TYPE  newActiveSwitches   = 0;
+  MASK_CFN_TYPE  newActiveFnSwitches = 0;
 
-#if defined(ROTARY_ENCODERS) && defined(GVARS) && !defined(PCBX9D)
-  // TODO modify the PCBX9D ifdef
+#if defined(ROTARY_ENCODERS) && defined(GVARS)
   static rotenc_t rePreviousValues[ROTARY_ENCODERS];
 #endif
 
@@ -2114,25 +2169,39 @@ void evalFunctions()
     trimGvar[i] = -1;
 #endif
 
-  for (uint8_t i=0; i<NUM_FSW; i++) {
-    FuncSwData *sd = &g_model.funcSw[i];
+  for (uint8_t i=0; i<NUM_CFN; i++) {
+    CustomFnData *sd = &g_model.funcSw[i];
     int8_t swtch = sd->swtch;
     if (swtch) {
       MASK_FUNC_TYPE function_mask = (sd->func >= FUNC_TRAINER ? ((MASK_FUNC_TYPE)1 << (sd->func-FUNC_TRAINER)) : 0);
-      MASK_FSW_TYPE switch_mask = ((MASK_FSW_TYPE)1 << i);
+      MASK_CFN_TYPE  switch_mask   = ((MASK_CFN_TYPE)1 << i);
       uint8_t momentary = 0;
+
 #if defined(CPUARM)
-      uint8_t shrt=0, lng=0;
+
+  #define MOMENTARY_START_TEST() ( (momentary && !(activeSwitches & switch_mask) && active) || \
+                                   (shortPress && !active && fnSwitchDuration[i]>0 && fnSwitchDuration[i]<CFN_PRESSLONG_DURATION) || \
+                                   (longPress && active && fnSwitchDuration[i]>=CFN_PRESSLONG_DURATION) )
+
+      uint8_t shortPress=0, longPress=0;
       if (swtch > MAX_SWITCH+1+MAX_SWITCH+1+MAX_PSWITCH) {
-        lng = 1;
+        longPress = 1;
         swtch -= MAX_SWITCH+1+MAX_SWITCH+1+MAX_PSWITCH;
       }
       else if (swtch > MAX_SWITCH+1+MAX_SWITCH+1) {
-        shrt = 1;
+        shortPress = 1;
         swtch -= MAX_SWITCH+1+MAX_SWITCH+1;
       }
       else
+
+#else
+
+  #define shortPress  0
+  #define longPress   0
+  #define MOMENTARY_START_TEST() (!(activeSwitches & switch_mask) && active)
+
 #endif
+
       if (swtch > MAX_SWITCH+1) {
         momentary = 1;
         swtch -= MAX_SWITCH+1;
@@ -2141,26 +2210,54 @@ void evalFunctions()
         momentary = 1;
         swtch += MAX_SWITCH+1;
       }
+
+      bool active = getSwitch(swtch, 0);
+      if (active) newActiveSwitches |= switch_mask;
+      if (momentary || longPress || shortPress) {
+
 #if defined(CPUARM)
-      bool sw;
-      if ((sw=getSwitch(swtch, 0)) || (shrt&&fnSwitchDuration[i]>0&&fnSwitchDuration[i]<FSW_PRESSLONG_DURATION) || (lng&&fnSwitchDuration[i]>=(uint8_t)FSW_PRESSLONG_DURATION)) {
-        if (shrt || lng) {
-          if (sw) {
+        bool swState = active;
+#endif
+
+        if (MOMENTARY_START_TEST()) {
+
+          active = !(activeFnSwitches & switch_mask);
+#if !defined(CPUARM)
+          if (sd->func == FUNC_PLAY_BOTH && !active) {
+            momentary = 1;
+          }
+          else
+#endif
+          {
+            momentary = 0;
+          }
+        }
+        else {
+          active = (activeFnSwitches & switch_mask);
+          momentary = 0;
+        }
+#if defined(CPUARM)
+        if (shortPress || longPress) {
+          if (swState) {
             if (fnSwitchDuration[i] < 255)
               fnSwitchDuration[i]++;
-            newActiveFunctions |= (activeFunctions & function_mask);
-            continue;
           }
           else {
             fnSwitchDuration[i] = 0;
           }
         }
-#else
-      if (getSwitch(swtch, 0)) {
 #endif
+      }
+#if !defined(CPUARM)
+      else if (sd->func == FUNC_PLAY_BOTH) {
+        momentary = 1;
+      }
+#endif
+
+      if (active || momentary) {
         if (sd->active) {
           if (sd->func < FUNC_TRAINER) {
-            safetyCh[sd->func] = FSW_PARAM(sd);
+            safetyCh[sd->func] = CFN_PARAM(sd);
           }
 
           if (!(activeFunctions & function_mask)) {
@@ -2176,159 +2273,139 @@ void evalFunctions()
         }
         else if (sd->func <= FUNC_INSTANT_TRIM) {
           function_mask = 0;
+          switch_mask = 0;
         }
 
 #if defined(SDCARD)
         if (sd->func == FUNC_LOGS) {
-          logDelay = FSW_PARAM(sd);
+          logDelay = CFN_PARAM(sd);
         }
 #endif
 
-        if (!(activeFunctionSwitches & switch_mask)) {
-          if (sd->func == FUNC_RESET) {
-            switch (FSW_PARAM(sd)) {
-              case 0:
-              case 1:
-                resetTimer(FSW_PARAM(sd));
-                break;
-              case 2:
-                resetAll();
-                break;
+        if (sd->func == FUNC_RESET) {
+          switch (CFN_PARAM(sd)) {
+            case FUNC_RESET_TIMER1:
+            case FUNC_RESET_TIMER2:
+              resetTimer(CFN_PARAM(sd));
+              break;
+            case FUNC_RESET_ALL:
+              resetAll();
+              break;
 #if defined(FRSKY)
-              case 3:
-                resetTelemetry();
-                break;
+            case FUNC_RESET_TELEMETRY:
+              resetTelemetry();
+              break;
 #endif
-            }
+#if ROTARY_ENCODERS > 0
+            case FUNC_RESET_ROTENC1:
+#if ROTARY_ENCODERS > 1
+            case FUNC_RESET_ROTENC2:
+#endif
+              g_rotenc[CFN_PARAM(sd)-FUNC_RESET_ROTENC1] = 0;
+              break;
+#endif
           }
         }
 
-#if defined(CPUARM) && defined(SDCARD)
-        if ((shrt || lng) && (activeFunctions & function_mask)) {
-          if (sd->func == FUNC_BACKGND_MUSIC) {
-            STOP_PLAY(i+1);
-          }
+        if (sd->func == FUNC_PLAY_SOUND) {
+          AUDIO_PLAY(AU_FRSKY_FIRST+CFN_PARAM(sd));
         }
-        else
-#endif
-
-        if (!COMPLEX_SWITCH || !(activeFunctionSwitches & switch_mask)) {
-          if (sd->func == FUNC_PLAY_SOUND) {
-            AUDIO_PLAY(AU_FRSKY_FIRST+FSW_PARAM(sd));
-          }
 
 #if defined(HAPTIC)
-          if (sd->func == FUNC_HAPTIC) {
-            haptic.event(AU_FRSKY_LAST+FSW_PARAM(sd));
-          }
+        if (sd->func == FUNC_HAPTIC) {
+          haptic.event(AU_FRSKY_LAST+CFN_PARAM(sd));
+        }
 #endif
 
 #if defined(CPUARM) && defined(SDCARD)
-          else if (sd->func == FUNC_PLAY_TRACK || sd->func == FUNC_BACKGND_MUSIC) {
-            if (IS_PLAYING(i+1)) {
-              switch_mask = 0;
-            }
-            else {
-              char lfn[] = SOUNDS_PATH "/xxxxxx.wav";
-              strncpy(lfn+sizeof(SOUNDS_PATH), sd->param, sizeof(sd->param));
-              lfn[sizeof(SOUNDS_PATH)+sizeof(sd->param)] = '\0';
-              strcat(lfn+sizeof(SOUNDS_PATH), SOUNDS_EXT);
-              PLAY_FILE(lfn, sd->func==FUNC_BACKGND_MUSIC ? PLAY_BACKGROUND : 0, i+1);
-            }
-          }
-          else if (sd->func == FUNC_PLAY_VALUE) {
-            if (IS_PLAYING(i+1)) {
-              switch_mask = 0;
-            }
-            else {
-              PLAY_VALUE(FSW_PARAM(sd), i+1);
+        else if (sd->func == FUNC_PLAY_TRACK || sd->func == FUNC_PLAY_VALUE) {
+          tmr10ms_t tmr10ms = get_tmr10ms();
+          uint8_t repeatParam = sd->active;
+          if (!lastFunctionTime[i] || (repeatParam && (signed)(tmr10ms-lastFunctionTime[i])>=500*repeatParam)) {
+            if (!IS_PLAYING(i+1)) {
+              lastFunctionTime[i] = tmr10ms;
+              if (sd->func == FUNC_PLAY_VALUE) {
+                PLAY_VALUE(CFN_PARAM(sd), i+1);
+              }
+              else {
+                playCustomFunctionFile(sd, i+1);
+              }
             }
           }
-          else if (sd->func == FUNC_VOLUME) {
-            requiredSpeakerVolume = ((1024 + getValue(FSW_PARAM(sd))) * NUM_VOL_LEVELS) / 2048;
+        }
+        else if (sd->func == FUNC_BACKGND_MUSIC) {
+          if (!IS_PLAYING(i+1)) {
+            playCustomFunctionFile(sd, i+1);
           }
+        }
+        else if (sd->func == FUNC_VOLUME) {
+          requiredSpeakerVolume = ((1024 + getValue(CFN_PARAM(sd))) * VOLUME_LEVEL_MAX) / 2048;
+        }
 #elif defined(VOICE)
-          else if (sd->func == FUNC_PLAY_TRACK) {
-            if (IS_PLAYING(i+1)) {
-              switch_mask = 0;
+        else if (sd->func == FUNC_PLAY_TRACK || sd->func == FUNC_PLAY_BOTH || sd->func == FUNC_PLAY_VALUE) {
+          tmr10ms_t tmr10ms = get_tmr10ms();
+          uint8_t repeatParam = sd->active;
+          if (!lastFunctionTime[i] || (sd->func==FUNC_PLAY_BOTH && active!=(bool)(activeFnSwitches&switch_mask)) || (repeatParam && (signed)(tmr10ms-lastFunctionTime[i])>=(1500<<(repeatParam-1)))) {
+            lastFunctionTime[i] = tmr10ms;
+            if (sd->func == FUNC_PLAY_VALUE) {
+              PLAY_VALUE(CFN_PARAM(sd), i+1);
             }
             else {
-              PUSH_CUSTOM_PROMPT(sd->param, i+1);
+              PUSH_CUSTOM_PROMPT(active ? sd->param : sd->param+1, i+1);
             }
           }
-          else if (sd->func == FUNC_PLAY_VALUE) {
-            if (IS_PLAYING(i+1)) {
-              switch_mask = 0;
-            }
-            else {
-              PLAY_VALUE(FSW_PARAM(sd), i+1);
-            }
-          }
+        }
 #endif
 
 #if defined(DEBUG)
-          else if (sd->func == FUNC_TEST) {
-            testFunc();
-          }
+        else if (sd->func == FUNC_TEST) {
+          testFunc();
+        }
 #endif
 
 #if defined(GVARS)
-          else if (sd->func >= FUNC_ADJUST_GV1) {
-            if (FSW_PARAM(sd) >= MIXSRC_TrimRud-1 && FSW_PARAM(sd) <= MIXSRC_TrimAil-1) {
-              trimGvar[FSW_PARAM(sd)-MIXSRC_TrimRud+1] = sd->func-FUNC_ADJUST_GV1;
-            }
-#if defined(ROTARY_ENCODERS) && !defined(PCBX9D)
-            // TODO modify these ifdef
-            else if (FSW_PARAM(sd) >= MIXSRC_REa-1 && FSW_PARAM(sd) < MIXSRC_TrimRud-1) {
-              int8_t scroll = rePreviousValues[FSW_PARAM(sd)-MIXSRC_REa+1] - (g_rotenc[FSW_PARAM(sd)-MIXSRC_REa+1] / ROTARY_ENCODER_GRANULARITY);
-              if (scroll) {
-                SET_GVAR(sd->func-FUNC_ADJUST_GV1, GVAR_VALUE(sd->func-FUNC_ADJUST_GV1, s_perout_flight_phase) + scroll, s_perout_flight_phase);
-              }
-            }
-#endif
-            else {
-              SET_GVAR(sd->func-FUNC_ADJUST_GV1, limit((int16_t)-1250, getValue(FSW_PARAM(sd)), (int16_t)1250) / 10, s_perout_flight_phase);
+        else if (sd->func >= FUNC_ADJUST_GV1) {
+          if (CFN_PARAM(sd) >= MIXSRC_TrimRud-1 && CFN_PARAM(sd) <= MIXSRC_TrimAil-1) {
+            trimGvar[CFN_PARAM(sd)-MIXSRC_TrimRud+1] = sd->func-FUNC_ADJUST_GV1;
+          }
+#if defined(ROTARY_ENCODERS)
+          else if (CFN_PARAM(sd) >= MIXSRC_REa-1 && CFN_PARAM(sd) < MIXSRC_TrimRud-1) {
+            int8_t scroll = rePreviousValues[CFN_PARAM(sd)-MIXSRC_REa+1] - (g_rotenc[CFN_PARAM(sd)-MIXSRC_REa+1] / ROTARY_ENCODER_GRANULARITY);
+            if (scroll) {
+              SET_GVAR(sd->func-FUNC_ADJUST_GV1, GVAR_VALUE(sd->func-FUNC_ADJUST_GV1, s_perout_flight_phase) + scroll, s_perout_flight_phase);
             }
           }
 #endif
-        }
-
-        if (COMPLEX_SWITCH) {
-          if (!(activeFunctionSwitches & switch_mask)) {
-            if (!(activeFunctions & function_mask)) {
-              newActiveFunctions |= function_mask;
-            }
-          }
           else {
-            newActiveFunctions |= (activeFunctions & function_mask);
+            SET_GVAR(sd->func-FUNC_ADJUST_GV1, limit((int16_t)-1250, getValue(CFN_PARAM(sd)), (int16_t)1250) / 10, s_perout_flight_phase);
           }
         }
-        else {
+#endif
+
+        if (active) {
+          newActiveFnSwitches |= switch_mask;
           newActiveFunctions |= function_mask;
         }
-
-        activeFunctionSwitches |= switch_mask;
       }
       else {
+        lastFunctionTime[i] = 0;
 #if defined(CPUARM)
         fnSwitchDuration[i] = 0;
 #endif
 #if defined(CPUARM) && defined(SDCARD)
-        if (!COMPLEX_SWITCH && sd->func == FUNC_BACKGND_MUSIC) {
+        if (sd->func == FUNC_BACKGND_MUSIC && isFunctionActive(FUNC_BACKGND_MUSIC)) {
           STOP_PLAY(i+1);
         }
 #endif
-        activeFunctionSwitches &= (~switch_mask);
-        if (COMPLEX_SWITCH)
-          newActiveFunctions |= (activeFunctions & function_mask);
       }
     }
   }
 
-  activeFunctions = newActiveFunctions;
+  activeSwitches   = newActiveSwitches;
+  activeFnSwitches = newActiveFnSwitches;
+  activeFunctions  = newActiveFunctions;
 
-#if defined(ROTARY_ENCODERS) && defined(GVARS) && !defined(PCBX9D)
-  // TODO review #ifdef PCBX9D
+#if defined(ROTARY_ENCODERS) && defined(GVARS)
   for (uint8_t i=0; i<ROTARY_ENCODERS; i++)
     rePreviousValues[i] = (g_rotenc[i] / ROTARY_ENCODER_GRANULARITY);
 #endif
@@ -2346,7 +2423,7 @@ void perOut(uint8_t mode, uint8_t tick10ms)
     bpanaCenter = anaCenter;
   }
 
-#ifdef HELI
+#if defined(HELI)
   if(g_model.swashR.value)
   {
     uint32_t v = ((int32_t)anas[ELE_STICK]*anas[ELE_STICK] + (int32_t)anas[AIL_STICK]*anas[AIL_STICK]);
@@ -2454,11 +2531,13 @@ void perOut(uint8_t mode, uint8_t tick10ms)
       else {
         if (k < NUM_STICKS)
           v = md->noExpo ? rawAnas[k] : anas[k]; //Switch is on. MAX=FULL=512 or value.
-#if defined(PCBX9D) || defined(PCBACT)
+#if defined(PCBX9D)
         else {
           v = getValue(k);
-          // TODO switches: if (v < 0 && !md->swtch) sw = false;
-          if (k>=MIXSRC_CH1-1 && k<=MIXSRC_CHMAX-1 && md->destCh != k-MIXSRC_CH1+1) {
+          if (k >= MIXSRC_SA-1 && k <= MIXSRC_LAST_CSW-1) {
+            if (v < 0 && !md->swtch) sw = false;
+          }
+          if (k>=MIXSRC_CH1-1 && k<=MIXSRC_LAST_CH-1 && md->destCh != k-MIXSRC_CH1+1) {
             if (dirtyChannels & ((bitfield_channels_t)1 << (k-MIXSRC_CH1+1)) & (passDirtyChannels|~(((bitfield_channels_t) 1 << md->destCh)-1)))
               passDirtyChannels |= (bitfield_channels_t) 1 << md->destCh;
             if (k-MIXSRC_CH1+1 < md->destCh || pass > 0)
@@ -2466,13 +2545,12 @@ void perOut(uint8_t mode, uint8_t tick10ms)
           }
         }
 #else
-        else if (k >= MIXSRC_THR-1 && k <= MIXSRC_SWC-1) {
-          v = getSwitch(k-MIXSRC_THR+1+1, 0) ? +1024 : -1024;
-          if (v < 0 && !md->swtch) sw = false;
-        }
         else {
-          v = getValue(k<=MIXSRC_3POS ? k : k-MAX_SWITCH);
-          if (k>=MIXSRC_CH1-1 && k<=MIXSRC_CHMAX-1 && md->destCh != k-MIXSRC_CH1+1) {
+          v = getValue(k);
+          if (k >= MIXSRC_THR-1 && k <= MIXSRC_LAST_CSW-1) {
+            if (v < 0 && !md->swtch) sw = false;
+          }
+          else if (k>=MIXSRC_CH1-1 && k<=MIXSRC_LAST_CH-1 && md->destCh != k-MIXSRC_CH1+1) {
             if (dirtyChannels & ((bitfield_channels_t)1 << (k-MIXSRC_CH1+1)) & (passDirtyChannels|~(((bitfield_channels_t) 1 << md->destCh)-1)))
               passDirtyChannels |= (bitfield_channels_t) 1 << md->destCh;
             if (k-MIXSRC_CH1+1 < md->destCh || pass > 0)
@@ -2482,22 +2560,20 @@ void perOut(uint8_t mode, uint8_t tick10ms)
 #endif
       }
 
+      bool apply_offset_and_curve = true;
+
       //========== DELAYS ===============
       uint8_t swTog;
-      bool apply_offset = true;
       if (sw) { // switch on?  (if no switch selected => on)
         swTog = !swOn[i];
         if (mode == e_perout_mode_normal) {
           swOn[i] = true;
           if (md->delayUp) {
             if (swTog) {
-              if (sDelay[i])
-                sDelay[i] = 0;
-              else
-                sDelay[i] = md->delayUp * (100/DELAY_STEP);
+              sDelay[i] = (sDelay[i] ? 0 : (md->delayUp * (100/DELAY_STEP)));
             }
             if (sDelay[i] > 0) { // perform delay
-              sDelay[i] = max(0, sDelay[i] - tick10ms);
+              sDelay[i] = max<int16_t>(0, (int16_t)sDelay[i] - tick10ms);
               if (!md->swtch) {
                 v = -1024;
               }
@@ -2514,27 +2590,26 @@ void perOut(uint8_t mode, uint8_t tick10ms)
         swTog = swOn[i];
         swOn[i] = false;
         if (md->delayDown) {
+          uint16_t delay = sDelay[i];
           if (swTog) {
-            if (sDelay[i])
-              sDelay[i] = 0;
-            else
-              sDelay[i] = md->delayDown * (100/DELAY_STEP);
+            delay = (delay ? 0 : (md->delayDown * (100/DELAY_STEP)));
           }
-          if (sDelay[i] > 0) { // perform delay
-            sDelay[i] = max(0, sDelay[i] - tick10ms);
+          if (delay > 0) { // perform delay
+            delay = max<int16_t>(0, (int16_t)delay - tick10ms);
             if (!md->swtch) v = +1024;
             has_delay = true;
           }
           else if (!md->swtch) {
             v = -1024;
           }
+          sDelay[i] = delay;
         }
         if (!has_delay) {
           if (md->speedDown) {
             if (md->mltpx == MLTPX_REP) continue;
             if (md->swtch) {
               v = 0;
-              apply_offset = false;
+              apply_offset_and_curve = false;
             }
           }
           else if (md->swtch) {
@@ -2548,8 +2623,8 @@ void perOut(uint8_t mode, uint8_t tick10ms)
 #endif
 
       //========== OFFSET ===============
-      if (apply_offset) {
-        int8_t offset = GET_GVAR(md->offset, -125, 125, s_perout_flight_phase);
+      if (apply_offset_and_curve) {
+        int8_t offset = GET_GVAR(MD_OFFSET(md), -125, 125, s_perout_flight_phase);
         if (offset) v += calc100toRESX(offset);
       }
 
@@ -2565,7 +2640,12 @@ void perOut(uint8_t mode, uint8_t tick10ms)
         if (mix_trim >= 0) v += trims[mix_trim];
       }
 
-      int16_t weight = GET_GVAR(md->weight, -500, 500, s_perout_flight_phase);
+      //========== CURVES ===============
+      if (apply_offset_and_curve && md->curveParam && md->curveMode == MODE_CURVE) {
+        v = applyCurve(v, md->curveParam);
+      }
+
+      int16_t weight = GET_GVAR(MD_WEIGHT(md), -500, 500, s_perout_flight_phase);
 
       //========== SPEED ===============
       if (mode == e_perout_mode_normal && (md->speedUp || md->speedDown)) { // there are delay values
@@ -2593,11 +2673,6 @@ void perOut(uint8_t mode, uint8_t tick10ms)
 
           v = act[i] / DEL_MULT;
         }
-      }
-
-      //========== CURVES ===============
-      if (md->curveParam && md->curveMode == MODE_CURVE) {
-        v = applyCurve(v, md->curveParam);
       }
 
       //========== WEIGHT ===============
@@ -2735,6 +2810,14 @@ void doMixerCalculations()
   else {
     s_perout_flight_phase = phase;
     perOut(e_perout_mode_normal, tick10ms);
+  }
+
+  if (tick10ms) {
+#if defined(CPUARM)
+    requiredSpeakerVolume = g_eeGeneral.speakerVolume + VOLUME_LEVEL_DEF;
+#endif
+
+    evalFunctions();
   }
 
   //========== LIMITS ===============
@@ -2919,8 +3002,8 @@ void doMixerCalculations()
         if(s_timerVal[0]<= 3) AUDIO_TIMER_LT3(s_timerVal[0]);
       }
 
-      if (g_eeGeneral.minuteBeep && (((g_model.timers[0].start ? g_model.timers[0].start-s_timerVal[0] : s_timerVal[0])%60)==0)) { // short beep every minute
-        AUDIO_MINUTE_BEEP();
+      if (g_eeGeneral.minuteBeep && (s_timerVal[0] % 60)==0) { // short beep every minute
+        AUDIO_TIMER_MINUTE(s_timerVal[0]);
       }
     }
     else if(s_timerState[0] == TMR_BEEPING) {
@@ -2954,12 +3037,6 @@ void doMixerCalculations()
       }
     }
   }
-
-#if defined(CPUARM)
-  requiredSpeakerVolume = g_eeGeneral.speakerVolume;
-#endif
-
-  evalFunctions();
 
 #if defined(DSM2)
   if (s_rangecheck_mode) AUDIO_PLAY(AU_FRSKY_CHEEP);
@@ -3051,7 +3128,7 @@ void perMain()
   checkBacklight();
 
 #if defined(CPUARM) && defined(FRSKY)
-  check_frsky();
+  telemetryPoll10ms();
 #endif
 
   lcd_clear();
@@ -3094,7 +3171,12 @@ void perMain()
     static uint8_t  s_batCheck;
     static uint16_t s_batSum;
 
+#if defined(VOICE)
+    s_batCheck += 8;
+#else
     s_batCheck += 32;
+#endif
+
     s_batSum += instant_vbat;
 
     if (g_vbat100mV == 0) {
@@ -3102,9 +3184,19 @@ void perMain()
       s_batSum = 0;
       s_batCheck = 0;
     }
+#if defined(VOICE)
+    else if (!(s_batCheck & 0x3f)) {
+#else
     else if (s_batCheck == 0) {
+#endif
       g_vbat100mV = s_batSum / 8;
       s_batSum = 0;
+#if defined(VOICE)
+      if (s_batCheck != 0) {
+        // no alarms
+      }
+      else
+#endif
       if (g_vbat100mV <= g_eeGeneral.vBatWarn && g_vbat100mV>50) {
         AUDIO_TX_BATTERY_LOW();
       }
@@ -3175,14 +3267,10 @@ ISR(TIMER_10MS_VECT, ISR_NOBLOCK) // 10ms timer
 
   static uint8_t cnt10ms = 77; // execute 10ms code once every 78 ISRs
 
-#if defined(FRSKY)
+#if defined(FRSKY) || defined(MAVLINK) || defined(JETI)
   if (cnt10ms == 30) {
-#if defined(DSM2_SERIAL)
-    if (s_current_protocol != PROTO_DSM2)
-      check_frsky();
-#else
-    check_frsky();
-#endif
+    if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol))
+      telemetryPoll10ms();
   }
 #endif
 
@@ -3287,6 +3375,7 @@ ISR(TIMER3_CAPT_vect) // G: High frequency noise can cause stack overflo with IS
 // TODO serial_arm and serial_avr
 
 #if defined(FRSKY) && !defined(CPUARM)
+// TODO in frsky.cpp?
 FORCEINLINE void FRSKY_USART0_vect()
 {
   if (frskyTxBufferCount > 0) {
@@ -3316,7 +3405,7 @@ FORCEINLINE void DSM2_USART0_vect()
 ISR(USART0_UDRE_vect)
 {
 #if defined(FRSKY) && defined(DSM2_SERIAL)
-  if (g_model.protocol == PROTO_DSM2) {
+  if (IS_DSM2_PROTOCOL(g_model.protocol)) { // TODO not s_current_protocol?
     DSM2_USART0_vect();
   }
   else {
@@ -3402,10 +3491,10 @@ void saveTimers()
 }
 #endif
 
-#if defined(PCBACT)
-volatile rotenc_t g_rotenc[1] = {0};
-#elif defined(ROTARY_ENCODERS)
+#if defined(ROTARY_ENCODERS)
 volatile rotenc_t g_rotenc[ROTARY_ENCODERS] = {0};
+#elif defined(ROTARY_ENCODER_NAVIGATION)
+volatile rotenc_t g_rotenc[1] = {0};
 #endif
 
 #ifndef SIMU
@@ -3499,16 +3588,19 @@ uint16_t stack_free()
 inline void open9xInit(OPEN9X_INIT_ARGS)
 {
 #if defined(PCBX9D)
+  BACKLIGHT_ON();
+  CoTickDelay(10);  //20ms
   Splash();
 #endif
 
   eeReadAll();
 
+#if defined(VOICE)
+  setVolume(g_eeGeneral.speakerVolume+VOLUME_LEVEL_DEF);
+#endif
+
 #if defined(CPUARM)
-  setVolume(g_eeGeneral.speakerVolume);
   setBacklight(g_eeGeneral.backlightBright);
-#elif defined(VOICE)
-  SET_VOLUME(g_eeGeneral.speakerVolume+7);
 #endif
 
 #if defined(PCBSKY9X)
@@ -3528,7 +3620,7 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
 
   if (UNEXPECTED_SHUTDOWN()) {
     unexpectedShutdown = 1;
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
     eeLoadModel(g_eeGeneral.currModel);
 #endif
   }
@@ -3541,7 +3633,7 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
     }
 #endif
 
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
     eeLoadModel(g_eeGeneral.currModel);
 #endif
 
@@ -3808,7 +3900,7 @@ int main(void)
 #endif
   lcd_clear() ;
   lcdRefresh() ;
-  pwrOff();            // Only turn power off if necessary
+  pwrOff(); // Only turn power off if necessary
   wdt_disable();
   while(1); // never return from main() - there is no code to return back, if any delays occurs in physical power it does dead loop.
 #endif

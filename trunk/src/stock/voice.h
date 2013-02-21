@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -39,7 +41,11 @@
 #define BACKLIGHT_BIT           0x04
 #define SPARE_BIT               0x08
 
-#define VOICE_Q_LENGTH          8
+#if defined(CPUM64)
+  #define VOICE_Q_LENGTH        8
+#else
+  #define VOICE_Q_LENGTH        16
+#endif
 
 // Voice states
 #define V_STARTUP               0
@@ -75,7 +81,9 @@ extern void pushPrompt16(uint16_t value);
 extern struct t_voice *voiceaddress( void ) ;
 extern struct t_voice Voice ;
 
-#define SET_VOLUME(v) pushPrompt16((v) | 0xFFF0)
+#define VOLUME_LEVEL_MAX  7
+#define VOLUME_LEVEL_DEF  7
+#define setVolume(v) pushPrompt16((v) | 0xFFF0)
 
 inline bool isPlaying()
 {
@@ -130,5 +138,5 @@ inline bool isPlaying()
 #define PUSH_CUSTOM_PROMPT(p, ...) pushCustomPrompt((p))
 #define PLAY_NUMBER(n, u, a) playNumber((n), (u), (a))
 #define PLAY_DURATION(d) playDuration((d))
-#define IS_PLAYING(id) isPlaying()
+#define IS_PLAYING(id) (0) /* isPlaying() */
 #define PLAY_VALUE(v, id) playValue((v))

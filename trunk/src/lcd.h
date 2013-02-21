@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -55,6 +57,12 @@
 #define CENTER_OFS    0
 #endif
 
+#if defined(CPUARM)
+#define lcdint_t      int32_t
+#else
+#define lcdint_t      int16_t
+#endif
+
 #if LCD_H > 64
 #define LCD_LINES     9
 #else
@@ -101,7 +109,6 @@
 #define ROUND         0x08
 
 /* switches flags */
-#define SWONOFF       0x10 /* means inlude ON OFF in switches */
 #define SWCONDENSED   0x20 /* means that THRm will be displayed as THR */
 
 /* telemetry flags */
@@ -159,8 +166,8 @@ extern void lcd_putsLeft(uint8_t y, const pm_char * s);
 #define lcd_putsCenter(y, s) lcd_puts((LCD_W-sizeof(TR_##s)*FW+FW-2)/2, y, STR_##s)
 
 extern void lcd_outhex4(xcoord_t x, uint8_t y, uint16_t val);
-extern void lcd_outdezAtt(xcoord_t x, uint8_t y, int16_t val, LcdFlags mode=0);
-extern void lcd_outdezNAtt(xcoord_t x, uint8_t y, int16_t val, LcdFlags mode=0, uint8_t len=0);
+extern void lcd_outdezAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags mode=0);
+extern void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags mode=0, uint8_t len=0);
 extern void lcd_outdez8(xcoord_t x, uint8_t y, int8_t val);
 
 extern void putsStrIdx(xcoord_t x, uint8_t y, const pm_char *str, uint8_t idx, LcdFlags att=0);
@@ -175,8 +182,7 @@ extern void putsTrimMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdF
 void putsRotaryEncoderMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdFlags att);
 #endif
 
-extern void putsChnRaw(xcoord_t x, uint8_t y, uint8_t idx1, LcdFlags att);
-#define putsChn(x, y, idx, att) putsChnRaw(x, y, (idx)+(NUM_STICKS+NUM_POTS+NUM_ROTARY_ENCODERS+NUM_STICKS+1+NUM_SW_SRCRAW+NUM_CYC+NUM_PPM), att)
+#define putsChn(x, y, idx, att) putsMixerSource(x, y, MIXSRC_CH1+idx-1, att)
 extern void putsChnLetter(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags attr);
 
 extern void putsVolts(xcoord_t x, uint8_t y, uint16_t volts, LcdFlags att);
@@ -197,7 +203,7 @@ extern void lcd_plot(xcoord_t x, uint8_t y, LcdFlags att=0);
 extern void lcd_hline(xcoord_t x, uint8_t y, xcoord_t w, LcdFlags att=0);
 extern void lcd_hlineStip(xcoord_t x, uint8_t y, xcoord_t w, uint8_t pat, LcdFlags att=0);
 extern void lcd_vline(xcoord_t x, int8_t y, int8_t h);
-#if defined(PCBSTD)
+#if defined(CPUM64)
 extern void lcd_vlineStip(xcoord_t x, int8_t y, int8_t h, uint8_t pat);
 #else
 extern void lcd_vlineStip(xcoord_t x, int8_t y, int8_t h, uint8_t pat, LcdFlags att=0);
@@ -208,6 +214,8 @@ extern void lcd_filled_rect(xcoord_t x, int8_t y, xcoord_t w, uint8_t h, uint8_t
 extern void lcd_invert_line(int8_t y);
 #define lcd_status_line() lcd_invert_line(LCD_LINES-1)
 inline void lcd_square(xcoord_t x, uint8_t y, xcoord_t w, LcdFlags att=0) { lcd_rect(x, y, w, w, SOLID, att); }
+
+void lcdDrawTelemetryTopBar();
 
 #define DO_CROSS(xx,yy,ww)          \
     lcd_vline(xx,yy-ww/2,ww);  \

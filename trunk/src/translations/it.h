@@ -1,3 +1,25 @@
+/*
+ * Authors (alphabetical order)
+ * - Bertrand Songis <bsongis@gmail.com>
+ * - Romolo Manfredini <romolo.manfredini@gmail.com>
+ *
+ * open9x is based on code named
+ * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
+ * er9x by Erez Raviv: http://code.google.com/p/er9x/,
+ * and the original (and ongoing) project by
+ * Thomas Husterer, th9x: http://code.google.com/p/th9x/
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ */
+
 #define LEN_OFFON        "\003"
 #define TR_OFFON         "OFF""ON\0"
 
@@ -46,22 +68,36 @@
 #endif
 
 #define LEN_VPROTOS      "\006"
-#ifdef PXX
-#define TR_PXX "PXX\0  "
+
+#if defined(PXX)
+  #define TR_PXX         "PXX\0  "
+#elif defined(DSM2) || defined(IRPROTOS)
+  #define TR_PXX         "[PXX]\0"
 #else
-#define TR_PXX "[PXX]\0"
+  #define TR_PXX
 #endif
-#ifdef DSM2
-#define TR_DSM2 "DSM2\0 "
+
+#if defined(DSM2)
+  #define TR_DSM2        "LP45\0 ""DSM2\0 ""DSMX\0 "
+#elif defined(IRPROTOS)
+  #define TR_DSM2        "[LP45]""[DSM2]""[DSMX]"
 #else
-#define TR_DSM2 "[DSM2]"
+  #define TR_DSM2
 #endif
-#ifdef IRPROTOS
-#define TR_IRPROTOS "SILV  TRAC09PICZ  SWIFT\0"
+
+#if defined(IRPROTOS)
+  #define TR_IRPROTOS    "SILV  TRAC09PICZ  SWIFT\0"
 #else
-#define TR_IRPROTOS
+  #define TR_IRPROTOS
 #endif
-#define TR_VPROTOS       "PPM\0  ""PPM16\0""PPMsim" TR_PXX TR_DSM2 TR_IRPROTOS
+
+#if defined(CPUARM)
+  #define TR_XPPM
+#else
+  #define TR_XPPM              "PPM16\0""PPMsim"
+#endif
+
+#define TR_VPROTOS             "PPM\0  " TR_XPPM TR_PXX TR_DSM2 TR_IRPROTOS
 
 #define LEN_POSNEG       "\003"
 #define TR_POSNEG        "POS""NEG"
@@ -78,8 +114,8 @@
 #define LEN_VMIXTRIMS    "\003"
 #define TR_VMIXTRIMS     "OFF""ON ""Rud""Ele""Thr""Ail"
 
-#define LEN_VCSWFUNC     "\010"
-#define TR_VCSWFUNC      "---\0    ""v>ofs\0  ""v<ofs\0  ""|v|>ofs\0""|v|<ofs\0""AND\0    ""OR\0     ""XOR\0    ""v1==v2\0 ""v1!=v2\0 ""v1>v2\0  ""v1<v2\0  ""v1>=v2\0 ""v1<=v2\0 ""d>=ofs\0 ""|d|>=ofs"
+#define LEN_VCSWFUNC     "\006"
+#define TR_VCSWFUNC      "---\0  ""v1>x\0 ""v1<x\0 ""|v1|>x""|v1|<x""AND\0  ""OR\0   ""XOR\0  ""v1==v2""v1!=v2""v1>v2\0""v1<v2\0""v1>=v2""v1<=v2""d>=x\0 ""|d|>=x"
 
 #define LEN_VFSWFUNC     "\015"
 #if defined(VARIO)
@@ -110,32 +146,32 @@
 #else
 #define TR_SDCLOGS       "[SDCARD Logs]"
 #endif
-#define TR_FSW_VOLUME    "Volume\0      "
-#define TR_FSW_BG_MUSIC  "BgMusic\0     ""BgMusic Pause"
+#define TR_CFN_VOLUME    "Volume\0      "
+#define TR_CFN_BG_MUSIC  "BgMusic\0     ""BgMusic Pause"
 #elif defined(PCBGRUVIN9X)
 #if defined(SDCARD)
 #define TR_SDCLOGS       "SDCARD Logs"
 #else
 #define TR_SDCLOGS       "[SDCARD Logs]"
 #endif
-#define TR_FSW_VOLUME
-#define TR_FSW_BG_MUSIC
+#define TR_CFN_VOLUME
+#define TR_CFN_BG_MUSIC
 #else
 #define TR_SDCLOGS
-#define TR_FSW_VOLUME
-#define TR_FSW_BG_MUSIC
+#define TR_CFN_VOLUME
+#define TR_CFN_BG_MUSIC
 #endif
 #ifdef GVARS
-#define TR_FSW_ADJUST_GVAR  "Adjust \0     "
+#define TR_CFN_ADJUST_GVAR  "Adjust \0     "
 #else
-#define TR_FSW_ADJUST_GVAR
+#define TR_CFN_ADJUST_GVAR
 #endif
 #ifdef DEBUG
-#define TR_FSW_TEST          "Test\0        "
+#define TR_CFN_TEST          "Test\0        "
 #else
-#define TR_FSW_TEST
+#define TR_CFN_TEST
 #endif
-#define TR_VFSWFUNC      "Blocco\0      ""Trainer \0    ""Instant Trim " TR_SOUND TR_HAPTIC "Reset\0       " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_FSW_VOLUME "Retroillum.\0 " TR_FSW_BG_MUSIC TR_FSW_ADJUST_GVAR TR_FSW_TEST
+#define TR_VFSWFUNC      "Blocco\0      ""Trainer \0    ""Instant Trim " TR_SOUND TR_HAPTIC "Reset\0       " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "Retroillum.\0 " TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
 
 #define LEN_VFSWRESET    "\006"
 #define TR_VFSWRESET     "Timer1""Timer2""Tutto ""Telem."
@@ -171,8 +207,8 @@
 #define LEN_VOLTSRC      "\003"
 #define TR_VOLTSRC       "---""A1\0""A2\0""FAS""Cel"
 
-#define LEN_VARIOSRC     "\004"
-#define TR_VARIOSRC      "Data""A1\0 ""A2\0"
+#define LEN_VARIOSRC     "\005"
+#define TR_VARIOSRC      "Alti\0""Alti+""Vario""A1\0  ""A2\0"
 
 #define LEN_VSCREEN      "\004"
 #define TR_VSCREEN       "Nums""Bars"
@@ -215,13 +251,21 @@
 #else
 #define TR_CYC_VSRCRAW "[C1]""[C2]""[C3]"
 #endif
-#define TR_VSRCRAW       "Rud ""Ele ""Thr ""Ail ""P1  ""P2  ""P3  " TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX ""3POS" TR_CYC_VSRCRAW
+
+#if EXTRA_3POS == 1
+  #define TR_VSRCRAW       "Rud ""Ele ""Thr ""Ail ""3PO2""P2  ""P3  " TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX ""3PO1" TR_CYC_VSRCRAW
+#elif EXTRA_3POS == 2
+  #define TR_VSRCRAW       "Rud ""Ele ""Thr ""Ail ""P1  ""3PO2""P3  " TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX ""3PO1" TR_CYC_VSRCRAW
+#elif EXTRA_3POS == 3
+  #define TR_VSRCRAW       "Rud ""Ele ""Thr ""Ail ""P1  ""P2  ""3PO2" TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX ""3PO1" TR_CYC_VSRCRAW
+#else
+  #define TR_VSRCRAW       "Rud ""Ele ""Thr ""Ail ""P1  ""P2  ""P3  " TR_ROTARY_ENCODERS_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" "MAX ""3POS" TR_CYC_VSRCRAW
+#endif
+
+
 
 #define LEN_VTMRMODES    "\003"
 #define TR_VTMRMODES     "OFF""ABS""THs""TH%""THt"
-
-#define LEN_DSM2MODE     "\007"
-#define TR_DSM2MODE      "LP4/LP5DSMonlyDSMX   "
 
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
@@ -311,6 +355,8 @@
 #define TR_BEEPCOUNTDOWN       INDENT"Conto rov."
 #define TR_BACKLIGHT_LABEL     "Retroillum."
 #define TR_BLDELAY             INDENT"Durata"
+#define TR_BLONBRIGHTNESS      INDENT"ON Brightness"
+#define TR_BLOFFBRIGHTNESS     INDENT"OFF Brightness"
 #define TR_SPLASHSCREEN        "Schermata avvio"
 #define TR_THROTTLEWARNING     "All. Thr"
 #define TR_SWITCHWARNING       "Avv. Inter."
@@ -390,7 +436,6 @@
 #define TR_MENUDEBUG           "DEBUG"
 #define TR_RXNUM               "RxNum"
 #define TR_SYNCMENU            "Sinc.[Men\200]"
-#define TR_BACK                "Prec"
 #define TR_LIMIT               "Limit"
 #define TR_MINRSSI             "Min Rssi"
 #define TR_LATITUDE            "Latitud."

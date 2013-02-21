@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -180,9 +182,15 @@ void pwrOff()
 #endif
 }
 
+#if ROTARY_ENCODERS <= 2
+#define ROTENC_DOWN() ((~PIND & 0x20) || (~PIND & 0x10))
+#else
+#define ROTENC_DOWN() (0)
+#endif
+
 FORCEINLINE uint8_t keyDown()
 {
-  return (~PINL) & 0x3F;
+  return ((~PINL) & 0x3F) || ROTENC_DOWN();
 }
 
 bool switchState(EnumKeys enuk)
@@ -219,6 +227,20 @@ bool switchState(EnumKeys enuk)
     case SW_ID2:
       result = !(PINB & (1<<INP_B_ID2));
       break;
+
+#if 0
+    case SW_ID3:
+      result = (calibratedStick[POT1+EXTRA_3POS-1] < 0);
+      break;
+
+    case SW_ID4:
+      result = (calibratedStick[POT1+EXTRA_3POS-1] == 0);
+      break;
+
+    case SW_ID5:
+      result = (calibratedStick[POT1+EXTRA_3POS-1] > 0);
+      break;
+#endif
 
     case SW_GEA:
       result = PING & (1<<INP_G_Gear);
@@ -266,7 +288,7 @@ FORCEINLINE void readKeysAndTrims()
   in = (tin & 0x0f) << 3;
   in |= (tin & 0x30) >> 3;
 
-  for(int i=1; i<7; i++)
+  for (int i=1; i<7; i++)
   {
     //INP_B_KEY_MEN 1  .. INP_B_KEY_LFT 6
     keys[enuk].input(in & (1<<i),(EnumKeys)enuk);

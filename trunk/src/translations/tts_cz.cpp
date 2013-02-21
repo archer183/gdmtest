@@ -1,20 +1,7 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
  * - Bertrand Songis <bsongis@gmail.com>
- * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
- * - Cameron Weeks <th9xer@gmail.com>
- * - Erez Raviv
- * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
  * - Martin Hotar <mhotar@gmail.com>
- * - Michael Blandford
- * - Michal Hlavinka
- * - Pat Mackenzie
- * - Philip Moss
- * - Rob Thomson
- * - Romolo Manfredini <romolo.manfredini@gmail.com>
- * - Thomas Husterer
  *
  * open9x is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
@@ -101,10 +88,10 @@ enum CzechPrompts {
 
 #if defined(VOICE)
 
-#if defined(PCBSTD)
-#define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u))
-#else
+#if defined(CPUARM)
 #define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u), id)
+#else
+#define PUSH_UNIT_PROMPT(p, u) pushUnitPrompt((p), (u))
 #endif
 
 #define MUZSKY 0x80

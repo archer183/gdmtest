@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -87,6 +89,9 @@ extern const pm_char STR_OPEN9X[];
 #define OFS_VRENAVIG   (OFS_VBEEPMODE + sizeof(TR_VBEEPMODE))
 #define OFS_VRENCODERS (OFS_VRENAVIG + sizeof(TR_VRENAVIG))
 #define OFS_TRNMODE    (OFS_VRENCODERS + sizeof(TR_VRENCODERS))
+#elif defined(ROTARY_ENCODER_NAVIGATION)
+#define OFS_VRENCODERS (OFS_VBEEPMODE + sizeof(TR_VBEEPMODE))
+#define OFS_TRNMODE    (OFS_VRENCODERS + sizeof(TR_VRENCODERS))
 #else
 #define OFS_TRNMODE    (OFS_VBEEPMODE + sizeof(TR_VBEEPMODE))
 #endif
@@ -134,14 +139,8 @@ extern const pm_char STR_OPEN9X[];
 #define OFS_VSWITCHES  (OFS_VKEYS + sizeof(TR_VKEYS))
 #define OFS_VSRCRAW    (OFS_VSWITCHES + sizeof(TR_VSWITCHES))
 #define OFS_VTMRMODES  (OFS_VSRCRAW + sizeof(TR_VSRCRAW))
-#if defined(DSM2)
-#define OFS_DSM2MODE   (OFS_VTMRMODES + sizeof(TR_VTMRMODES))
-#define OFS_ENDDSM2    (OFS_DSM2MODE + sizeof(TR_DSM2MODE))
-#else
-#define OFS_ENDDSM2    (OFS_VTMRMODES + sizeof(TR_VTMRMODES))
-#endif
 #if defined(PCBGRUVIN9X) || defined(CPUARM)
-#define OFS_DATETIME   (OFS_ENDDSM2)
+#define OFS_DATETIME   (OFS_VTMRMODES + sizeof(TR_VTMRMODES))
 #endif
 #if defined(CPUARM)
 #define OFS_VLCD       (OFS_DATETIME + sizeof(TR_DATETIME))
@@ -198,13 +197,12 @@ extern const pm_char STR_OPEN9X[];
 #define STR_VSRCRAW    (STR_OPEN9X + OFS_VSRCRAW)
 #define STR_VTMRMODES  (STR_OPEN9X + OFS_VTMRMODES)
 
-#if defined(DSM2)
-#define STR_DSM2MODE   (STR_OPEN9X + OFS_DSM2MODE)
-#endif
-
 #if defined(ROTARY_ENCODERS)
 #define STR_VRENAVIG   (STR_OPEN9X + OFS_VRENAVIG)
-#define STR_VRENCODERS     (STR_OPEN9X + OFS_VRENCODERS)
+#endif
+
+#if defined(ROTARY_ENCODER_NAVIGATION)
+#define STR_VRENCODERS (STR_OPEN9X + OFS_VRENCODERS)
 #endif
 
 #if defined(PCBGRUVIN9X) || defined(CPUARM)
@@ -301,6 +299,10 @@ extern const pm_char STR_MINUTEBEEP[];
 extern const pm_char STR_BEEPCOUNTDOWN[];
 extern const pm_char STR_BACKLIGHT_LABEL[];
 extern const pm_char STR_BLDELAY[];
+#if defined(PWM_BACKLIGHT)
+extern const pm_char STR_BLONBRIGHTNESS[];
+extern const pm_char STR_BLOFFBRIGHTNESS[];
+#endif
 extern const pm_char STR_SPLASHSCREEN[];
 extern const pm_char STR_THROTTLEWARNING[];
 extern const pm_char STR_SWITCHWARNING[];
@@ -378,11 +380,6 @@ extern const pm_char STR_RXNUM[];
 extern const pm_char STR_SYNCMENU[];
 extern const pm_char STR_INVERT_THR[];
 
-#if defined(ROTARY_ENCODER_NAVIGATION)
-extern const pm_char STR_BACK[];
-#define LEN_BACK PSIZE(TR_BACK)
-#endif
-
 #if defined(FRSKY)
 extern const pm_char STR_LIMIT[];
 #endif
@@ -405,26 +402,31 @@ extern const pm_char STR_CURRENT[];
 #endif
 
 #if defined(CPUARM)
-extern const pm_char STR_CURRENT_CALIB[];
-#define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
+  extern const pm_char STR_CURRENT_CALIB[];
+  #define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
 #else
-#define LEN_CALIB_FIELDS PSIZE(TR_BATT_CALIB)
+  #define LEN_CALIB_FIELDS PSIZE(TR_BATT_CALIB)
+#endif
+
+#if defined(NAVIGATION_MENUS)
+  extern const pm_char STR_SELECT_MODEL[];
+  extern const pm_char STR_CREATE_MODEL[];
+  extern const pm_char STR_COPY_MODEL[];
+  extern const pm_char STR_MOVE_MODEL[];
+  extern const pm_char STR_DELETE_MODEL[];
 #endif
 
 #if defined(SDCARD)
-extern const pm_char STR_SELECT_MODEL[];
-extern const pm_char STR_CREATE_MODEL[];
-extern const pm_char STR_BACKUP_MODEL[];
-extern const pm_char STR_DELETE_MODEL[];
-extern const pm_char STR_RESTORE_MODEL[];
-extern const pm_char STR_SDCARD_ERROR[];
-extern const pm_char STR_NO_SDCARD[];
-extern const pm_char STR_INCOMPATIBLE[];
-extern const pm_char STR_LOGS_PATH[];
-extern const pm_char STR_LOGS_EXT[];
-extern const pm_char STR_MODELS_PATH[];
-extern const pm_char STR_MODELS_EXT[];
-#define STR_UPDATE_LIST STR_DELAYDOWN
+  extern const pm_char STR_BACKUP_MODEL[];
+  extern const pm_char STR_RESTORE_MODEL[];
+  extern const pm_char STR_SDCARD_ERROR[];
+  extern const pm_char STR_NO_SDCARD[];
+  extern const pm_char STR_INCOMPATIBLE[];
+  extern const pm_char STR_LOGS_PATH[];
+  extern const pm_char STR_LOGS_EXT[];
+  extern const pm_char STR_MODELS_PATH[];
+  extern const pm_char STR_MODELS_EXT[];
+  #define STR_UPDATE_LIST STR_DELAYDOWN
 #endif
 
 extern const pm_uchar font_5x7[];
@@ -490,8 +492,20 @@ extern const pm_char STR_DATE[];
 extern const pm_char STR_CHANNELS_MONITOR[];
 
 #if defined(VOICE)
-PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);
-PLAY_FUNCTION(playDuration, int16_t seconds);
+  PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);
+  PLAY_FUNCTION(playDuration, int16_t seconds);
+#endif
+
+#if LCD_W >= 212
+  extern const pm_char STR_MODELNAME[];
+  extern const pm_char STR_PHASENAME[];
+  extern const pm_char STR_MIXNAME[];
+  extern const pm_char STR_EXPONAME[];
+#else
+  #define STR_MODELNAME STR_NAME
+  #define STR_PHASENAME STR_NAME
+  #define STR_MIXNAME   STR_NAME
+  #define STR_EXPONAME  STR_NAME
 #endif
 
 #endif

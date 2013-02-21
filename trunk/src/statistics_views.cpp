@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -64,19 +66,17 @@ void menuStatisticsView(uint8_t event)
   uint8_t traceRd = (s_traceCnt < 0 ? s_traceWr : 0);
   const uint8_t x=5;
   const uint8_t y=60;
-  lcd_hline(x-3,y,120+3+3);
+  lcd_hline(x-3,y,MAXTRACE+3+3);
   lcd_vline(x,y-32,32+3);
 
-  for(uint8_t i=0; i<120; i+=6)
-  {
+  for (uint8_t i=0; i<MAXTRACE; i+=6) {
     lcd_vline(x+i+6,y-1,3);
   }
-  for(uint8_t i=1; i<=120; i++)
-  {
-    lcd_vline(x+i,y-s_traceBuf[traceRd],s_traceBuf[traceRd]);
+  for (uint8_t i=1; i<=MAXTRACE; i++) {
+    lcd_vline(x+i, y-s_traceBuf[traceRd], s_traceBuf[traceRd]);
     traceRd++;
-    if(traceRd>=MAXTRACE) traceRd=0;
-    if(traceRd==s_traceWr) break;
+    if (traceRd>=MAXTRACE) traceRd = 0;
+    if (traceRd==s_traceWr) break;
   }
 #endif
 }

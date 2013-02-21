@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -44,7 +46,7 @@ const pm_char * openLogs()
   // Determine and set log file filename
   FRESULT result;
   DIR folder;
-  char filename[24];
+  char filename[32];
 
   if (!sdMounted())
     return STR_NO_SDCARD;
@@ -102,7 +104,7 @@ const pm_char * openLogs()
 #endif
 
 #if defined(FRSKY_HUB)
-    if (g_model.frsky.usrProto == USR_PROTO_FRSKY_HUB)
+    if (g_model.frsky.usrProto == USR_PROTO_FRSKY)
       f_puts("GPS Date,GPS Time,Long,Lat,Course,GPS Speed,GPS Alt,Baro Alt,Temp1,Temp2,RPM,Fuel,Volts,AccelX,AccelY,AccelZ,", &g_oLogFile);
 #endif
 
@@ -171,7 +173,7 @@ void writeLogs()
 #endif
 
 #if defined(FRSKY_HUB)
-      if (g_model.frsky.usrProto == USR_PROTO_FRSKY_HUB) {
+      if (g_model.frsky.usrProto == USR_PROTO_FRSKY) {
         f_printf(&g_oLogFile, "%4d-%02d-%02d,", frskyData.hub.year+2000, frskyData.hub.month, frskyData.hub.day);
         f_printf(&g_oLogFile, "%02d:%02d:%02d,", frskyData.hub.hour, frskyData.hub.min, frskyData.hub.sec);
         f_printf(&g_oLogFile, "%03d.%04d%c,", frskyData.hub.gpsLongitude_bp, frskyData.hub.gpsLongitude_ap,

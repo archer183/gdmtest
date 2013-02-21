@@ -1,12 +1,14 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
+ * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny <shadow@privy.de>
+ * - Karl Szmutny
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -898,8 +900,9 @@ void eeLoadModel(uint8_t id)
       resumePulses();
     }
 
+    activeSwitches = 0;
+    activeFnSwitches = 0;
     activeFunctions = 0;
-    activeFunctionSwitches = 0;
 
 #if !defined(PCBSTD)
     for (uint8_t i=0; i<MAX_TIMERS; i++) {
@@ -913,7 +916,7 @@ void eeLoadModel(uint8_t id)
     // TODO pulses should be started after mixer calculations ...
 
 #if defined(FRSKY)
-    FRSKY_setModelAlarms();
+    frskySendAlarms();
 #endif
 
 #if defined(CPUARM) && defined(SDCARD)
@@ -934,6 +937,12 @@ void eeReadAll()
     generalDefault();
 
     ALERT(STR_EEPROMWARN, STR_BADEEPROMDATA, AU_BAD_EEPROM);
+
+    if (pwrCheck() == e_power_off) {
+      // the radio has been powered off during the ALERT
+      pwrOff();
+    }
+
     MESSAGE(STR_EEPROMWARN, STR_EEPROMFORMATTING, NULL, AU_EEPROM_FORMATTING);
 
     EeFsFormat();
@@ -970,3 +979,25 @@ void eeCheck(bool immediately)
   }
 }
 
+#if defined(CPUARM)
+bool eeCopyModel(uint8_t dst, uint8_t src)
+{
+  if (theFile.copy(FILE_MODEL(dst), FILE_MODEL(src))) {
+    memcpy(modelNames[dst], modelNames[src], sizeof(g_model.name));
+    return true;
+  }
+  else {
+    return false;
+  }
+}
+
+void eeSwapModels(uint8_t id1, uint8_t id2)
+{
+  EFile::swap(FILE_MODEL(id1), FILE_MODEL(id2));
+
+  char tmp[sizeof(g_model.name)];
+  memcpy(tmp, modelNames[id1], sizeof(g_model.name));
+  memcpy(modelNames[id1], modelNames[id2], sizeof(g_model.name));
+  memcpy(modelNames[id2], tmp, sizeof(g_model.name));
+}
+#endif
