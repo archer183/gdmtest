@@ -50,13 +50,14 @@ void audioQueue::heartbeat()
 {
 #if defined(SIMU)
   return;
-#else
+#endif
+
   if (toneTimeLeft > 0) {
     if (toneFreq == 0) {  //pause only events
       SPEAKER_OFF;
     }
     else {
-#if defined(PCBGRUVIN9X)
+#if defined(PCBV4)
       if (toneFreq) {
         OCR0A = (5000 / toneFreq); // sticking with old values approx 20(abs. min) to 90, 60 being the default tone(?).
         SPEAKER_ON;
@@ -78,12 +79,12 @@ void audioQueue::heartbeat()
       toneFreqIncr = queueToneFreqIncr[t_queueRidx];
       tonePause = queueTonePause[t_queueRidx];
       if (!queueToneRepeat[t_queueRidx]--) {
-        t_queueRidx = (t_queueRidx + 1) & (AUDIO_QUEUE_LENGTH-1);
+        t_queueRidx = (t_queueRidx + 1) % AUDIO_QUEUE_LENGTH;
       }
     }
     else {
       if (tone2TimeLeft > 0) {
-#if defined(PCBGRUVIN9X)
+#if defined(PCBV4)
         if (tone2Freq) {
           OCR0A = (5000 / tone2Freq); // sticking with old values approx 20(abs. min) to 90, 60 being the default tone(?).
           SPEAKER_ON;
@@ -101,7 +102,6 @@ void audioQueue::heartbeat()
       }
     }
   }
-#endif // defined(SIMU)
 }
 
 inline uint8_t audioQueue::getToneLength(uint8_t tLen)
@@ -124,7 +124,7 @@ void audioQueue::pause(uint8_t tLen)
 void audioQueue::play(uint8_t tFreq, uint8_t tLen, uint8_t tPause,
     uint8_t tFlags, int8_t tFreqIncr)
 {
-  if (tFlags & PLAY_BACKGROUND) {
+  if (tFlags & PLAY_SOUND_VARIO) {
     tone2Freq = tFreq;
     tone2TimeLeft = tLen;
     tone2Pause = tPause;
@@ -134,7 +134,7 @@ void audioQueue::play(uint8_t tFreq, uint8_t tLen, uint8_t tPause,
       tFreq += g_eeGeneral.speakerPitch + BEEP_OFFSET; // add pitch compensator
     }
     tLen = getToneLength(tLen);
-    if ((tFlags & PLAY_NOW) || (!busy() && empty())) {
+    if (tFlags & PLAY_NOW || (!busy() && empty())) {
       toneFreq = tFreq;
       toneTimeLeft = tLen;
       tonePause = tPause;
@@ -147,7 +147,7 @@ void audioQueue::play(uint8_t tFreq, uint8_t tLen, uint8_t tPause,
   
     tFlags &= 0x0f;
     if (tFlags) {
-      uint8_t next_queueWidx = (t_queueWidx + 1) & (AUDIO_QUEUE_LENGTH-1);
+      uint8_t next_queueWidx = (t_queueWidx + 1) % AUDIO_QUEUE_LENGTH;
       if (next_queueWidx != t_queueRidx) {
         queueToneFreq[t_queueWidx] = tFreq;
         queueToneLength[t_queueWidx] = tLen;
@@ -167,8 +167,8 @@ void audioQueue::event(uint8_t e, uint8_t f)
 #endif
 
   if (g_eeGeneral.flashBeep && (e <= AU_ERROR || e >= AU_WARNING1)) {
-    if (lightOffCounter < FLASH_DURATION)
-      lightOffCounter = FLASH_DURATION;
+    if (g_LightOffCounter < FLASH_DURATION)
+      g_LightOffCounter = FLASH_DURATION;
   }
 
   if (g_eeGeneral.beeperMode>0 || (g_eeGeneral.beeperMode==0 && e>=AU_TRIM_MOVE) || (g_eeGeneral.beeperMode>=-1 && e<=AU_ERROR)) {
@@ -221,6 +221,12 @@ void audioQueue::event(uint8_t e, uint8_t f)
         case AU_WARNING3:
           play(BEEP_DEFAULT_FREQ, 30, 1, PLAY_NOW);
           break;
+        // startup tune
+        case AU_TADA:
+          play(50, 10, 5);
+          play(90, 10, 5);
+          play(110, 5, 4, 2);
+          break;
         // pot/stick center
         case AU_POT_STICK_MIDDLE:
           play(BEEP_DEFAULT_FREQ + 50, 10, 1, PLAY_NOW);
@@ -250,18 +256,6 @@ void audioQueue::event(uint8_t e, uint8_t f)
         // time <3 seconds left
         case AU_TIMER_LT3:
           play(BEEP_DEFAULT_FREQ + 50, 15, 3, PLAY_NOW);
-          break;
-        case AU_FRSKY_BEEP1:
-          play(BEEP_DEFAULT_FREQ,10,1,0);
-          pause(200);
-          break;
-        case AU_FRSKY_BEEP2:
-          play(BEEP_DEFAULT_FREQ,20,1,0);
-          pause(200);
-          break;
-        case AU_FRSKY_BEEP3:
-          play(BEEP_DEFAULT_FREQ,30,1,0);
-          pause(200);
           break;
         case AU_FRSKY_WARN1:
           play(BEEP_DEFAULT_FREQ+20,15,5,2);

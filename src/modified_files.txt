@@ -1,6 +1,0 @@
-en.h   				X
-makefile   			X
-open9x .cpp & .h		X
-combatmath.h   			X
-myeeprom.h			X
-model_menus cpp and h         	X
