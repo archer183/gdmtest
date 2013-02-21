@@ -259,9 +259,9 @@ extern inline uint8_t MAVLINK_Action2CtrlMode(uint8_t action) {
 	return action;
 }
 #endif
-void telemetryPoll10ms();
+void check_mavlink();
 void MAVLINK_Init(void);
-void menuTelemetryMavlink(uint8_t event);
+void menuProcMavlink(uint8_t event);
 void MAVLINK10mspoll(uint16_t time);
 
 #ifdef MAVLINK_PARAMS
