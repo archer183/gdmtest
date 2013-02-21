@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -40,11 +37,8 @@
 #define STR2(s) #s
 #define DEFNUMSTR(s)  STR2(s)
 
-const pm_char stamp1[] PROGMEM = " SVN: " SVN_STR;
-const pm_char stamp2[] PROGMEM = "DATE: " DATE_STR;
-const pm_char stamp3[] PROGMEM = "TIME: " TIME_STR;
-#if defined(CPUM64)
-const pm_char eeprom_stamp[] PROGMEM = "EEPR: " DEFNUMSTR(EEPROM_VER) "-" DEFNUMSTR(EEPROM_VARIANT);
-#else
-const pm_char eeprom_stamp[] PROGMEM = "EEPR: " DEFNUMSTR(EEPROM_VER);
-#endif
+const pm_char stamp1[] PROGMEM = "VERS: V" VERS_STR;
+const pm_char stamp2[] PROGMEM = " SVN: " SVN_STR;
+const pm_char stamp3[] PROGMEM = "DATE: " DATE_STR;
+const pm_char stamp4[] PROGMEM = "TIME: " TIME_STR;
+

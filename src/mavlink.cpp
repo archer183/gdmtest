@@ -1,15 +1,12 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Gerard Valade <gerard.valade@gmail.com>
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -607,7 +604,7 @@ void MAVLINK10mspoll(uint8_t count) {
 	}
 }
 
-void telemetryPoll10ms() {
+void check_mavlink() {
 	uint16_t tmr10ms = get_tmr10ms();
 	uint8_t count = tmr10ms & 0x0f; // 15*10ms
 	if (!count) {
@@ -627,7 +624,7 @@ void telemetryPoll10ms() {
 }
 
 // Start of Mavlink menus <<<<<<<<<<<<<<<<<<<<<<<<<<<
-void displayScreenIndex(uint8_t index, uint8_t count, uint8_t attr);
+void DisplayScreenIndex(uint8_t index, uint8_t count, uint8_t attr);
 
 enum mavlink_menu_ {
 	MENU_INFO = 0, //
@@ -659,7 +656,7 @@ inline mavlink_menu_ operator--(mavlink_menu_ &eDOW, int) {
 void mav_title(const pm_char * s, uint8_t index) {
 	lcd_putsAtt(0, 0, PSTR("MAVLINK"), INVERS);
 	lcd_putsAtt(10 * FW, 0, s, 0);
-	displayScreenIndex(index, MAX_MAVLINK_MENU, INVERS);
+	DisplayScreenIndex(index, MAX_MAVLINK_MENU, INVERS);
 	lcd_putcAtt(8 * FW, 0, (mav_heartbeat > 0) ? '*' : ' ', 0);
 }
 
@@ -748,7 +745,7 @@ void MAVLINK_ReqMode(uint8_t mode, uint8_t send) {
 	}
 }
 
-void menuTelemetryMavlinkInfos(void) {
+void menuProcMavlinkInfos(void) {
 
 	mav_title(PSTR("INFOS"), MAVLINK_menu);
 
@@ -791,7 +788,7 @@ void menuTelemetryMavlinkInfos(void) {
 
 }
 
-void menuTelemetryMavlinkGPS(void) {
+void menuProcMavlinkGPS(void) {
 	mav_title(PSTR("GPS"), MAVLINK_menu);
 
 	uint8_t x1, x2, xnum, y;
@@ -850,7 +847,7 @@ void lcd_outhex2(uint8_t x, uint8_t y, uint8_t val) {
 	}
 }
 
-void menuTelemetryMavlinkDump(uint8_t event) {
+void menuProcMavlinkDump(uint8_t event) {
 	uint8_t x = 0;
 	uint8_t y = FH;
 	uint16_t count = 0;
@@ -888,7 +885,7 @@ void menuTelemetryMavlinkDump(uint8_t event) {
 }
 #endif
 
-void menuTelemetryMavlink(uint8_t event) {
+void menuProcMavlink(uint8_t event) {
 
 	switch (event) // new event received, branch accordingly
 	{
@@ -906,20 +903,20 @@ void menuTelemetryMavlink(uint8_t event) {
 	case EVT_KEY_FIRST(KEY_EXIT):
 		//MAVLINK_Quit();
 		chainMenu(menuMainView);
-		return;
+		break;
 	}
 
 	switch (MAVLINK_menu) {
 	case MENU_INFO:
-	  menuTelemetryMavlinkInfos();
+	  menuProcMavlinkInfos();
 	  break;
 	case MENU_GPS:
-	  menuTelemetryMavlinkGPS();
+	  menuProcMavlinkGPS();
 	  break;
 #ifdef DUMP_RX_TX
 	case MENU_DUMP_TX:
 	case MENU_DUMP_RX:
-	  menuTelemetryMavlinkDump(event);
+	  menuProcMavlinkDump(event);
 	  break;
 #endif
 

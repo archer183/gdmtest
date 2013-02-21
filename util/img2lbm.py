@@ -6,71 +6,13 @@ from PyQt4 import Qt, QtGui
 image = QtGui.QImage(sys.argv[1])
 width, height = image.size().width(), image.size().height()
 
-f = open(sys.argv[2], "w")
+f = file(sys.argv[2], "w")
 
-if sys.argv[3] == "largimg":
+if sys.argv[3] == "img":
     rows = 1
     if len(sys.argv) > 4:
         rows = int(sys.argv[4])
-    f.write("255,%d, %d,\n" % (width-255, height/rows))
-    for y in range(0, height, 8):
-        for x in range(width):
-            value = 0
-            for z in range(8):
-                if y+z < height and image.pixel(x, y+z) == Qt.qRgb(0, 0, 0):
-                    value += 1 << z            
-            f.write("0x%02x," % value)
-        f.write("\n")
-elif sys.argv[3] == "img":
-    rows = 1
-    if len(sys.argv) > 4:
-        rows = int(sys.argv[4])
-    f.write("%d,%d,\n" % (width, height/rows))
-    for y in range(0, height, 8):
-        for x in range(width):
-            value = 0
-            for z in range(8):
-                if y+z < height and image.pixel(x, y+z) == Qt.qRgb(0, 0, 0):
-                    value += 1 << z            
-            f.write("0x%02x," % value)
-        f.write("\n")
-elif sys.argv[3] == "bmp":
-    rows = 1
-    colors = []
-    if len(sys.argv) > 4:
-        rows = int(sys.argv[4])
-    f.write("%d,%d,\n" % (width, height/rows))
-    for y in range(0, height, 8):
-        for x in range(width):
-            values = [255, 255, 255, 255]
-            for z in range(8):
-                if y+z < height:
-                    gray = Qt.qGray(image.pixel(x, y+z))
-                    for i in range(4):
-                        if (gray & (1<<(4+i))):
-                            values[i] -= 1 << z
-            for value in values:
-                f.write("0x%02x," % value)
-        f.write("\n")
-elif sys.argv[3] == "3x5":
-    for y in range(0, height, 5):
-        for x in range(width):
-            value = 0
-            for z in range(5):
-                if image.pixel(x, y+z) == Qt.qRgb(0, 0, 0):
-                    value += 1 << z
-            f.write("0x%02x," % value)
-        f.write("\n")        
-elif sys.argv[3] == "4x6":
-    for y in range(0, height, 7):
-        for x in range(width):
-            value = 0
-            for z in range(7):
-                if image.pixel(x, y+z) == Qt.qRgb(0, 0, 0):
-                    value += 1 << z
-            f.write("0x%02x," % value)
-        f.write("\n")        
-elif sys.argv[3] == "5x7":
+    f.write("%d,%d,0,\n" % (width, height/rows))
     for y in range(0, height, 8):
         for x in range(width):
             value = 0
@@ -79,17 +21,52 @@ elif sys.argv[3] == "5x7":
                     value += 1 << z
             f.write("0x%02x," % value)
         f.write("\n")
-elif sys.argv[3] == "8x10":
-    for y in range(0, height, 12):
+
+elif sys.argv[3] == "imgc":
+    rows = 1
+    if len(sys.argv) > 4:
+        rows = int(sys.argv[4])
+    f.write("%d,%d,1,\n" % (width, height/rows))
+    val=0
+    ocur=0
+    for y in range(0, height, 8):
         for x in range(width):
-            for l in range(0, 12, 8):
-                value = 0
-                for z in range(8):
-                    if l+z < 12 and image.pixel(x, y+l+z) == Qt.qRgb(0, 0, 0):
-                        value += 1 << z
-                f.write("0x%02x," % value)
+            value = 0
+            for z in range(8):
+                if image.pixel(x, y+z) == Qt.qRgb(0, 0, 0):
+                    value += 1 << z
+            if (val==value) & (ocur<255):
+		ocur+=1
+	    else:
+		if ocur>1:
+		    if ocur>2:
+			f.write("0xf0,0x%02x,0x%02x," % (val,ocur))
+		    else:
+			f.write("0x%02x,0x%02x," % (val,val))
+		else:
+		    if val!=0xf0:
+			f.write("0x%02x," % val)
+		    else:
+			f.write("0xf0,0xf0,0x01,")
+		val=value
+		ocur=1
         f.write("\n")
-elif sys.argv[3] == "10x14":
+    if ocur>0:
+	if ocur>1: f.write("0xf0,0x%02x,0x%02x," % (val,ocur))
+	else:
+	    if val!=0xf0: f.write("0x%02x," % val)
+	    else: f.write("0xf0,0xf0,0x01,")
+        
+elif sys.argv[3] == "char":
+    for y in range(0, height, 8):
+        for x in range(width):
+            value = 0
+            for z in range(8):
+                if image.pixel(x, y+z) == Qt.qRgb(0, 0, 0):
+                    value += 1 << z
+            f.write("0x%02x," % value)
+        f.write("\n")
+elif sys.argv[3] == "dblsize":
     for y in range(0, height, 16):
         for x in range(width):
             for l in range(0, 16, 8):
@@ -99,5 +76,3 @@ elif sys.argv[3] == "10x14":
                         value += 1 << z
                 f.write("0x%02x," % value)
         f.write("\n")
-else:
-    print "wrong argument", sys.argv[3]

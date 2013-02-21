@@ -1,14 +1,11 @@
 /*
  * Authors (alphabetical order)
- * - Andre Bernet <bernet.andre@gmail.com>
- * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
  * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
  * - Cameron Weeks <th9xer@gmail.com>
  * - Erez Raviv
- * - Gabriel Birkus
  * - Jean-Pierre Parisy
- * - Karl Szmutny
+ * - Karl Szmutny <shadow@privy.de>
  * - Michael Blandford
  * - Michal Hlavinka
  * - Pat Mackenzie
@@ -34,20 +31,4 @@
  *
  */
 
-#define PROMPT_SYSTEM_BASE      230
-#define PROMPT_CUSTOM_BASE      256
-
-extern void pushPrompt(uint16_t prompt);
-extern bool isPlaying();
-
-#define PLAY_FUNCTION(x, ...) void x(__VA_ARGS__)
-#define PUSH_PROMPT(p) pushPrompt((p))
-#define PUSH_CUSTOM_PROMPT(p, id) pushPrompt(PROMPT_CUSTOM_BASE+(p))
-#define PLAY_NUMBER(n, u, a) playNumber((n), (u), (a))
-#define PLAY_DURATION(d) playDuration((d))
-#define IS_PLAYING(id) isPlaying()
-#define PLAY_VALUE(v, id) playValue((v))
-
-#define VOLUME_LEVEL_MAX  7
-#define VOLUME_LEVEL_DEF  7
-#define setVolume(v)
+extern void somoPushPrompt(uint16_t prompt);

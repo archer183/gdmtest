@@ -81,24 +81,24 @@ bool keyState(EnumKeys enuk)
   uint8_t result = 0 ;
 
   if (enuk < (int)DIM(keys))
-    return keys[enuk].state();
+    return keys[enuk].state() ? 1 : 0;
 
   switch(enuk){
-    case SW_ELE:
+    case SW_ElevDR:
       result = PINE & (1<<INP_E_ElevDR);
       break;
 
 #if defined(JETI) || defined(FRSKY) || defined(ARDUPILOT) || defined(NMEA) || defined(MAVLINK)
-    case SW_AIL:
+    case SW_AileDR:
       result = PINC & (1<<INP_C_AileDR); //shad974: rerouted inputs to free up UART0
       break;
 #else
-    case SW_AIL:
+    case SW_AileDR:
       result = PINE & (1<<INP_E_AileDR);
       break;
 #endif
 
-    case SW_RUD:
+    case SW_RuddDR:
       result = PING & (1<<INP_G_RuddDR);
       break;
       //     INP_G_ID1 INP_E_ID2
@@ -117,24 +117,24 @@ bool keyState(EnumKeys enuk)
       result = !(PINE & (1<<INP_E_ID2));
       break;
 
-    case SW_GEA:
+    case SW_Gear:
       result = PINE & (1<<INP_E_Gear);
       break;
 
-    //case SW_THR  : return PINE & (1<<INP_E_ThrCt);
+    //case SW_ThrCt  : return PINE & (1<<INP_E_ThrCt);
 
 #if defined(JETI) || defined(FRSKY) || defined(ARDUPILOT) || defined(NMEA) || defined(MAVLINK)
-    case SW_THR:
+    case SW_ThrCt:
       result = PINC & (1<<INP_C_ThrCt); //shad974: rerouted inputs to free up UART0
       break;
 
 #else
-    case SW_THR:
+    case SW_ThrCt:
       result = PINE & (1<<INP_E_ThrCt);
       break;
 #endif
 
-    case SW_TRN:
+    case SW_Trainer:
       result = PINE & (1<<INP_E_Trainer);
       break;
 
@@ -181,21 +181,4 @@ void readKeysAndTrims()
     keys[enuk].input(in & pgm_read_byte(crossTrim+i),(EnumKeys)enuk);
     ++enuk;
   }
-}
-
-bool checkSlaveMode()
-{
-  // no power -> only phone jack = slave mode
-  static bool lastSlaveMode = false;
-  static uint8_t checkDelay = 0;
-  if (IS_AUDIO_BUSY()) {
-    checkDelay = 20;
-  }
-  else if (checkDelay) {
-    --checkDelay;
-  }
-  else {
-    lastSlaveMode = (PING & (1<<INP_G_RF_POW));
-  }
-  return lastSlaveMode;
 }
