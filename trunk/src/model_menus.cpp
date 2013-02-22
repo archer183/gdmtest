@@ -2879,7 +2879,7 @@ SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
 			}
 			//putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		}
-#endif		
+//#endif		
 #else
       putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 #endif
