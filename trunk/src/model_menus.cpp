@@ -2877,7 +2877,7 @@ SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); 
 			}
 			else
 			{
-				putsStrIdx(0, y,STR_GV,1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
+				putsStrIdx(0, y,STR_GDM,1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
 			}
 			//putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		}
