@@ -156,6 +156,7 @@ const pm_char STR_SLOWUP[] PROGMEM = TR_SLOWUP;
 const pm_char STR_MIXER[] PROGMEM = TR_MIXER;
 const pm_char STR_CV[] PROGMEM = TR_CV;
 const pm_char STR_GV[] PROGMEM = TR_GV;
+const pm_char STR_GDM[] PROGMEM = TR_testgdm;
 const pm_char STR_ACHANNEL[] PROGMEM = TR_ACHANNEL;
 const pm_char STR_RANGE[] PROGMEM = TR_RANGE;
 const pm_char STR_BAR[] PROGMEM = TR_BAR;

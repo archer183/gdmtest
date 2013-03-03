@@ -33,7 +33,7 @@
  * GNU General Public License for more details.
  *
  */
-
+#define TR_testgdm					"AB"
 // NON ZERO TERMINATED STRINGS
 #define LEN_OFFON              "\003"
 #define TR_OFFON               "OFF""ON\0"
