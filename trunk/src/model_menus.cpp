@@ -2819,13 +2819,13 @@ void menuModelLimits(uint8_t event)
 void menuModelCurvesAll(uint8_t event)
 {
 #if defined(TRIG)
-const char STR_COMBAT[] = "COMBCV";
-const char STR_COMB1[] = "AZ";
-const char STR_COMB2[] = "RN";
-const char STR_COMB3[] = "RM";
-const char STR_COMB4[] = "TS";
+const pm_char STR_COMBAT[] = "COMBCV";
+const pm_char STR_COMB1[] = "AZ";
+const pm_char STR_COMB2[] = "RN";
+const pm_char STR_COMB3[] = "RM";
+const pm_char STR_COMB4[] = "TS";
 
-const char* CombatMenuPointer[] = {STR_COMB4,STR_COMB3,STR_COMB2,STR_COMB1};
+const pm_char* CombatMenuPointer[] = {STR_COMB4,STR_COMB3,STR_COMB2,STR_COMB1};
 uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
 
 SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
@@ -2871,11 +2871,11 @@ SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); 
 		{
 			//must make sure these positions follow with those in combatmath.h!
 			if (k<MAX_CURVES + MAX_GVARS - CombatGvarUsed +2 ) {
-				putsStrIdx(0, y, "T1", k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed)+2);
+				putsStrIdx(0, y, CombatMenuPointer[0], k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed)+2);
 			}
 			else
 			{
-				putsStrIdx(0, y,"tt" ,1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
+				putsStrIdx(0, y,CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1],1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
 			}
 			//putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		}
