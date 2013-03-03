@@ -2819,11 +2819,11 @@ void menuModelLimits(uint8_t event)
 void menuModelCurvesAll(uint8_t event)
 {
 #if defined(TRIG)
-const char STR_COMBAT[] = "COMBATCURVES";
+const char STR_COMBAT[] = "COMBCV";
 const char STR_COMB1[] = "AZ";
 const char STR_COMB2[] = "RN";
-const char STR_COMB3[] = "RMX";
-const char STR_COMB4[] = "TSP";
+const char STR_COMB3[] = "RM";
+const char STR_COMB4[] = "TS";
 
 const char* CombatMenuPointer[] = {STR_COMB4,STR_COMB3,STR_COMB2,STR_COMB1};
 uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
