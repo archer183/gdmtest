@@ -364,7 +364,7 @@ uint16_t isqrt32b(uint32_t n)  // integer square root courtesy of existing code.
 int16_t Comb_input_fcn(int16_t x){
 	x = abs(x)/10;
 	if (x < 16){
-		x = ex_chans[x];
+		x = ex_chans[x];  //may have to switch to chans if open9x removes ex_chans
 	}
 	else if (x > 19 && x < 27){
 		x = x-20;

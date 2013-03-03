@@ -2826,7 +2826,7 @@ const char STR_COMB3[] = "RMX";
 const char STR_COMB4[] = "TSP";
 
 const char* CombatMenuPointer[] = {STR_COMB4,STR_COMB3,STR_COMB2,STR_COMB1};
-uint8_t CombatGvarUsed = 5;
+uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
 
 SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
 
