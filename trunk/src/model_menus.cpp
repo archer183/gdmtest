@@ -2819,6 +2819,8 @@ void menuModelLimits(uint8_t event)
 void menuModelCurvesAll(uint8_t event)
 {
 #if defined(TRIG)
+
+	//MUST USE PROGMEM TO GET TEXT RIGHT FOR SOME REASON!
 const pm_char STR_COMBAT[] = "COMBCV";
 const pm_char STR_COMB1[] = "AZ";
 const pm_char STR_COMB2[] = "RN";
@@ -2871,11 +2873,11 @@ SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); 
 		{
 			//must make sure these positions follow with those in combatmath.h!
 			if (k<MAX_CURVES + MAX_GVARS - CombatGvarUsed +2 ) {
-				putsStrIdx(0, y, CombatMenuPointer[0], k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed)+2);
+				putsStrIdx(0, y, STR_GV, k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed)+2);//CombatMenuPointer[0]
 			}
 			else
 			{
-				putsStrIdx(0, y,CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1],1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
+				putsStrIdx(0, y,STR_GV,1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
 			}
 			//putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		}
