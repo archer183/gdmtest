@@ -164,7 +164,7 @@ PACK(typedef struct t_EEGeneral {
   TrainerData trainer;
   uint8_t   view;      //index of subview in main scrren
   int8_t    spare1:3;
-  int8_t    beeperMode:0;  //TRIG  changed to kill beep?
+  int8_t    beeperMode:2;  
   uint8_t   flashBeep:1;
   uint8_t   disableMemoryWarning:1;
   uint8_t   disableAlarmWarning:1;
@@ -176,7 +176,7 @@ PACK(typedef struct t_EEGeneral {
   uint8_t   minuteBeep:1;
   uint8_t   preBeep:1;
   SPLASH_MODE; /* 3bits */
-  int8_t    hapticMode:2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
+  int8_t    hapticMode:-2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
   uint8_t   blOffBright:4;
   uint8_t   blOnBright:4;
   uint8_t   lightAutoOff;
