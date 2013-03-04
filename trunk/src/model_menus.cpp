@@ -2830,7 +2830,7 @@ void menuModelCurvesAll(uint8_t event)
 const pm_char* CombatMenuPointer[] = {STR_TURRETSPACE,STR_RANGEMAX,STR_RANGEINPUT,STR_AZINPUT};
 uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
 
-SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
+SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
 
 #elif defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
