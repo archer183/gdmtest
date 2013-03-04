@@ -387,7 +387,7 @@ extern const pm_char STR_RANGEINPUT[];
 extern const pm_char STR_AZINPUT[];
 extern const pm_char STR_RANGEMAX[];
 extern const pm_char STR_TURRETSPACE[];
-
+extern const pm_char STR_COMBAT[];
 
 #endif
 

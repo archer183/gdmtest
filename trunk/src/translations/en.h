@@ -133,6 +133,7 @@
 #define TR_AZINPUT				"AZ"
 #define	TR_RANGEMAX				"RM"
 #define	TR_TURRETSPACE			"TS"
+#define TR_COMBAT				"COMBAT CURVES"
 
 //TRIG FUNCTIONS ADDED ABOVE
 #else
