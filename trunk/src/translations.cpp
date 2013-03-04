@@ -99,6 +99,10 @@ const pm_char STR_OPEN9X[] PROGMEM =
 #ifdef TRIG
 const pm_char STR_GDM[] PROGMEM = TR_testgdm;  //TRIG
 const pm_char STR_RANGEINPUT[] PROGMEM = TR_RANGEINPUT;
+const pm_char STR_AZINPUT[] PROGMEM = TR_AZINPUT;
+const pm_char STR_RANGEMAX[] PROGMEM = TR_RANGEMAX;
+const pm_char STR_TURRETSPACE[] PROGMEM = TR_TURRETSPACE;
+
 
 #endif
 // The 0-terminated-strings

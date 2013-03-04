@@ -130,6 +130,10 @@
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""RNG""BTA""BTV"
 #define TR_testgdm				"AB"
 #define TR_RANGEINPUT			"RN"
+#define TR_AZINPUT				"AZ"
+#define	TR_RANGEMAX				"RM"
+#define	TR_TURRETSPACE			"TS"
+
 //TRIG FUNCTIONS ADDED ABOVE
 #else
 #define TR_VCURVEFUNC          "---""x>0""x<0""|x|""f>0""f<0""|f|"

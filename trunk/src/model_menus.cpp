@@ -2821,13 +2821,13 @@ void menuModelCurvesAll(uint8_t event)
 #if defined(TRIG)
 
 	//MUST USE PROGMEM TO GET TEXT RIGHT FOR SOME REASON!
-const pm_char STR_COMBAT[] = "COMBCV";
-const pm_char STR_COMB1[] = "AZn";
-const pm_char STR_COMB2[] = "RNn";
-const pm_char STR_COMB3[] = "RMn";
-const pm_char STR_COMB4[] = "TSn";
+//const pm_char STR_COMBAT[] = "COMBCV";
+//const pm_char STR_COMB1[] = "AZn";
+//const pm_char STR_COMB2[] = "RNn";
+//const pm_char STR_COMB3[] = "RMn";
+//const pm_char STR_COMB4[] = "TSn";
 
-const pm_char* CombatMenuPointer[] = {STR_RANGEINPUT,STR_COMB3,STR_COMB2,STR_COMB1};
+const pm_char* CombatMenuPointer[] = {STR_TURRETSPACE,STR_RANGEMAX,STR_RANGEINPUT,STR_AZINPUT};
 uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
 
 SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
