@@ -164,7 +164,7 @@ PACK(typedef struct t_EEGeneral {
   TrainerData trainer;
   uint8_t   view;      //index of subview in main scrren
   int8_t    spare1:3;
-  int8_t    beeperMode:2;
+  int8_t    beeperMode:-2;  //TRIG  changed to kill beep?
   uint8_t   flashBeep:1;
   uint8_t   disableMemoryWarning:1;
   uint8_t   disableAlarmWarning:1;
