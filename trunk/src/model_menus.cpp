@@ -2822,10 +2822,10 @@ void menuModelCurvesAll(uint8_t event)
 
 	//MUST USE PROGMEM TO GET TEXT RIGHT FOR SOME REASON!
 const pm_char STR_COMBAT[] = "COMBCV";
-const pm_char STR_COMB1[] = "AZ";
-const pm_char STR_COMB2[] = "RN";
-const pm_char STR_COMB3[] = "RM";
-const pm_char STR_COMB4[] = "TS";
+const pm_char STR_COMB1[] = "AZn";
+const pm_char STR_COMB2[] = "RNn";
+const pm_char STR_COMB3[] = "RMn";
+const pm_char STR_COMB4[] = "TSn";
 
 const pm_char* CombatMenuPointer[] = {STR_RANGEINPUT,STR_COMB3,STR_COMB2,STR_COMB1};
 uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
