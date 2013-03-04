@@ -2827,7 +2827,7 @@ const pm_char STR_COMB2[] = "RN";
 const pm_char STR_COMB3[] = "RM";
 const pm_char STR_COMB4[] = "TS";
 
-const pm_char* CombatMenuPointer[] = {STR_COMB4,STR_COMB3,STR_COMB2,STR_COMB1};
+const pm_char* CombatMenuPointer[] = {STR_RANGEINPUT,STR_COMB3,STR_COMB2,STR_COMB1};
 uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
 
 SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
@@ -2877,7 +2877,7 @@ SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); 
 			}
 			else
 			{
-				putsStrIdx(0, y,STR_RANGEINPUT,1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
+				putsStrIdx(0, y,CombatMenuPointer[0],1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
 			}
 			//putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
 		}
