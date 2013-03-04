@@ -274,7 +274,7 @@ extern const pm_char STR_SLOWUP[];
 extern const pm_char STR_MIXER[];
 extern const pm_char STR_CV[];
 extern const pm_char STR_GV[];
-extern const pm_char STR_GDM[];
+
 extern const pm_char STR_ACHANNEL[];
 extern const pm_char STR_RANGE[];
 extern const pm_char STR_BAR[];
@@ -380,6 +380,11 @@ extern const pm_char STR_MENUDEBUG[];
 extern const pm_char STR_RXNUM[];
 extern const pm_char STR_SYNCMENU[];
 extern const pm_char STR_INVERT_THR[];
+
+#if defined(TRIG)
+extern const pm_char STR_GDM[];
+extern const pm_char STR_RANGEINPUT[];
+#endif
 
 #if defined(FRSKY)
 extern const pm_char STR_LIMIT[];

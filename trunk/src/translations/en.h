@@ -33,7 +33,11 @@
  * GNU General Public License for more details.
  *
  */
-#define TR_testgdm					"AB"
+
+// below are changed!
+
+
+
 // NON ZERO TERMINATED STRINGS
 #define LEN_OFFON              "\003"
 #define TR_OFFON               "OFF""ON\0"
@@ -124,7 +128,8 @@
 
 #if defined(TRIG)
 #define TR_VCURVEFUNC    "---""x>0""x<0""|x|""f>0""f<0""|f|""COS""SIN""ACS""ASN""RNG""BTA""BTV"
-
+#define TR_testgdm				"AB"
+#define TR_RANGEINPUT			"RN"
 //TRIG FUNCTIONS ADDED ABOVE
 #else
 #define TR_VCURVEFUNC          "---""x>0""x<0""|x|""f>0""f<0""|f|"
