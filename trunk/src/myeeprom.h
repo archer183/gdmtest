@@ -176,7 +176,7 @@ PACK(typedef struct t_EEGeneral {
   uint8_t   minuteBeep:1;
   uint8_t   preBeep:1;
   SPLASH_MODE; /* 3bits */
-  int8_t    hapticMode:-2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
+  int8_t    hapticMode:2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
   uint8_t   blOffBright:4;
   uint8_t   blOnBright:4;
   uint8_t   lightAutoOff;
