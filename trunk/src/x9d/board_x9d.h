@@ -79,12 +79,14 @@ extern uint16_t sessionTimer;
 #define SLAVE_MODE() (0/*pwrCheck() == e_power_trainer*/)
 
 void delaysInit();
-void debugInit();
 
 #define DEBUG_UART_BAUDRATE 115200
+#define SPORT_BAUDRATE 9600
 
-void uartInit(void);
-void uartSendChar(uint8_t c);
+void uartInit(uint32_t baudrate);
+void uartPutc(const char c);
+
+void sportInit(void);
 
 void delaysInit(void);
 void delay_01us(uint16_t nb);
@@ -137,6 +139,7 @@ extern volatile uint16_t Analog_values[];
 void pwrInit();
 uint32_t pwrCheck();
 void pwrOff();
+#define UNEXPECTED_SHUTDOWN() (g_eeGeneral.unexpectedShutdown)
 
 // Backlight driver
 #define setBacklight(xx)

@@ -421,10 +421,12 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags flags, uint8_t
     div_t qr = div((uint16_t)val, 10);
     char c = qr.rem + '0';
     LcdFlags f = flags;
+#if !defined(PCBX9D)
     if (dblsize) {
       if (c=='1' && i==len && xn>x+10) { x+=2; f|=CONDENSED; }
       if ((uint16_t)val >= 1000) { x+=FWNUM; f&=~DBLSIZE; }
     }
+#endif
     lcd_putcAtt(x, y, c, f);
     if (mode==i) {
       flags &= ~PREC2; // TODO not needed but removes 20bytes, could be improved for sure, check asm
@@ -449,7 +451,9 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags flags, uint8_t
         x--;
       }
     }
+#if !defined(PCBX9D)
     if (dblsize && (uint16_t)val >= 1000 && (uint16_t)val < 10000) x-=2;
+#endif
     val = qr.quot;
     x-=fw;
   }
@@ -667,6 +671,7 @@ void lcd_invert_line(int8_t y)
   }
 }
 
+#if !defined(PCBX9D) // TODO test inversion
 void lcdDrawTelemetryTopBar()
 {
   putsModelName(0, 0, g_model.name, g_eeGeneral.currModel, 0);
@@ -674,18 +679,44 @@ void lcdDrawTelemetryTopBar()
   putsVBat(14*FW,0,att);
   if (g_model.timers[0].mode) {
     att = (s_timerState[0]==TMR_BEEPING ? BLINK : 0);
-    putsTime(17*FW, 0, s_timerVal[0], att, att);
+    putsTime(17*FW+5*FWNUM+1, 0, s_timerVal[0], att, att);
   }
   lcd_invert_line(0);
 }
+#else
+void lcdDrawTelemetryTopBar()
+{
+  putsModelName(0, 0, g_model.name, g_eeGeneral.currModel, 0);
+  uint8_t att = (g_vbat100mV < g_eeGeneral.vBatWarn ? BLINK : 0);
+  putsVBat(16*FW+2,0,att);
+  if (g_model.timers[0].mode) {
+    att = (s_timerState[0]==TMR_BEEPING ? BLINK : 0);
+    putsTime(22*FW+5*FWNUM+1, 0, s_timerVal[0], att, att);
+    lcd_putsiAtt(18*FW+2, 1, STR_VTELEMCHNS, TELEM_TM1, SMLSIZE);
+  }
+  if (g_model.timers[1].mode) {
+    att = (s_timerState[1]==TMR_BEEPING ? BLINK : 0);
+    putsTime(31*FW+5*FWNUM+1, 0, s_timerVal[1], att, att);
+    lcd_putsiAtt(27*FW+2, 1, STR_VTELEMCHNS, TELEM_TM2, SMLSIZE);
+  }
+  lcd_invert_line(0);
+}
+#endif
 
 void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2)
 {
   div_t qr;
 
-  if (att & LEFT) x+=3*FW;
+  if (!(att & LEFT)) {
+    if (att & DBLSIZE)
+      x -= 5*(2*FWNUM)-4;
+    else if (att & MIDSIZE)
+      x -= 5*8-4;
+    else
+      x -= 5*FWNUM+1;
+  }
 
-  if (tme<0) {
+  if (tme < 0) {
     lcd_putcAtt(x - ((att & DBLSIZE) ? FW+3 : ((att & MIDSIZE) ? FW+1 : FWNUM)), y, '-', att);
     tme = -tme;
   }
@@ -711,11 +742,11 @@ void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2
 #endif
 
   uint8_t x2, x3;
-  if (att&DBLSIZE) {
+  if (att & DBLSIZE) {
     x2 = x+2*(FW+FWNUM)-3;
     x3 = x+2*(FW+FWNUM)+FW-2;
   }
-  else if (att&MIDSIZE) {
+  else if (att & MIDSIZE) {
     x2 = x+2*8-6;
     x3 = x+2*8+1;
   }
@@ -725,7 +756,7 @@ void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2
   }
 
 #if defined(CPUARM)
-  if (att&MIDSIZE) {
+  if (att & MIDSIZE) {
     LCD_2DOTS(x2, y, att);
   }
   else
@@ -750,7 +781,10 @@ void putsVBat(xcoord_t x, uint8_t y, LcdFlags att)
 void putsStrIdx(xcoord_t x, uint8_t y, const pm_char *str, uint8_t idx, LcdFlags att)
 {
   lcd_putsAtt(x, y, str, att);
-  lcd_outdezNAtt(lcdLastPos, y, idx, att|LEFT, 2);
+  if (att & SMLSIZE)
+    lcd_outdezNAtt(lcdLastPos+1, y, idx, att|LEFT, 2);
+  else
+    lcd_outdezNAtt(lcdLastPos, y, idx, att|LEFT, 2);
   lcd_putsAtt(x, y, str, att);
 }
 
@@ -771,8 +805,12 @@ void putsMixerSource(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags att)
     putsStrIdx(x, y, STR_PPM, idx-MIXSRC_PPM1+1, att);
   else if (idx <= MIXSRC_LAST_CH)
     putsStrIdx(x, y, STR_CH, idx-MIXSRC_CH1+1, att);
+#if defined(GVARS)
+  else if (idx <= MIXSRC_LAST_GVAR)
+    putsStrIdx(x, y, STR_GV, idx-MIXSRC_GVAR1+1, att);
+#endif
   else
-    lcd_putsiAtt(x, y, STR_VTELEMCHNS, idx-MIXSRC_LAST_CH, att);
+    lcd_putsiAtt(x, y, STR_VTELEMCHNS, idx-MIXSRC_FIRST_TELEM+1, att);
 }
 
 void putsChnLetter(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags attr)

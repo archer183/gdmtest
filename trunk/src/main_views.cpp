@@ -52,7 +52,10 @@
 #define BITMAP_Y      (LCD_H/2)
 #define PHASE_X       BITMAP_X
 #define PHASE_Y       (3*FH)
+#define PHASE_FLAGS   (0)
 #define TIMERS_X      144
+#define TIMER1_Y      0
+#define TIMER2_Y      VBATT_Y
 #define TIMERS_R      192
 #define REBOOT_X      (LCD_W-FW)
 #define VSWITCH_X(i)  (((i>=NUM_CSW*3/4) ? BITMAP_X+28 : ((i>=NUM_CSW/2) ? BITMAP_X+25 : ((i>=NUM_CSW/4) ? 21 : 18))) + 3*i)
@@ -72,6 +75,7 @@
 #define MODELNAME_X   (2*FW-2)
 #define PHASE_X       (6*FW)
 #define PHASE_Y       (2*FH)
+#define PHASE_FLAGS   0
 #define VBATT_X       (6*FW)
 #define VBATT_Y       (2*FH)
 #define VBATTUNIT_X   (VBATT_X-1)
@@ -89,6 +93,12 @@
 #define TRIM_LEN 27
 #define MARKER_WIDTH  5
 #define BOX_LIMIT     (BOX_WIDTH-MARKER_WIDTH)
+
+#if defined(PCBX9D)
+  const pm_uchar x9d_logo[] PROGMEM = { 
+  #include "x9d_logo.lbm"
+  };
+#endif
 
 void drawPotsBars()
 {
@@ -184,26 +194,30 @@ void displayTimers()
 {
   // Main timer
   if (g_model.timers[0].mode) {
-    putsTime(TIMERS_X, 0, s_timerVal[0], MIDSIZE, MIDSIZE);
-    putsTmrMode(TIMERS_X-16, 5, g_model.timers[0].mode, SWCONDENSED|SMLSIZE);
-    if (g_model.timers[0].remanent) lcd_putcAtt(TIMERS_R, 1, 'R', SMLSIZE);
-    if (s_timerState[0]==TMR_BEEPING) {
-      lcd_hline(TIMERS_X-6, 2, 4);
-      if (BLINK_ON_PHASE)
-        lcd_filled_rect(TIMERS_X-17, 0, 69, 12);
-    }
+    putsTime(TIMERS_X, TIMER1_Y, s_timerVal[0], MIDSIZE|LEFT, MIDSIZE|LEFT);
+    putsTmrMode(TIMERS_X-16, TIMER1_Y+5, g_model.timers[0].mode, SWCONDENSED|SMLSIZE);
+    if (g_model.timers[0].persistent) lcd_putcAtt(TIMERS_R, TIMER1_Y+1, 'P', SMLSIZE);
+    if (s_timerVal[0] < 0) lcd_hline(TIMERS_X-6, TIMER1_Y+2, 4);
   }
 
   // Second timer
   if (g_model.timers[1].mode) {
-    putsTime(TIMERS_X, FH+3, s_timerVal[1], MIDSIZE, MIDSIZE);
-    putsTmrMode(TIMERS_X-16, FH+8, g_model.timers[1].mode, SWCONDENSED|SMLSIZE);
-    if (g_model.timers[1].remanent) lcd_putcAtt(TIMERS_R, FH+4, 'R', SMLSIZE);
-    if (s_timerState[1]==TMR_BEEPING) {
-      lcd_hline(TIMERS_X-6, FH+5, 4);
-      if (BLINK_ON_PHASE)
-        lcd_filled_rect(TIMERS_X-17, FH+3, 69, 12);
-    }
+    putsTime(TIMERS_X, TIMER2_Y, s_timerVal[1], MIDSIZE|LEFT, MIDSIZE|LEFT);
+    putsTmrMode(TIMERS_X-16, TIMER2_Y+5, g_model.timers[1].mode, SWCONDENSED|SMLSIZE);
+    if (g_model.timers[1].persistent) lcd_putcAtt(TIMERS_R, TIMER2_Y+1, 'P', SMLSIZE);
+    if (s_timerVal[1] < 0) lcd_hline(TIMERS_X-6, TIMER2_Y+2, 4);
+  }
+
+  // Main timer beeping
+  if (s_timerState[0]==TMR_BEEPING) {
+    if (BLINK_ON_PHASE)
+      lcd_filled_rect(TIMERS_X-17, TIMER1_Y, 70, 12);
+  }
+
+  // Second timer beeping
+  if (s_timerState[1]==TMR_BEEPING) {
+    if (BLINK_ON_PHASE)
+      lcd_filled_rect(TIMERS_X-17, TIMER2_Y, 70, 12);
   }
 }
 #else
@@ -212,15 +226,36 @@ void displayTimers()
   // Main timer
   if (g_model.timers[0].mode) {
     uint8_t att = DBLSIZE | (s_timerState[0]==TMR_BEEPING ? BLINK|INVERS : 0);
-    putsTime(12*FW+2, FH*2, s_timerVal[0], att, att);
+    putsTime(12*FW+2+10*FWNUM-4, FH*2, s_timerVal[0], att, att);
     putsTmrMode(s_timerVal[0] >= 0 ? 9*FW-FW/2+3 : 9*FW-FW/2-4, FH*3, g_model.timers[0].mode, SWCONDENSED);
   }
 }
 #endif
 
+void displayBattVoltage()
+{
+#if defined(BATTGRAPH)
+  putsVBat(VBATT_X-8, VBATT_Y+1, 0);
+  lcd_filled_rect(VBATT_X-25, VBATT_Y+9, 22, 5);
+  lcd_vline(VBATT_X-3, VBATT_Y+10, 3);
+  uint8_t count = limit<uint8_t>(2, 20 * (g_vbat100mV - g_eeGeneral.vBatMin - 90) / (30 + g_eeGeneral.vBatMax - g_eeGeneral.vBatMin), 20);
+  for (uint8_t i=0; i<count; i+=2)
+    lcd_vline(VBATT_X-24+i, VBATT_Y+10, 3);
+  if (g_vbat100mV > g_eeGeneral.vBatWarn || BLINK_ON_PHASE)
+    lcd_filled_rect(VBATT_X-26, VBATT_Y, 25, 15);
+#else
+  LcdFlags att = (g_vbat100mV <= g_eeGeneral.vBatWarn ? BLINK|INVERS : 0) | BIGSIZE;
+  putsVBat(VBATT_X-1, VBATT_Y, att|NO_UNIT);
+#if LCD_W >= 212
+  lcd_putcAtt(VBATTUNIT_X, VBATTUNIT_Y, 'v', MIDSIZE);
+#else
+  lcd_putc(VBATT_X, VBATTUNIT_Y, 'V');
+#endif
+#endif
+}
 
 #if defined(CPUARM)
-void displayVoltage()
+void displayVoltageOrAlarm()
 {
   if (g_vbat100mV > g_eeGeneral.vBatWarn && g_eeGeneral.temperatureWarn && getTemperature() >= g_eeGeneral.temperatureWarn) {
     putsTelemetryValue(6*FW-1, 3*FH, getTemperature(), UNIT_DEGREES, BLINK|INVERS|DBLSIZE);
@@ -231,22 +266,11 @@ void displayVoltage()
   }
 #endif
   else {
-    LcdFlags att = (g_vbat100mV <= g_eeGeneral.vBatWarn ? BLINK|INVERS : 0) | BIGSIZE;
-    putsVBat(VBATT_X-1, VBATT_Y, att|NO_UNIT);
-#if LCD_W >= 212
-    lcd_putcAtt(VBATTUNIT_X, VBATTUNIT_Y, 'v', MIDSIZE);
-#else
-    lcd_putc(VBATT_X, VBATTUNIT_Y, 'V');
-#endif
+    displayBattVoltage();
   }
 }
 #else
-void displayVoltage()
-{
-  LcdFlags att = (g_vbat100mV <= g_eeGeneral.vBatWarn ? BLINK|INVERS : 0) | BIGSIZE;
-  putsVBat(VBATT_X-1, VBATT_Y, att|NO_UNIT);
-  lcd_putc(VBATT_X, VBATTUNIT_Y, 'V');
-}
+  #define displayVoltageOrAlarm() displayBattVoltage()
 #endif
 
 #if defined(PCBX9D) || defined(PCBACT)
@@ -404,9 +428,6 @@ void menuMainView(uint8_t event)
         resetTimer(1);
       }
 #endif
-      else {
-        resetTimer(0);
-      }
       AUDIO_KEYPAD_UP();
       break;
 
@@ -419,13 +440,13 @@ void menuMainView(uint8_t event)
   {
     // Flight Phase Name
     uint8_t phase = s_perout_flight_phase;
-    lcd_putsnAtt(PHASE_X, PHASE_Y, g_model.phaseData[phase].name, sizeof(g_model.phaseData[phase].name), ZCHAR);
+    lcd_putsnAtt(PHASE_X, PHASE_Y, g_model.phaseData[phase].name, sizeof(g_model.phaseData[phase].name), ZCHAR|PHASE_FLAGS);
 
     // Model Name
     putsModelName(MODELNAME_X, 0*FH, g_model.name, g_eeGeneral.currModel, BIGSIZE);
 
     // Main Voltage (or alarm if any)
-    displayVoltage();
+    displayVoltageOrAlarm();
 
     // Timers
     displayTimers();
@@ -439,8 +460,10 @@ void menuMainView(uint8_t event)
   displaySliders();
 
 #if defined(PCBX9D)
-  // Model bitmap
-  lcd_bmp(BITMAP_X, BITMAP_Y, modelBitmap);
+  if (modelBitmapLoaded == NULL)
+    lcd_bmp(BITMAP_X, BITMAP_Y, modelBitmap);
+  else
+    lcd_bmp(BITMAP_X, BITMAP_Y, x9d_logo);
 #endif
 
   // Switches
@@ -597,7 +620,7 @@ void menuMainView(uint8_t event)
     }
   }
   else { // timer2
-    putsTime(33+FW+2, FH*5, s_timerVal[1], DBLSIZE, DBLSIZE);
+    putsTime(33+FW+2+10*FWNUM-4, FH*5, s_timerVal[1], DBLSIZE, DBLSIZE);
     putsTmrMode(s_timerVal[1] >= 0 ? 20-FW/2+5 : 20-FW/2-2, FH*6, g_model.timers[1].mode, SWCONDENSED);
     // lcd_outdezNAtt(33+11*FW, FH*6, s_timerVal_10ms[1], LEADING0, 2); // 1/100s
   }

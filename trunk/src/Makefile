@@ -97,6 +97,14 @@ AUDIO = NO
 # Values = YES, NO 
 VOICE = NO
 
+# corrects different rounding for negative values. So instead of -99.9 you will see again -100.0
+# Values = YES, NO
+CORRECT_NEGATIVE_VALUES = YES
+
+# adds additional code to prevent arithmetic overflows. MAX or MIN values stays. Not yet guaranteed!! Just improved
+# Values = YES, NO
+ARITHMETIC_OVERFLOW_CHECK = NO
+
 # HAPTIC Mods
 # Values = YES, NO 
 HAPTIC = NO
@@ -113,9 +121,10 @@ PWM_BACKLIGHT = NO
 # Values = YES, NO, FIXED
 SPLASH = NO
 
-# GRAPHICS (sliders / checkboxes / bold)
+# GRAPHICS (sliders / checkboxes / bold / batt graph)
 GRAPHICS = YES
 BOLD = YES
+BATTGRAPH = NO
 
 # THR trace (in STATS screen)
 THR_TRACE = YES
@@ -206,11 +215,9 @@ XCURVES = YES
 # Global Vars
 # Values = YES, NO
 GVARS = YES
-
 #trig and combat math.
 # Values = Yes , No
 TRIG = YES
-
 # Enable another 3 positions switch to replace a pot
 # Values = NO, POT1, POT2, POT3,
 3POS = NO
@@ -275,11 +282,17 @@ endif
 
 ifeq ($(PCB), X9D)
   ARCH = ARM
+  ifeq ($(PCBREV), REV3)
+    CPPDEFS += -DREV3
+  else
+    CPPDEFS += -DREV4
+  endif
   LDSCRIPT = x9d/stm32_flash.ld
   TRGT = arm-none-eabi-
   MCU  = cortex-m3
   CPPDEFS += -DHSE_VALUE=12000000
   SDCARD = YES
+  EXT = FRSKY
 endif
 
 CC      = $(TRGT)gcc
@@ -393,6 +406,12 @@ ifeq ($(BOLD), YES)
   CPPDEFS += -DBOLD_FONT
 endif
 
+ifneq ($(PCB), X9D)
+  ifeq ($(BATTGRAPH), YES)
+    CPPDEFS += -DBATTGRAPH
+  endif
+endif
+  
 ifeq ($(THR_TRACE), YES)
   CPPDEFS += -DTHRTRACE
 endif
@@ -412,6 +431,14 @@ endif
 ifeq ($(GVARS), YES)
   CPPDEFS += -DGVARS
   EEPROM_VARIANT += ${GVARS_VARIANT}
+endif
+
+ifeq ($(CORRECT_NEGATIVE_VALUES), YES)
+  CPPDEFS += -DCORRECT_NEGATIVE_SHIFTS
+endif
+
+ifeq ($(ARITHMETIC_OVERFLOW_CHECK), YES)
+  CPPDEFS += -DPREVENT_ARITHMETIC_OVERFLOW
 endif
 
 # If STD-Support is enabled
@@ -493,8 +520,8 @@ ifeq ($(PCB), X9D)
   EEPROMSRC = eeprom_avr.cpp # TODO later eeprom_conversions.cpp
   PULSESSRC = pulses_arm.cpp
   CPPSRC += audio_arm.cpp
-  CPPSRC += x9d/pwr_driver.cpp x9d/pulses_driver.cpp x9d/keys_driver.cpp x9d/adc_driver.cpp x9d/trainer_driver.cpp x9d/audio_driver.cpp x9d/delays.cpp
-  CPPSRC += bmp.cpp monitors_views.cpp
+  CPPSRC += x9d/pwr_driver.cpp x9d/pulses_driver.cpp x9d/keys_driver.cpp x9d/adc_driver.cpp x9d/trainer_driver.cpp x9d/audio_driver.cpp x9d/delays.cpp x9d/uart_driver.cpp x9d/sport_driver.cpp
+  CPPSRC += bmp.cpp monitors_views.cpp 
   SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Source/Templates/system_stm32f2xx.c
   SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_gpio.c
   SRC += x9d/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_rcc.c
@@ -517,7 +544,6 @@ ifeq ($(PCB), X9D)
 
   ifeq ($(DEBUG), YES)
     CPPSRC += debug.cpp
-  	CPPSRC += x9d/debug_driver.cpp
   	SRC += sky9x/syscalls.c
   endif
 endif
@@ -839,7 +865,7 @@ eep: $(TARGET).eep
 lss: $(TARGET).lss
 sym: $(TARGET).sym
 
-lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm asterisk.lbm
+lbm: font.lbm font_tiny.lbm font_small.lbm font_midsize.lbm font_dblsize.lbm sticks.lbm splash_9x.lbm splash_X9D.lbm x9d_logo.lbm icons.lbm asterisk.lbm
 
 # Build stamp-file
 stamp_header:
@@ -925,7 +951,17 @@ splash_9x.lbm: splash_9x.xbm
 	
 splash_X9D.lbm: splash_X9D.bmp
 	@echo
-	@echo "Convert X9D splash from xbm to lbm:"
+	@echo "Convert X9D splash from bmp to lbm:"
+	$(IMG2LBM) $< $@ bmp
+	
+x9d_logo.lbm: x9d_logo.bmp
+	@echo
+	@echo "Convert X9D logo from bmp to lbm:"
+	$(IMG2LBM) $< $@ bmp
+	
+icons.lbm: icons.png	
+	@echo
+	@echo "Convert icons from png to lbm:"
 	$(IMG2LBM) $< $@ bmp
 
 asterisk.lbm: asterisk.xbm
@@ -979,7 +1015,6 @@ simu: stamp_header $(BOARDSRC) $(CPPSRC) Makefile simu.cpp simpgmspace.cpp *.h *
 
 eeprom.bin:
 	dd if=/dev/zero of=$@ bs=1 count=2048
-
 
 
 # Create final output files (.hex, .eep) from ELF output file.

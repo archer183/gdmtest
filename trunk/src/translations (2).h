@@ -137,8 +137,7 @@ extern const pm_char STR_OPEN9X[];
 #endif
 #define OFS_VKEYS      (OFS_ENDHELI)
 #define OFS_VSWITCHES  (OFS_VKEYS + sizeof(TR_VKEYS))
-#define OFS_VSWITCHES_SHORT (OFS_VSWITCHES + sizeof(TR_VSWITCHES))
-#define OFS_VSRCRAW    (OFS_VSWITCHES_SHORT + sizeof(TR_VSWITCHES_SHORT))
+#define OFS_VSRCRAW    (OFS_VSWITCHES + sizeof(TR_VSWITCHES))
 #define OFS_VTMRMODES  (OFS_VSRCRAW + sizeof(TR_VSRCRAW))
 #if defined(PCBGRUVIN9X) || defined(CPUARM)
 #define OFS_DATETIME   (OFS_VTMRMODES + sizeof(TR_VTMRMODES))
@@ -195,7 +194,6 @@ extern const pm_char STR_OPEN9X[];
 
 #define STR_VKEYS      (STR_OPEN9X + OFS_VKEYS)
 #define STR_VSWITCHES  (STR_OPEN9X + OFS_VSWITCHES)
-#define STR_VSWITCHES_SHORT (STR_OPEN9X + OFS_VSWITCHES_SHORT)
 #define STR_VSRCRAW    (STR_OPEN9X + OFS_VSRCRAW)
 #define STR_VTMRMODES  (STR_OPEN9X + OFS_VTMRMODES)
 
@@ -276,6 +274,7 @@ extern const pm_char STR_SLOWUP[];
 extern const pm_char STR_MIXER[];
 extern const pm_char STR_CV[];
 extern const pm_char STR_GV[];
+
 extern const pm_char STR_ACHANNEL[];
 extern const pm_char STR_RANGE[];
 extern const pm_char STR_BAR[];
@@ -296,6 +295,7 @@ extern const pm_char STR_MEMORYWARNING[];
 extern const pm_char STR_ALARMWARNING[];
 extern const pm_char STR_RENAVIG[];
 extern const pm_char STR_THROTTLEREVERSE[];
+extern const pm_char STR_BEEP_LABEL[];
 extern const pm_char STR_MINUTEBEEP[];
 extern const pm_char STR_BEEPCOUNTDOWN[];
 extern const pm_char STR_BACKLIGHT_LABEL[];
@@ -390,6 +390,7 @@ extern const pm_char STR_TURRETSPACE[];
 extern const pm_char STR_COMBAT[];
 
 #endif
+
 #if defined(FRSKY)
 extern const pm_char STR_LIMIT[];
 #endif

@@ -65,10 +65,11 @@ class AudioFragment : public ToneFragment {
 
 extern "C" void DAC_IRQHandler();
 
-#define AUDIO_SLEEPING     0
-#define AUDIO_RESUMING     1
-#define AUDIO_PLAYING_TONE 2
-#define AUDIO_PLAYING_WAV  3
+#define AUDIO_NOT_STARTED  0
+#define AUDIO_SLEEPING     1
+#define AUDIO_RESUMING     2
+#define AUDIO_PLAYING_TONE 3
+#define AUDIO_PLAYING_WAV  4
 
 extern bool playingBackground;
 
@@ -92,6 +93,8 @@ class AudioQueue {
 
     AudioQueue();
 
+    void start();
+
     void play(uint8_t tFreq, uint8_t tLen, uint8_t tPause, uint8_t tFlags=0, int8_t tFreqIncr=0);
 
     void playFile(const char *filename, uint8_t flags=0, uint8_t id=0);
@@ -103,6 +106,11 @@ class AudioQueue {
     void stopSD();
 
     bool isPlaying(uint8_t id);
+
+    bool started()
+    {
+      return (state != AUDIO_NOT_STARTED);
+    }
 
     bool busy()
     {
@@ -126,7 +134,7 @@ class AudioQueue {
 
     void sdWakeup(AudioContext & context);
 
-    uint8_t state;
+    volatile uint8_t state;
     uint8_t ridx;
     uint8_t widx;
     int8_t prioIdx;
@@ -141,6 +149,7 @@ extern AudioQueue audioQueue;
 
 void codecsInit();
 void audioEvent(uint8_t e, uint8_t f=BEEP_DEFAULT_FREQ);
+void audioStart();
 
 #define AUDIO_TADA()             audioEvent(AU_TADA)
 #define AUDIO_KEYPAD_UP()        audioEvent(AU_KEYPAD_UP)

@@ -35,61 +35,38 @@
  */
 
 #include "../open9x.h"
-#include <stdarg.h>
-#include "fifo.h"
 
-#if !defined(SIMU)
-
-Fifo512 debugRxFifo;
-Fifo512 debugTxFifo;
-
-// Outputs a string to the UART
-void debugPuts(const char *format, ...)
+void uartInit(uint32_t baudrate)
 {
-  va_list arglist;
-  char tmp[256];
+  USART_InitTypeDef USART_InitStructure;
+  GPIO_InitTypeDef GPIO_InitStructure;
 
-  va_start(arglist, format);
-  vsnprintf(tmp, 256, format, arglist);
-  va_end(arglist);
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIO_UART3, ENABLE);
 
-  const char *t = tmp;
-  while (*t) {
-    debugTxFifo.push(*t++);
-  }
+  GPIO_PinAFConfig(GPIO_UART3, GPIO_PinSource_UART3_RX, GPIO_AF_UART3);
+  GPIO_PinAFConfig(GPIO_UART3, GPIO_PinSource_UART3_TX, GPIO_AF_UART3);
+
+  GPIO_InitStructure.GPIO_Pin = GPIO_PIN_UART3_TX | GPIO_PIN_UART3_RX;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+  GPIO_Init(GPIO_UART3, &GPIO_InitStructure);
+  
+  RCC_APB1PeriphClockCmd(RCC_APB1Periph_UART3, ENABLE);
+  
+  USART_InitStructure.USART_BaudRate = baudrate;
+  USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+  USART_InitStructure.USART_StopBits = USART_StopBits_1;
+  USART_InitStructure.USART_Parity = USART_Parity_No;
+  USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+  USART_InitStructure.USART_Mode = USART_Mode_Tx;
+  
+  USART_Init(UART3, &USART_InitStructure);
+  USART_Cmd(UART3, ENABLE);
 }
 
-void dump(unsigned char *data, unsigned int size)
+void uartPutc(const char c)
 {
- debugPuts("DUMP %d bytes ...\n\r", size);
- unsigned int i = 0, j=0;
- while (i*32+j < size) {
-   debugPuts("%.2X ", data[i*32+j]);
-   j++;
-   if (j==32) {
-     i++; j=0;
-     debugPuts("\n\r");
-   }
- }
- debugPuts("\n\r");
+  USART_SendData(UART3, c);
 }
-
-void debugTask(void* pdata)
-{
-  uint8_t rxchar ;
-
-  for (;;) {
-    while (!debugRxFifo.pop(rxchar))
-      CoTickDelay(5); // 10ms
-
-  }
-}
-
-void debugTx(void)
-{
-	uint8_t txchar;
-	
-	if(debugTxFifo.pop(txchar))	
-		debugPutc(txchar);
-}
-#endif

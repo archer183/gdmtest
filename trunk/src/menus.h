@@ -37,13 +37,15 @@
 #ifndef menus_h
 #define menus_h
 
-#define NO_HI_LEN 25
+#define NO_HI_LEN  25
 
-#define RESX    1024
-#define RESXu   1024u
-#define RESXul  1024ul
-#define RESXl   1024l
-#define RESKul  100ul
+// RESX range is used for internal calculation; The menu says -100.0 to 100.0; internally it is -1024 to 1024 to allow some optimizations
+#define RESX_SHIFT 10
+#define RESX       1024
+#define RESXu      1024u
+#define RESXul     1024ul
+#define RESXl      1024l
+#define RESKul     100ul
 #define RESX_PLUS_TRIM (RESX+128)
 
 typedef void (*MenuFuncP)(uint8_t event);
@@ -51,8 +53,13 @@ typedef void (*MenuFuncP)(uint8_t event);
 void displayScreenIndex(uint8_t index, uint8_t count, uint8_t attr);
 
 #if LCD_W >= 212
+#if defined(TRANSLATIONS_FR)
+  #define MENU_COLUMNS         1
+  #define COLUMN_X             0
+#else
+  #define MENU_COLUMNS         2
+#endif
 #define MENUS_SCROLLBAR_WIDTH  2
-#define MENU_COLUMNS           2
 #define MENU_COLUMN2_X         (14 + LCD_W / 2)
 #define lcd_putsColumnLeft(x, y, str) lcd_puts((x > (LCD_W-10*FW-MENUS_SCROLLBAR_WIDTH)) ? MENU_COLUMN2_X : 0, y, str)
 #else
@@ -211,10 +218,10 @@ uint8_t onoffMenuItem(uint8_t value, uint8_t x, uint8_t y, const pm_char *label,
 int8_t switchMenuItem(uint8_t x, uint8_t y, int8_t value, LcdFlags attr, uint8_t event);
 
 #if defined(GVARS)
-int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int8_t min, int8_t max, LcdFlags attr, uint8_t event);
+int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t event); // @@@ open.20.fsguruh
 #define displayGVar(x, y, v, min, max) gvarMenuItem(x, y, v, min, max, 0, 0)
 #else
-int8_t gvarMenuItem(uint8_t x, uint8_t y, int8_t value, int8_t min, int8_t max, LcdFlags attr, uint8_t event);
+int8_t gvarMenuItem(uint8_t x, uint8_t y, int8_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t event);
 #define displayGVar(x, y, v, min, max) lcd_outdez8(x, y, v)
 #endif
 

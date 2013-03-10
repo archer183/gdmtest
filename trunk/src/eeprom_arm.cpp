@@ -406,9 +406,10 @@ void eeLoadModel(uint8_t id)
     activeSwitches = 0;
     activeFnSwitches = 0;
     activeFunctions = 0;
+    memclear(lastFunctionTime, sizeof(lastFunctionTime));
 
     for (uint8_t i=0; i<MAX_TIMERS; i++) {
-      if (g_model.timers[i].remanent) {
+      if (g_model.timers[i].persistent) {
         s_timerVal[i] = g_model.timers[i].value;
       }
     }

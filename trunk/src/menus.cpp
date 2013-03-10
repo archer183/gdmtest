@@ -145,10 +145,17 @@ int16_t checkIncDec(uint8_t event, int16_t val, int16_t i_min, int16_t i_max, ui
     if (s_editMode>0) {
       int8_t swtch = getMovedSwitch();
       if (swtch) {
+#if defined(PCBX9D)
+        if(swtch == SWSRC_SH2)
+          newval = (newval == SWSRC_SH2 ? SWSRC_SH0 : SWSRC_SH2);
+        else if(swtch != SWSRC_SH0)
+          newval = swtch;
+#else
         if (IS_MOMENTARY(newval) && IS_MOMENTARY(swtch))
           newval = -newval;
         else
           newval = swtch;
+#endif
       }
     }
 
@@ -499,7 +506,7 @@ bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
       } while (MAXCOL(l_posVert) == (uint8_t)-1);
 
 #if defined(ROTARY_ENCODER_NAVIGATION) || defined(PCBX9D)
-      s_editMode = 0; // TODO why?
+      s_editMode = 0; // if we go down, we must be in this mode
 #endif
       l_posHorz = min(l_posHorz, MAXCOL(l_posVert));
       break;
@@ -544,6 +551,11 @@ bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
       do {
         DEC(l_posVert, POS_VERT_INIT, maxrow);
       } while(MAXCOL(l_posVert) == (uint8_t)-1);
+
+#if defined(ROTARY_ENCODER_NAVIGATION) || defined(PCBX9D)
+      s_editMode = 0; // if we go up, we must be in this mode
+#endif
+
       l_posHorz = min(l_posHorz, MAXCOL(l_posVert));
       break;
 
@@ -683,39 +695,54 @@ int8_t switchMenuItem(uint8_t x, uint8_t y, int8_t value, LcdFlags attr, uint8_t
 }
 
 #if defined(GVARS)
-int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int8_t min, int8_t max, LcdFlags attr, uint8_t event)
+int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t event) 
 {
-  uint8_t delta = (max <= 100 ? GV1_SMALL-1 : GV1_LARGE-1);
+  uint16_t delta = GV_GET_GV1_VALUE(max);
   bool invers = (attr & INVERS);
   if (invers && event == EVT_KEY_LONG(KEY_ENTER)) {
     s_editMode = !s_editMode;
-    value = (value > max ? GET_GVAR(value, min, max, s_perout_flight_phase) : delta+1);
+    
+    value = ( GV_IS_GV_VALUE(value,min,max) ? GET_GVAR(value, min, max, s_perout_flight_phase) : delta);
+    
     eeDirty(EE_MODEL);
   }
-  if (value > max) {
+  if ( GV_IS_GV_VALUE(value,min,max) ) {
     if (attr & LEFT)
       attr -= LEFT; /* because of ZCHAR */
     else
       x -= 2*FW+FWNUM;
-    int8_t idx = value - delta;
+    
+    int8_t idx = (int16_t) GV_INDEX_CALC_DELTA(value,delta);
     if (invers) {
-      CHECK_INCDEC_MODELVAR(event, idx, -4, +5);
-      value = (int16_t)idx + delta;
+      CHECK_INCDEC_MODELVAR(event, idx, -MAX_GVARS, MAX_GVARS-1);
     }
-    if (idx <= 0) { idx = 1-idx; lcd_putcAtt(x-6, y, '-', attr); }
+
+/*  sometimes this implementation was smaller, but sometimes not....
+    value=delta+(int16_t) idx;
+    if (idx < 0) {idx = -1-idx; lcd_putcAtt(x-6, y, '-', attr); } 
+    else value|=~(delta-1);
+    idx++; */
+
+    if (idx < 0) { 
+      value=(int16_t) GV_CALC_VALUE_IDX_NEG(idx,delta); idx=-idx; lcd_putcAtt(x-6, y, '-', attr); 
+    } else { 
+      value = (int16_t) GV_CALC_VALUE_IDX_POS(idx,delta); idx++; 
+    }
+    
     putsStrIdx(x, y, STR_GV, idx, attr);
   }
   else {
     lcd_outdezAtt(x, y, value, attr);
-    if (invers) CHECK_INCDEC_MODELVAR(event, value, min, max);
+	if (invers) value = checkIncDec(event, value, min, max,EE_MODEL);    
   }
   return value;
 }
+
 #else
-int8_t gvarMenuItem(uint8_t x, uint8_t y, int8_t value, int8_t min, int8_t max, LcdFlags attr, uint8_t event)
+int8_t gvarMenuItem(uint8_t x, uint8_t y, int8_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t event)
 {
   lcd_outdezAtt(x, y, value, attr);
-  if (attr&INVERS) CHECK_INCDEC_MODELVAR(event, value, min, max);
+  if (attr&INVERS) value = checkIncDec(event, value, min, max,EE_MODEL);
   return value;
 }
 #endif

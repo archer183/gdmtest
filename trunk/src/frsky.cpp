@@ -1039,9 +1039,9 @@ int16_t convertCswTelemValue(CustomSwData * cs)
 {
   int16_t val;
   if (CS_STATE(cs->func)==CS_VOFS)
-    val = convertTelemValue(cs->v1 - MIXSRC_LAST_CH, 128+cs->v2);
+    val = convertTelemValue(cs->v1 - MIXSRC_FIRST_TELEM + 1, 128+cs->v2);
   else
-    val = convertTelemValue(cs->v1 - MIXSRC_LAST_CH, 128+cs->v2) - convertTelemValue(cs->v1 - MIXSRC_LAST_CH, 128);
+    val = convertTelemValue(cs->v1 - MIXSRC_FIRST_TELEM + 1, 128+cs->v2) - convertTelemValue(cs->v1 - MIXSRC_FIRST_TELEM + 1, 128);
   return val;
 }
 
@@ -1061,7 +1061,8 @@ void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, 
   switch (channel) {
     case TELEM_TM1-1:
     case TELEM_TM2-1:
-      putsTime(x-3*FW, y, val, att, att);
+      att &= ~NO_UNIT;
+      putsTime(x, y, val, att, att);
       break;
     case TELEM_MIN_A1-1:
     case TELEM_MIN_A2-1:
@@ -1077,6 +1078,7 @@ void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, 
         converted_value /= 10;
       }
       else {
+#if !defined(PCBX9D)
         if (abs(converted_value) < 1000) {
           att |= PREC2;
         }
@@ -1084,6 +1086,9 @@ void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, 
           converted_value /= 10;
           att |= PREC1;
         }
+#else
+        att |= PREC2;
+#endif
       }
       putsTelemetryValue(x, y, converted_value, g_model.frsky.channels[channel].type, att);
       break;
@@ -1141,7 +1146,7 @@ void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, 
       if (channel >= TELEM_MAX_T1-1 && channel <= TELEM_MAX_DIST-1)
         channel -= TELEM_MAX_T1 - TELEM_T1;
       if (channel <= TELEM_GPSALT-1)
-        unit = channel - 6;
+        unit = channel + 1 - TELEM_ALT;
       if (channel >= TELEM_MIN_ALT-1 && channel <= TELEM_MAX_ALT-1)
         unit = 0;
       if (channel == TELEM_HDG-1)
@@ -1163,6 +1168,27 @@ enum FrskyViews {
 
 static uint8_t s_frsky_view = e_frsky_custom_screen_1;
 
+#if LCD_W == 212
+void displayRssiLine()
+{
+  if (frskyStreaming > 0) {
+    lcd_hline(0, 55, 212, 0); // separator
+    uint8_t rssi = min((uint8_t)99, frskyData.rssi[1].value);
+    lcd_putsLeft(7*FH+1, STR_TX); lcd_outdezNAtt(4*FW, 7*FH+1, rssi, LEADING0, 2);
+    lcd_rect(25, 57, 78, 7);
+    lcd_filled_rect(26, 58, 19*rssi/25, 5, (rssi < getRssiAlarmValue(0)) ? DOTTED : SOLID);
+    rssi = min((uint8_t)99, frskyData.rssi[0].value);
+    lcd_puts(190, 7*FH+1, STR_RX); lcd_outdezNAtt(189+4*FW-1, 7*FH+1, rssi, LEADING0, 2);
+    lcd_rect(110, 57, 78, 7);
+    uint8_t v = 19*rssi/25;
+    lcd_filled_rect(111+76-v, 58, v, 5, (rssi < getRssiAlarmValue(0)) ? DOTTED : SOLID);
+  }
+  else {
+    lcd_putsAtt(7*FW, 7*FH+1, STR_NODATA, BLINK);
+    lcd_status_line();
+  }
+}
+#else
 void displayRssiLine()
 {
   if (frskyStreaming > 0) {
@@ -1182,6 +1208,7 @@ void displayRssiLine()
     lcd_status_line();
   }
 }
+#endif
 
 #if defined(FRSKY_HUB)
 void displayGpsTime()
@@ -1286,7 +1313,7 @@ void menuTelemetryFrsky(uint8_t event)
             uint8_t y = barHeight+6+i*(barHeight+6);
             lcd_putsiAtt(0, y+barHeight-5, STR_VTELEMCHNS, source, 0);
             lcd_rect(25, y, 101, barHeight+2);
-            int16_t value = getValue(MIXSRC_LAST_CH+source-1);
+            int16_t value = getValue(MIXSRC_FIRST_TELEM+source-2);
             int16_t threshold = 0;
             uint8_t thresholdX = 0;
             if (source <= TELEM_TM2)
@@ -1333,10 +1360,15 @@ void menuTelemetryFrsky(uint8_t event)
         // Custom Screen with numbers
         uint8_t fields_count = 0;
         for (uint8_t i=0; i<4; i++) {
-          for (uint8_t j=0; j<2; j++) {
+          for (uint8_t j=0; j<NUM_LINE_ITEMS; j++) {
             uint8_t field = screen.lines[i].sources[j];
             if (i==3 && j==0) {
+#if LCD_W >= 212
+              lcd_vline(69, 8, 48);
+              lcd_vline(141, 8, 48);
+#else
               lcd_vline(63, 8, 48);
+#endif
               if (frskyStreaming > 0) {
 #if defined(FRSKY_HUB)
                 if (field == TELEM_ACC) {
@@ -1359,16 +1391,21 @@ void menuTelemetryFrsky(uint8_t event)
             }
             if (field) {
               fields_count++;
-              int16_t value = getValue(MIXSRC_LAST_CH+field-1);
+              int16_t value = getValue(MIXSRC_FIRST_TELEM+field-2);
               uint8_t att = (i==3 ? NO_UNIT : DBLSIZE|NO_UNIT);
-              if (field <= TELEM_TM2) {
-                uint8_t x = (i==3 ? j?80:20 : j?74:10);
-                putsTime(x, 1+FH+2*FH*i, value, att, att);
+#if LCD_W >= 212
+              xcoord_t pos[] = {0, 71, 143, 214};
+#else
+              xcoord_t pos[] = {0, 65, 130};
+#endif
+              putsTelemetryChannel(pos[j+1]-2, 1+FH+2*FH*i, field-1, value, att);
+#if LCD_W < 212              
+              if (field >= TELEM_TM1 && field <= TELEM_TM2 && i!=3) {
+                // there is not enough space on LCD for displaying "Tmr1" or "Tmr2", we write "T1" or "T2" instead
+                field = field-TELEM_TM1+TELEM_T1;
               }
-              else {
-                putsTelemetryChannel(j ? 128 : 63, i==3 ? 1+7*FH : 1+2*FH+2*FH*i, field-1, value, att);
-                lcd_putsiAtt(j*65, 1+FH+2*FH*i, STR_VTELEMCHNS, field, 0);
-              }
+#endif
+              lcd_putsiAtt(pos[j], 1+FH+2*FH*i, STR_VTELEMCHNS, field, 0);
             }
           }
         }
@@ -1425,10 +1462,10 @@ void menuTelemetryFrsky(uint8_t event)
         uint8_t y = 1*FH;
         for (uint8_t k=0; k<frskyData.hub.cellsCount && k<6; k++) {
           uint8_t attr = (barsThresholds[THLD_CELL] && frskyData.hub.cellVolts[k] < barsThresholds[THLD_CELL]) ? BLINK|PREC2 : PREC2;
-          lcd_outdezNAtt(21*FW, y, frskyData.hub.cellVolts[k] * 2, attr, 4);
+          lcd_outdezNAtt(LCD_W, y, frskyData.hub.cellVolts[k] * 2, attr, 4);
           y += 1*FH;
         }
-        lcd_vline(17*FW+4, 8, 47);
+        lcd_vline(LCD_W-3*FW-2, 8, 47);
       }
 #endif
 
