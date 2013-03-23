@@ -3020,12 +3020,12 @@ uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!!
 //IS NUMBER OF GVARS FROM MAX THAT CONTAINS COMBAT VARIABLE STRING!!
 
 SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
-#if defined(GVARS) && defined(CPUM64)
+#elif defined(GVARS) && defined(CPUM64)
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
 #else
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES);
 #endif
-#endif
+
   int8_t  sub = m_posVert - 1;
 
   switch (event) {
