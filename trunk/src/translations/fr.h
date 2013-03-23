@@ -1,7 +1,21 @@
 /*
  * Authors (alphabetical order)
  * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
  * - Bertrand Songis <bsongis@gmail.com>
+ * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
+ * - Cameron Weeks <th9xer@gmail.com>
+ * - Erez Raviv
+ * - Gabriel Birkus
+ * - Jean-Pierre Parisy
+ * - Karl Szmutny
+ * - Michael Blandford
+ * - Michal Hlavinka
+ * - Pat Mackenzie
+ * - Philip Moss
+ * - Rob Thomson
+ * - Romolo Manfredini <romolo.manfredini@gmail.com>
+ * - Thomas Husterer
  *
  * open9x is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
@@ -53,6 +67,9 @@
 
 #define LEN_VLCD         "\006"
 #define TR_VLCD          "NormalOptrex"
+
+#define LEN_COUNTRYCODES TR("\002", "\007")
+#define TR_COUNTRYCODES  TR("US""JP""EU", "USA\0""Japon\0 ""Europe\0")
 
 #define LEN_VTRIMINC     TR("\006","\013")
 #define TR_VTRIMINC      TR("Expo\0 ""ExFin\0""Fin\0  ""Moyen\0""Gros\0 ","Exponentiel""Extra Fin\0 ""Fin\0       ""Moyen\0     ""Grossier\0  ")
@@ -313,16 +330,15 @@
 #define INDENT_WIDTH           (FW/2)
 
 #if defined(PCBX9D)
-#define TR_POPUPS              "[ENTER]\010[EXIT]"
+  #define TR_ENTER             "[ENTER]"
 #else
-#define TR_POPUPS              "[MENU]\010[EXIT]"
+  #define TR_ENTER             "[MENU]"
 #endif
-#define OFS_EXIT               7
-#if defined(PCBX9D)
-    #define TR_MENUWHENDONE    CENTER"\005[ENTER] QUAND PRET"
-#else
-  #define TR_MENUWHENDONE      CENTER"\006[MENU] QUAND PRET"
-#endif
+
+#define TR_POPUPS              TR_ENTER"\010[EXIT]"
+#define OFS_EXIT               sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE        CENTER"\006"TR_ENTER" QUAND PRET"
 #define TR_FREE                "disp"
 #define TR_DELETEMODEL         "SUPPRIMER MODELE"
 #define TR_COPYINGMODEL        "Copie..."
@@ -396,19 +412,21 @@
 #define TR_HAPTICSTRENGTH      INDENT"Force"
 #define TR_CONTRAST            "Contraste"
 #define TR_ALARMS_LABEL        "Alarmes"
-#define TR_BATTERYWARNING      INDENT"Batterie faible"
+#define TR_BATTERY_RANGE       "Plage batterie"
+#define TR_BATTERYWARNING      TR(INDENT"Batterie",INDENT"Batterie faible")
 #define TR_INACTIVITYALARM     INDENT"Inactivit\200"
 #define TR_MEMORYWARNING       INDENT"M\200moire faible"
-#define TR_ALARMWARNING        INDENT"Sons d\200sactiv\200s"
+#define TR_ALARMWARNING        TR(INDENT"Silence",INDENT"Sons d\200sactiv\200s")
 #define TR_RENAVIG             "Navig EncRot"
 #define TR_THROTTLEREVERSE     "Inversion gaz"
-#define TR_MINUTEBEEP          INDENT"Chaque minute"
-#define TR_BEEPCOUNTDOWN       TR(INDENT"Cpt. \202 rebours",INDENT"Compte \202 rebours")
+#define TR_MINUTEBEEP          TR(INDENT"Bip min.",INDENT"Chaque minute")
+#define TR_BEEPCOUNTDOWN       TR(INDENT"Bip fin",INDENT"Compte \202 rebours")
+#define TR_PERSISTENT          TR(INDENT"Persist.",INDENT"Persistant")
 #define TR_BACKLIGHT_LABEL     "R\200tro\200clairage"
 #define TR_BLDELAY             INDENT"Dur\200e"
 #define TR_BLONBRIGHTNESS      INDENT"Luminosit\200 ON"
 #define TR_BLOFFBRIGHTNESS     INDENT"Luminosit\200 OFF"
-#define TR_SPLASHSCREEN        "Ecran d'accueil"
+#define TR_SPLASHSCREEN        "Logo d'accueil"
 #define TR_THROTTLEWARNING     "Alerte gaz"
 #define TR_SWITCHWARNING       TR("Alerte int","Alerte interrupt.")
 #define TR_TIMEZONE            "Fuseau horaire"
@@ -473,7 +491,7 @@
 #define TR_MENUCALIBRATION     "CALIBRATION"
 #define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
 #define TR_MENUMODELSEL        "MODELES"
-#define TR_MENUSETUP           TR("CONF.","CONFIGURATION")
+#define TR_MENUSETUP           TR("CONF. MODELE","CONFIGURATION")
 #define TR_MENUFLIGHTPHASE     "PHASE DE VOL"
 #define TR_MENUFLIGHTPHASES    "PHASES DE VOL"
 #define TR_MENUHELISETUP       TR("CONF.HELI","CONFIGURATION HELICO")
@@ -501,7 +519,7 @@
 #define TR_MINRSSI             "RSSI Min."
 #define TR_LATITUDE            "Latitude"
 #define TR_LONGITUDE           "Longitude"
-#define TR_GPSCOORD            "Coordonn\200es GPS"
+#define TR_GPSCOORD            TR("Coordonn\200es","Coordonn\200es GPS")
 #define TR_VARIO               TR("Vario","Variom\201tre")
 #define TR_SHUTDOWN            "ARRET EN COURS"
 #define TR_BATT_CALIB          "Calib. Batterie"
@@ -568,3 +586,8 @@
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "Enc.Rot."
 #define TR_CHANNELS_MONITOR    "MONITEUR CANAUX"
+#define TR_INTERNALRF          "HF interne"
+#define TR_EXTERNALRF          "HF externe"
+#define TR_FAILSAFE            "Type failsafe"
+#define TR_FAILSAFESET         "REGLAGES FAILSAFE"
+#define TR_COUNTRYCODE         "Zone g\200o."

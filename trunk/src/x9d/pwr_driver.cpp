@@ -48,6 +48,12 @@ uint32_t pwrCheck()
 #else
   if (GPIO_ReadInputDataBit(GPIOPWR, PIN_PWR_STATUS) == Bit_RESET)
     return e_power_on;
+#if !defined(REV3)
+  else if (GPIO_ReadInputDataBit(GPIOTRNDET, PIN_TRNDET) == Bit_SET)
+    return e_power_trainer;
+#endif
+  else if (usbPlugged())
+    return e_power_usb;
   else
     return e_power_off;
 #endif
@@ -64,23 +70,40 @@ void pwrInit()
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP ;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(GPIOPWR, &GPIO_InitStructure);
 
   GPIO_InitStructure.GPIO_Pin = PIN_PWR_STATUS;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP ;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(GPIOPWR, &GPIO_InitStructure);
   
   GPIO_InitStructure.GPIO_Pin = PIN_PWR_LED;
   GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
   GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
   GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
-  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP ;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
   GPIO_Init(GPIOPWRLED, &GPIO_InitStructure);
+
+#if !defined(REV3)  
+  GPIO_ResetBits(GPIOPWR, PIN_INT_RF_PWR | PIN_EXT_RF_PWR);
+  GPIO_InitStructure.GPIO_Pin = PIN_INT_RF_PWR | PIN_EXT_RF_PWR;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_OUT;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOPWR, &GPIO_InitStructure);
   
+  GPIO_InitStructure.GPIO_Pin = PIN_TRNDET;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_UP;
+  GPIO_Init(GPIOTRNDET, &GPIO_InitStructure);
+#endif
+
   // Soft power ON
   GPIO_SetBits(GPIOPWR,PIN_MCU_PWR);
 }

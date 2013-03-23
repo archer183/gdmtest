@@ -39,14 +39,21 @@
 
 #include <stdio.h>
 
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_rcc.h"
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_gpio.h"
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_spi.h"
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_rtc.h"
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_pwr.h"
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_usart.h"
-#include "./STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Include/stm32f2xx.h"
-
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_rcc.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_gpio.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_spi.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_rtc.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_pwr.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_dma.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/inc/stm32f2xx_usart.h"
+#include "STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Include/stm32f2xx.h"
+extern "C" {
+#include "STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_Device_Library/Class/msc/inc/usbd_msc_core.h"
+#include "STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_Device_Library/Core/inc/usbd_usr.h"
+#include "usbd_desc.h"
+#include "usb_conf.h"
+#include "usbd_conf.h"
+}
 #include "hal.h"
 #include "aspi.h"
 #include "i2c.h"
@@ -56,8 +63,6 @@
 #define PERI2_FREQUENCY 60000000
 #define TIMER_MULT_APB1 2
 #define TIMER_MULT_APB2 1
-
-void usbMassStorage();
 
 #define JACK_PPM_OUT()
 #define JACK_PPM_IN()
@@ -74,14 +79,17 @@ uint8_t getTemperature();
 
 extern uint16_t sessionTimer;
 
-#define BOOTLOADER_REQUEST() (0/*usbPlugged()*/)
+/* USB driver */
+uint8_t usbPlugged(void);
+#define BOOTLOADER_REQUEST() (0)
+#define usbBootloader()
 
-#define SLAVE_MODE() (0/*pwrCheck() == e_power_trainer*/)
+#define SLAVE_MODE()         (0/*pwrCheck() == e_power_trainer*/)
 
 void delaysInit();
 
 #define DEBUG_UART_BAUDRATE 115200
-#define SPORT_BAUDRATE 9600
+#define SPORT_BAUDRATE 57600
 
 void uartInit(uint32_t baudrate);
 void uartPutc(const char c);
@@ -134,12 +142,21 @@ void watchdogInit();
 void adcInit();
 void adcRead();
 extern volatile uint16_t Analog_values[];
+#if defined(REV3)
+  #define BATT_SCALE    120
+#else
+  #define BATT_SCALE    150
+#endif
 
 // Power driver
 void pwrInit();
 uint32_t pwrCheck();
 void pwrOff();
 #define UNEXPECTED_SHUTDOWN() (g_eeGeneral.unexpectedShutdown)
+#define INTERNAL_RF_ON()  GPIO_SetBits(GPIOPWR, PIN_INT_RF_PWR)
+#define INTERNAL_RF_OFF() GPIO_ResetBits(GPIOPWR, PIN_INT_RF_PWR)
+#define EXTERNAL_RF_ON()  GPIO_SetBits(GPIOPWR, PIN_EXT_RF_PWR)
+#define EXTERNAL_RF_OFF() GPIO_ResetBits(GPIOPWR, PIN_EXT_RF_PWR)
 
 // Backlight driver
 #define setBacklight(xx)
@@ -157,6 +174,7 @@ void pwrOff();
 void eeWriteBlockCmp(const void *pointer_ram, uint16_t pointer_eeprom, size_t size);
 #endif
 
-
+// USB driver
+void usbInit(void);
 
 #endif

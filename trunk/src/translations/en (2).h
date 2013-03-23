@@ -34,10 +34,6 @@
  *
  */
 
-// below are changed!
-
-
-
 // NON ZERO TERMINATED STRINGS
 #define LEN_OFFON              "\003"
 #define TR_OFFON               "OFF""ON\0"
@@ -287,7 +283,6 @@
 #define LEN_VSWITCHES          "\003"
 #define LEN_VSRCRAW            "\004"
 
-
 #if defined(PCBX9D)
   #define TR_POTS_VSRCRAW      "S1\0 ""S2\0 ""LS\0 ""RS\0 "
   #define TR_SW_VSRCRAW        "SA\0 ""SB\0 ""SC\0 ""SD\0 ""SE\0 ""SF\0 ""SG\0 ""SH\0 "
@@ -315,9 +310,10 @@
   #define TR_VSWITCHES         TR_9X_3POS_SWITCHES "THR""RUD""ELE""AIL""GEA""TRN" TR_CUSTOMSW " ON"
 #endif
 
-#if defined(PCBX9D)
-  #define TR_ROTARY_ENCODERS_VSRCRAW
-#elif defined(PCBSKY9X)
+#define LEN_VSWITCHES_SHORT    "\001"
+#define TR_VSWITCHES_SHORT     "-012TREAG3456789"
+
+#if defined(PCBSKY9X)
   #define TR_ROTARY_ENCODERS_VSRCRAW "REnc"
 #elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
   #define TR_ROTARY_ENCODERS_VSRCRAW "REa ""REb ""REc ""REd "
@@ -383,11 +379,11 @@
 #define TR_CHECKTRIMS          CENTER"\006Check\012Trims"
 #define OFS_CHECKTRIMS         CENTER_OFS+(9*FW)
 #define TR_SWASHTYPE           "Swash Type"
-#define TR_COLLECTIVE          "Collective"
+#define TR_COLLECTIVE          TR("Collective","Collective source")
 #define TR_SWASHRING           "Swash Ring"
-#define TR_ELEDIRECTION        "ELE Direction"
-#define TR_AILDIRECTION        "AIL Direction"
-#define TR_COLDIRECTION        "COL Direction"
+#define TR_ELEDIRECTION        TR("ELE Direction","Long. cyc. direction")
+#define TR_AILDIRECTION        TR("AIL Direction","Lateral cyc. direction")
+#define TR_COLDIRECTION        TR("PIT Direction","Coll. pitch direction")
 #define TR_MODE                INDENT"Mode"
 #define TR_NOFREEEXPO          "No free expo!"
 #define TR_NOFREEMIXER         "No free mixer!"
@@ -395,14 +391,14 @@
 #define TR_EDITMIX             "EDIT MIX "
 #define TR_SOURCE              INDENT"Source"
 #define TR_WEIGHT              "Weight"
-#define TR_EXPO                "Expo"
+#define TR_EXPO                TR("Expo","Exponential")
 #define TR_SIDE                "Side"
 #define TR_DIFFERENTIAL        "Differ"
 #define TR_OFFSET              INDENT"Offset"
 #define TR_TRIM                "Trim"
 #define TR_DREX                "DRex"
 #define TR_CURVE               "Curve"
-#define TR_FPHASE              "Phase"
+#define TR_FPHASE              TR("Phase","Phases")
 #define TR_MIXWARNING          "Warning"
 #define TR_OFF                 "OFF"
 #define TR_MULTPX              "Multpx"
@@ -433,7 +429,6 @@
 #define TR_ALARMWARNING        INDENT"Sound Off"
 #define TR_RENAVIG             "RotEnc Navig"
 #define TR_THROTTLEREVERSE     TR("Thr reverse","Throttle reverse")
-#define TR_BEEP_LABEL          "Timer beeps"
 #define TR_MINUTEBEEP          TR(INDENT"Minute",INDENT"Every minute")
 #define TR_BEEPCOUNTDOWN       INDENT"Countdown"
 #define TR_BACKLIGHT_LABEL     "Backlight"
@@ -500,8 +495,8 @@
 #define TR_MENUDATEANDTIME     "DATE AND TIME"
 #define TR_MENUTRAINER         "TRAINER"
 #define TR_MENUVERSION         "VERSION"
-#define TR_MENUDIAG            "DIAG"
-#define TR_MENUANA             "ANAS"
+#define TR_MENUDIAG            TR("SWITCHES","SWITCH TEST")
+#define TR_MENUANA             TR("ANAS","ANALOG INPUTS")
 #define TR_MENUCALIBRATION     "CALIBRATION"
 #define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
 #define TR_MENUMODELSEL        TR("MODELSEL","MODEL SELECTION")
@@ -527,7 +522,7 @@
 #define TR_MENUTEMPLATES       "TEMPLATES"
 #define TR_MENUSTAT            "STATS"
 #define TR_MENUDEBUG           "DEBUG"
-#define TR_RXNUM               TR("RxNum","Receiver Number")
+#define TR_RXNUM               TR("RxNum","Receiver No.")
 #define TR_SYNCMENU            "Sync [MENU]"
 #define TR_LIMIT               INDENT"Limit"
 #define TR_MINRSSI             "Min Rssi"
@@ -565,7 +560,7 @@
 #define TR_COPROC              "CoProc."
 #define TR_COPROC_TEMP         "MB Temp. \016>"
 #define TR_CAPAWARNING         INDENT"Capacity Low"
-#define TR_TEMPWARNING         TR(INDENT"Temp High",INDENT"Temperature High")
+#define TR_TEMPWARNING         INDENT"Overheat"
 #define TR_FUNC                "Func"
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"

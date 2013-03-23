@@ -51,6 +51,10 @@
 typedef void (*MenuFuncP)(uint8_t event);
 
 void displayScreenIndex(uint8_t index, uint8_t count, uint8_t attr);
+inline void displayColumnHeader(const char **headers, uint8_t index)
+{
+  lcd_putsAtt(17*FW, 0, headers[index], 0);
+}
 
 #if LCD_W >= 212
 #if defined(TRANSLATIONS_FR)
@@ -162,22 +166,29 @@ int8_t checkIncDecGen(uint8_t event, int8_t i_val, int8_t i_min, int8_t i_max);
 
 // Menus related stuff ...
 #if defined(SDCARD)
-#define maxrow_t uint16_t
+  #define vertpos_t uint16_t
 #else
-#define maxrow_t uint8_t
+  #define vertpos_t uint8_t
 #endif
-
-extern maxrow_t m_posVert;
-extern uint8_t m_posHorz;
 
 #if defined(PCBX9D)
-typedef uint8_t & check_event_t;
+  typedef uint8_t & check_event_t;
+  #define horzpos_t int8_t
 #else
-typedef uint8_t check_event_t;
+  typedef uint8_t check_event_t;
+  #define horzpos_t uint8_t
 #endif
 
-bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, const pm_uint8_t *subTab, uint8_t subTabMax, maxrow_t maxrow);
-bool check_simple(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, maxrow_t maxrow);
+extern vertpos_t m_posVert;
+extern horzpos_t m_posHorz;
+
+#if defined(PCBX9D)
+  #define NAVIGATION_LINE_BY_LINE  0x40
+#else
+  #define NAVIGATION_LINE_BY_LINE  0
+#endif
+bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, const pm_uint8_t *subTab, uint8_t subTabMax, vertpos_t maxrow);
+bool check_simple(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, vertpos_t maxrow);
 bool check_submenu_simple(check_event_t event, uint8_t maxrow);
 
 typedef void (*MenuFuncP_PROGMEM)(uint8_t event);
@@ -185,10 +196,17 @@ typedef void (*MenuFuncP_PROGMEM)(uint8_t event);
 void title(const pm_char * s);
 #define TITLE(str) title(str)
 
+#if defined(CPUARM)
+#define MENU(title, tab, menu, lines_count, ...) \
+const uint8_t mstate_tab[] = __VA_ARGS__; \
+if (!check(event,menu,tab,DIM(tab),mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; \
+TITLE(title)
+#else
 #define MENU(title, tab, menu, lines_count, ...) \
 static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
 if (!check(event,menu,tab,DIM(tab),mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; \
 TITLE(title)
+#endif
 
 #define SIMPLE_MENU_NOTITLE(tab, menu, lines_count) \
 if (!check_simple(event,menu,tab,DIM(tab),(lines_count)-1)) return;
@@ -310,11 +328,13 @@ void menuChannelsMonitor(uint8_t event);
 #endif
 
 #if defined(PCBX9D)
-  #define POS_VERT_INIT  (menuTab ? (MAXCOL((uint16_t)1) == 255 ? 2 : 1) : 0)
-  #define EDIT_MODE_INIT 0 // TODO enum
+  #define POS_VERT_INIT   (menuTab ? (MAXCOL((uint16_t)1) == 255 ? 2 : 1) : 0)
+  #define POS_HORZ_INIT(posVert)   ((COLATTR(posVert) & NAVIGATION_LINE_BY_LINE) ? -1 : 0)
+  #define EDIT_MODE_INIT  0 // TODO enum
 #else
-  #define POS_VERT_INIT 0
-  #define EDIT_MODE_INIT -1
+  #define POS_VERT_INIT   0
+  #define POS_HORZ_INIT(posVert)   0
+  #define EDIT_MODE_INIT  -1
 #endif
 
 #endif

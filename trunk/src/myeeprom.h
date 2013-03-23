@@ -56,9 +56,9 @@
 #elif defined(PCBSKY9X)
 #define EEPROM_VER       214
 #elif defined(PCBGRUVIN9X)
-#define EEPROM_VER       214
+#define EEPROM_VER       213
 #else
-#define EEPROM_VER       214
+#define EEPROM_VER       213
 #endif
 
 #ifndef PACK
@@ -72,10 +72,11 @@ typedef int16_t gvar_t;
 typedef char gvar_name_t[6];
 #define GVAR_MAX  1024
 #endif
+//CHANGE FOR GVARS > 10
 
 #define RESERVE_RANGE_FOR_GVARS 10
 // even we do not spend space in EEPROM for 10 GVARS, we reserve the space inside the range of values, like offset, weight, etc.
-//combat math trig increases gvars to 10
+//combat math trig increases gvars to 10+
 
 #if defined(CPUM64) && defined(GVARS)
 #if defined(TRIG)
@@ -121,8 +122,9 @@ PACK(typedef struct t_FrSkyRSSIAlarm {
   int8_t    value:6;
 }) FrSkyRSSIAlarm;
 
-#if defined(PCBX9D) || defined(PCBACT)
+#if defined(PCBX9D)
 enum MainViews {
+  VIEW_TIMERS,
   VIEW_INPUTS,
   VIEW_SWITCHES,
   VIEW_COUNT
@@ -145,7 +147,7 @@ enum BeeperMode {
 };
 
 #if defined(CPUARM)
-#define EXTRA_GENERAL_FIELDS \
+  #define EXTRA_GENERAL_FIELDS \
   uint8_t  backlightBright; \
   int8_t   currentCalib; \
   int8_t   temperatureWarn; \
@@ -155,17 +157,21 @@ enum BeeperMode {
   int8_t   temperatureCalib; \
   uint8_t  btBaudrate; \
   uint8_t  optrexDisplay; \
-  uint8_t  sticksGain;
+  uint8_t  sticksGain; \
+  uint8_t  rotarySteps; \
+  uint8_t  countryCode;
+#elif defined(PXX)
+  #define EXTRA_GENERAL_FIELDS uint8_t  countryCode;
 #else
-#define EXTRA_GENERAL_FIELDS
+  #define EXTRA_GENERAL_FIELDS
 #endif
 
-#if defined(PCBX9D) || defined(PCBACT)
-#define MODELDATA_EXTRA   char bitmap[10];
+#if defined(PCBX9D)
+#define MODELDATA_EXTRA   char bitmap[10]; int8_t rfProtocol; uint8_t ppmSCH; uint8_t failsafeMode; int16_t failsafeChannels[16];
 #define LIMITDATA_EXTRA   char name[6];
 #define swstate_t         uint16_t
 #elif defined(PCBSKY9X)
-#define MODELDATA_EXTRA   uint8_t ppmSCH; int8_t ppm2SCH; int8_t ppm2NCH;
+#define MODELDATA_EXTRA   uint8_t ppmSCH; int8_t ppm2SCH; int8_t ppm2NCH; int8_t rfProtocol; uint8_t rfCountryCode;
 #define LIMITDATA_EXTRA
 #define swstate_t         uint8_t
 #else
@@ -232,11 +238,11 @@ PACK(typedef struct t_EEGeneral {
   int8_t    vBatMin;
   int8_t    vBatMax;
 
-  EXTRA_GENERAL_FIELDS;
+  EXTRA_GENERAL_FIELDS
 
 }) EEGeneral;
 
-#if defined(PCBX9D) || defined(PCBACT)
+#if defined(PCBX9D)
 #define LEN_MODEL_NAME     12
 #define LEN_EXPOMIX_NAME   10
 #define LEN_FP_NAME        10
@@ -328,21 +334,22 @@ PACK(typedef struct t_MixData {
 }) MixData;
 
 #define MD_WEIGHT(md) (md->weight)
-#define MD_GETWEIGHT(var,md) var.word=md->weight
-#define MD_SETWEIGHT(var,md) md->weight=var.word
+#define MD_WEIGHT_TO_UNION(md, var) var.word = md->weight
+#define MD_UNION_TO_WEIGHT(var, md) md->weight = var.word
+// #define MD_SETWEIGHT(md, val) md->weight = val
 
 PACK( union u_int8int16_t {
   struct {
     int8_t  lo;
-	uint8_t hi;
+    uint8_t hi;
   } bytes_t;
   int16_t word;
 });
 
-
 #define MD_OFFSET(md) (md->offset)
-#define MD_GETOFFSET(var,md) var.word=md->offset;
-#define MD_SETOFFSET(var,md) md->offset=var.word;
+#define MD_OFFSET_TO_UNION(md, var) var.word = md->offset
+#define MD_UNION_TO_OFFSET(var, md) md->offset = var.word
+// #define MD_SETOFFSET(md, val) md->offset = val
 
 #else
 #define DELAY_STEP  2
@@ -370,8 +377,6 @@ PACK(typedef struct t_MixData {
   int8_t  offset;
 }) MixData;
 
-
-
 PACK( union u_gvarint_t {
   struct {
     int8_t lo;
@@ -391,18 +396,19 @@ private:
 PACK( union u_int8int16_t {
   struct {
     int8_t  lo;
-	uint8_t hi;
+    uint8_t hi;
   } bytes_t;
   int16_t word;
 });
-#define MD_GETWEIGHT(var,md) var.bytes_t.lo=md->weight; var.bytes_t.hi=md->weightMode?255:0
-#define MD_SETWEIGHT(var,md)   md->weight     = var.bytes_t.lo;  \
-     if (var.word<0) md->weightMode=1; else md->weightMode=0  // set negative sign
-	 
+
+#define MD_WEIGHT_TO_UNION(md, var) var.bytes_t.lo=md->weight; var.bytes_t.hi=md->weightMode?255:0
+#define MD_UNION_TO_WEIGHT(var, md) md->weight=var.bytes_t.lo; if (var.word<0) md->weightMode=1; else md->weightMode=0
+// #define MD_SETWEIGHT(md, val) md->weight=val; if (val<0) md->weightMode=1; else md->weightMode=0 
+
 #define MD_OFFSET(md) (u_gvarint_t(md->offset,md->offsetMode).word)
-#define MD_GETOFFSET(var,md) var.bytes_t.lo=md->offset; var.bytes_t.hi=md->offsetMode?255:0
-#define MD_SETOFFSET(var,md)   md->offset     = var.bytes_t.lo;  \
-     if (var.word<0) md->offsetMode=1; else md->offsetMode=0  // set negative sign	 
+#define MD_OFFSET_TO_UNION(md, var) var.bytes_t.lo=md->offset; var.bytes_t.hi=md->offsetMode?255:0
+#define MD_UNION_TO_OFFSET(var, md) md->offset=var.bytes_t.lo; if (var.word<0) md->offsetMode=1; else md->offsetMode=0 /* set negative sign */
+// #define MD_SETOFFSET(md, val) md->offset=val; if (val<0) md->offsetMode=1; else md->offsetMode=0
 
 #endif
 
@@ -497,13 +503,12 @@ enum ResetFunctionParam {
 PACK(typedef struct t_CustomFnData { // Function Switches data
   int8_t  swtch;
   uint8_t func;
-  union {
+  PACK(union {
     char name[LEN_CFN_NAME];
     struct {
       uint32_t val;
-      uint16_t spare;
     } composite;
-  } param;
+  }) param;
   uint8_t mode:2;
   uint8_t active:6;
 }) CustomFnData;
@@ -763,11 +768,7 @@ PACK(typedef struct t_SwashRingData { // Swash Ring data
 
 #define ROTARY_ENCODER_MAX  1024
 
-#if defined(PCBACT)
-#define NUM_ROTARY_ENCODERS 0
-#define ROTARY_ENCODER_ARRAY_EXTRA
-#define ROTARY_ENCODER_ARRAY int16_t rotaryEncoders[1];
-#elif defined(PCBX9D)
+#if defined(PCBX9D)
 #define NUM_ROTARY_ENCODERS 0
 #define NUM_ROTARY_ENCODERS_EXTRA 0
 #define ROTARY_ENCODER_ARRAY_EXTRA
@@ -1097,6 +1098,21 @@ enum Protocols {
   PROTO_NONE
 };
 
+enum RfProtocols {
+  RF_PROTO_OFF = -1,
+  RF_PROTO_X16,
+  RF_PROTO_D8,
+  RF_PROTO_LR12,
+  RF_PROTO_LAST = RF_PROTO_LR12
+};
+
+enum FailsafeModes {
+  FAILSAFE_HOLD,
+  FAILSAFE_CUSTOM,
+  FAILSAFE_NOPULSES,
+  FAILSAFE_LAST = FAILSAFE_NOPULSES
+};
+
 #if defined(MAVLINK)
 #define TELEMETRY_DATA MavlinkData mavlink;
 #elif defined(FRSKY) || !defined(CPUM64)
@@ -1113,6 +1129,7 @@ enum Protocols {
 
 PACK(typedef struct t_ModelData {
   char      name[LEN_MODEL_NAME]; // must be first for eeLoadModelName
+  uint8_t   modelId;
   TimerData timers[MAX_TIMERS];
   uint8_t   protocol:3;
   uint8_t   thrTrim:1;            // Enable Throttle Trim
@@ -1139,7 +1156,6 @@ PACK(typedef struct t_ModelData {
 
   int8_t    ppmFrameLength;       // 0=22.5ms  (10ms-30ms) 0.5ms increments
   uint8_t   thrTraceSrc;
-  uint8_t   modelId;
   
   swstate_t switchWarningStates;
 

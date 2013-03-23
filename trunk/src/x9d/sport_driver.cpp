@@ -89,8 +89,8 @@ void sportPutc(const char c)
 extern "C" void USART2_IRQHandler()
 {
     uint16_t data;
-    
-    while(USART_GetFlagStatus(SPORT, USART_FLAG_RXNE)){
+
+    if (USART_GetFlagStatus(SPORT, USART_FLAG_RXNE) || USART_GetFlagStatus(SPORT, USART_FLAG_ORE)) {
       data = USART_ReceiveData(SPORT);
       processSerialData((uint8_t) data);
     }

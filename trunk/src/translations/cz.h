@@ -54,6 +54,9 @@
 #define LEN_VLCD               "\006"
 #define TR_VLCD                "NormalOptrex"
 
+#define LEN_COUNTRYCODES       TR("\002", "\007")
+#define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japan\0 ""Europe\0")
+
 #define LEN_VTRIMINC           "\007"
 #define TR_VTRIMINC            "Expo\0  ""ExJemn\212""Jemn\212\0 ""St\206edn\204""Hrub\212\0 "
 
@@ -151,11 +154,11 @@
   #define TR_PLAY_VALUE        "\221\222TTS\0     "
 #else
   #define TR_PLAY_TRACK        "[\221\222Stopa]\0 "
-  #define TR_PLAY_BOTH         "[\221\222P\200r]\0    "
-  #define TR_PLAY_VALUE        "[\221\222TTS]\0    "
+  #define TR_PLAY_BOTH         "[\221\222P\200r]\0   "
+  #define TR_PLAY_VALUE        "[\221\222TTS]\0   "
 #endif
 
-#define TR_CFN_VOLUME        "Hlasitost\ 0"
+#define TR_CFN_VOLUME        "Hlasitost\0 "
 #define TR_CFN_BG_MUSIC      "BgHudba\0   ""BgHudba ||\0"
 
 #if defined(SDCARD)
@@ -177,11 +180,11 @@
 #endif
 
 #if defined(CPUARM)
-  #define TR_VFSWFUNC          "Z\200mek \0    ""Tren\202r  \0  ""Insta-Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "Podsv\203tlen\204" TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
+  #define TR_VFSWFUNC          "Z\200mek \0    ""Tren\202r \0   ""Insta-Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "Podsv\203tlen\204" TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
 #elif defined(PCBGRUVIN9X)
-  #define TR_VFSWFUNC          "Z\200mek \0    ""Tren\202r  \0  ""Insta-Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_BOTH TR_PLAY_VALUE TR_SDCLOGS "Podsv\203tlen\204" TR_CFN_ADJUST_GVAR TR_CFN_TEST
+  #define TR_VFSWFUNC          "Z\200mek \0    ""Tren\202r \0   ""Insta-Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_BOTH TR_PLAY_VALUE TR_SDCLOGS "Podsv\203tlen\204" TR_CFN_ADJUST_GVAR TR_CFN_TEST
 #else
-  #define TR_VFSWFUNC          "Z\200mek \0    ""Tren\202r  \0  ""Insta-Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_BOTH TR_PLAY_VALUE "Podsv\203tlen\204\0 " TR_CFN_ADJUST_GVAR TR_CFN_TEST
+  #define TR_VFSWFUNC          "Z\200mek \0    ""Tren\202r \0   ""Insta-Trim\0" TR_SOUND TR_HAPTIC "Reset\0     " TR_VVARIO TR_PLAY_TRACK TR_PLAY_BOTH TR_PLAY_VALUE "Podsv\203tlen\204" TR_CFN_ADJUST_GVAR TR_CFN_TEST
 #endif
 
 #define LEN_VFSWRESET           "\005"
@@ -313,16 +316,15 @@
 #define INDENT_WIDTH           (FW/2)
 
 #if defined(PCBX9D)
-  #define TR_POPUPS              "[ENTER]\010[EXIT]"
+  #define TR_ENTER             "[ENTER]"
 #else
-  #define TR_POPUPS              "[MENU]\010[EXIT]"
+  #define TR_ENTER             "[MENU]"
 #endif
-#define OFS_EXIT               7
-#if defined(PCBX9D)
-  #define TR_MENUWHENDONE        CENTER"\005[ENTER] > DAL\207\214"
-#else
-  #define TR_MENUWHENDONE        CENTER"\007[MENU] > DAL\207\214"
-#endif
+
+#define TR_POPUPS              TR_ENTER"\010[EXIT]"
+#define OFS_EXIT               sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE        CENTER"\007"TR_ENTER" > DAL\207\214"
 #define TR_FREE                "voln\202:"
 #define TR_DELETEMODEL         "SMAZAT MODEL"
 #define TR_COPYINGMODEL        "Kop\204ruji model.."
@@ -340,7 +342,7 @@
 #define TR_TRIMINC             "KrokTrimu"
 #define TR_TTRACE              "StopaPlyn"
 #define TR_TTRIM               "TrimPlynu"
-#define TR_BEEPCTR             "(!)St\206edy"
+#define TR_BEEPCTR             "(\043)St\206edy"
 #define TR_PROTO               INDENT"Protokol"
 #define TR_PPMFRAME            "PPM frame"
 #define TR_MS                  "ms"
@@ -396,21 +398,23 @@
 #define TR_HAPTICSTRENGTH      INDENT"S\204la"
 #define TR_CONTRAST            "Kontrast LCD"
 #define TR_ALARMS_LABEL        "Alarmy"
+#define TR_BATTERY_RANGE       "Meze Baterie"
 #define TR_BATTERYWARNING      INDENT"Vybit\200 Baterie"
 #define TR_INACTIVITYALARM     INDENT"Ne\201innost"
 #define TR_MEMORYWARNING       INDENT"Pln\200 Pam\203t'"
 #define TR_ALARMWARNING        INDENT"Vypnut\212 Zvuk"
 #define TR_RENAVIG             "Navig. RotEnc"
 #define TR_THROTTLEREVERSE     "Revers Plynu"
-#define TR_MINUTEBEEP          INDENT"Cel\200 minuta"
-#define TR_BEEPCOUNTDOWN       INDENT"Odpo\201et \201asu"
+#define TR_MINUTEBEEP          INDENT"Minuta"
+#define TR_BEEPCOUNTDOWN       INDENT"Odpo\201et"
+#define TR_PERSISTENT          INDENT"Persist."
 #define TR_BACKLIGHT_LABEL     "Podsv\203tlen\204"
 #define TR_BLDELAY             INDENT"Zhasnout po"
 #define TR_BLONBRIGHTNESS      INDENT"Jas Zap."
 #define TR_BLOFFBRIGHTNESS     INDENT"Jas Vyp."
 #define TR_SPLASHSCREEN        "\210vodn\204Logo"
-#define TR_THROTTLEWARNING     "(!)Plyn"
-#define TR_SWITCHWARNING       "(!)Sp\204na\201"
+#define TR_THROTTLEWARNING     "(\043)Plyn"
+#define TR_SWITCHWARNING       "(\043)Sp\204na\201"
 #define TR_TIMEZONE            "\201asov\202 p\200smo"
 #define TR_RXCHANNELORD        "Po\206ad\204 Kan\200l\211"
 #define TR_SLAVE               "Pod\206\204zen\212"
@@ -503,7 +507,7 @@
 #define TR_LONGITUDE           "Longitude"
 #define TR_GPSCOORD            "Gps Sou\206adnice"
 #define TR_VARIO               "Vario"
-#define TR_SHUTDOWN            "VYP\214N\213\N\204.."
+#define TR_SHUTDOWN            "VYP\214N\213N\204.."
 #define TR_BATT_CALIB          "Kalib:Baterie"
 #define TR_CURRENT_CALIB       " +=\006Proud"
 #define TR_VOLTAGE             INDENT"Nap\203t\204"
@@ -568,3 +572,8 @@
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "R.Encs"
 #define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"
+#define TR_INTERNALRF          "Internal RF"
+#define TR_EXTERNALRF          "External RF"
+#define TR_FAILSAFE            "Failsafe mode"
+#define TR_FAILSAFESET         "FAILSAFE SETTINGS"
+#define TR_COUNTRYCODE         "Country Code"

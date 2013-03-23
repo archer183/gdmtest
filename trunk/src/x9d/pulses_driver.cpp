@@ -47,11 +47,25 @@ extern uint16_t pxxStream[400] ;
 
 void init_pxx()
 {
+  INTERNAL_RF_ON();
+
   // Timer1
   setupPulsesPXX() ; // TODO not here!
 
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN ;           // Enable portA clock
+#if defined(REV3)
   configure_pins( 0x0100, PIN_PERIPHERAL | PIN_PORTA | PIN_PER_1 | PIN_OS25 | PIN_PUSHPULL ) ;
+#else
+  GPIO_InitTypeDef GPIO_InitStructure;
+  RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOCPPM, ENABLE);
+  GPIO_PinAFConfig(GPIOCPPM, GPIO_PinSource_CPPM, GPIO_AF_TIM1);
+  GPIO_InitStructure.GPIO_Pin = PIN_CPPM_OUT;
+  GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF;
+  GPIO_InitStructure.GPIO_Speed = GPIO_Speed_100MHz;
+  GPIO_InitStructure.GPIO_OType = GPIO_OType_PP;
+  GPIO_InitStructure.GPIO_PuPd = GPIO_PuPd_NOPULL;
+  GPIO_Init(GPIOCPPM, &GPIO_InitStructure);
+#endif
   RCC->APB2ENR |= RCC_APB2ENR_TIM1EN ;            // Enable clock
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN ;                    // Enable DMA1 clock
 
@@ -59,7 +73,11 @@ void init_pxx()
   TIM1->ARR = 18000 ;                     // 9mS
   TIM1->CCR2 = 15000 ;            // Update time
   TIM1->PSC = (PERI2_FREQUENCY * TIMER_MULT_APB2) / 2000000 - 1 ;               // 0.5uS from 30MHz
+#if defined(REV3)
   TIM1->CCER = TIM_CCER_CC1E | TIM_CCER_CC1P ;
+#else
+  TIM1->CCER = TIM_CCER_CC1NE ;
+#endif
   TIM1->CR2 = TIM_CR2_OIS1 ;                      // O/P idle high
   TIM1->BDTR = TIM_BDTR_MOE ;             // Enable outputs
   TIM1->CCR1 = pxxStream[0] ;
@@ -87,6 +105,7 @@ void init_pxx()
   TIM1->SR &= ~TIM_SR_CC2IF ;                             // Clear flag
   TIM1->DIER |= TIM_DIER_CC2IE ;  // Enable this interrupt
   TIM1->CR1 |= TIM_CR1_CEN ;
+//  NVIC_SetPriority(TIM1_CC_IRQn, 1); // Debug - high priority, doesn't help
   NVIC_EnableIRQ(TIM1_CC_IRQn) ;
 }
 
@@ -95,8 +114,8 @@ void disable_pxx()
   NVIC_DisableIRQ(TIM1_CC_IRQn) ;
   TIM1->DIER &= ~TIM_DIER_CC2IE ;
   TIM1->CR1 &= ~TIM_CR1_CEN ;
+  INTERNAL_RF_OFF();
 }
-
 
 // PPM output
 // Timer 1, channel 1 on PA8 for prototype
@@ -108,12 +127,20 @@ void init_main_ppm()
   ppmStreamPtr = ppmStream ;
 
   RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN ;           // Enable portA clock
+#if defined(REV3)
   configure_pins( 0x0100, PIN_PERIPHERAL | PIN_PORTA | PIN_PER_1 | PIN_OS25 | PIN_PUSHPULL ) ;
+#else
+  configure_pins( 0x0080, PIN_PERIPHERAL | PIN_PORTA | PIN_PER_1 | PIN_OS25 | PIN_PUSHPULL ) ;
+#endif
   RCC->APB2ENR |= RCC_APB2ENR_TIM1EN ;            // Enable clock
 
   TIM1->ARR = *ppmStreamPtr++ ;
   TIM1->PSC = (PERI2_FREQUENCY * TIMER_MULT_APB2) / 2000000 - 1 ;               // 0.5uS from 30MHz
+#if defined(REV3)
   TIM1->CCER = TIM_CCER_CC1E ;
+#else
+  TIM1->CCER = TIM_CCER_CC1NE | TIM_CCER_CC1NP ;
+#endif
   TIM1->CCMR1 = TIM_CCMR1_OC1M_1 | TIM_CCMR1_OC1M_2 | TIM_CCMR1_OC2PE ;                   // PWM mode 1
   TIM1->CCR1 = 600 ;              // 300 uS pulse
   TIM1->BDTR = TIM_BDTR_MOE ;
@@ -157,7 +184,6 @@ extern "C" void TIM1_CC_IRQHandler()
     ppmStreamPtr = ppmStream ;
 
     TIM1->DIER |= TIM_DIER_UDE ;
-
     TIM1->SR &= ~TIM_SR_UIF ;                                       // Clear this flag
     TIM1->DIER |= TIM_DIER_UIE ;                            // Enable this interrupt
   }

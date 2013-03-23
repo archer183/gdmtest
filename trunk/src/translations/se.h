@@ -54,6 +54,9 @@
 #define LEN_VLCD               "\006"
 #define TR_VLCD                "NormalOptrex"
 
+#define LEN_COUNTRYCODES       TR("\002", "\007")
+#define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japan\0 ""Europe\0")
+
 #define LEN_VTRIMINC           TR("\006","\014")
 #define TR_VTRIMINC            TR("Expo  ""xFin  ""Fin   ""Medium""Grov  ","Exponentiell""Extra Fin   ""Fin         ""Medium      ""Grov        ")
 
@@ -313,16 +316,15 @@
 #define INDENT_WIDTH           (FW/2)
 
 #if defined(PCBX9D)
-#define TR_POPUPS              "[ENTER]\010[EXIT]"
+  #define TR_ENTER             "[ENTER]"
 #else
-#define TR_POPUPS              "[MENU]\010[EXIT]"
+  #define TR_ENTER             "[MENU]"
 #endif
-#define OFS_EXIT               7
-#if defined(PCBX9D)
-  #define TR_MENUWHENDONE        CENTER"\006[ENTER] Avslutar "
-#else
-  #define TR_MENUWHENDONE        CENTER"\006[MENU] Avslutar "
-#endif
+
+#define TR_POPUPS              TR_ENTER"\010[EXIT]"
+#define OFS_EXIT               sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE        CENTER"\006"TR_ENTER" Avslutar "
 #define TR_FREE                "kvar"
 #define TR_DELETEMODEL         "Radera Modell"
 #define TR_COPYINGMODEL        "Kopierar Modell "
@@ -396,6 +398,7 @@
 #define TR_HAPTICSTRENGTH      INDENT"Styrka"
 #define TR_CONTRAST            "Kontrast"
 #define TR_ALARMS_LABEL        "Alarm"
+#define TR_BATTERY_RANGE       "Batteri range"
 #define TR_BATTERYWARNING      INDENT"Batteri"
 #define TR_INACTIVITYALARM     INDENT"Inaktivitet"
 #define TR_MEMORYWARNING       INDENT"Lite Minne"
@@ -404,6 +407,7 @@
 #define TR_THROTTLEREVERSE     "Reverserad Gas"
 #define TR_MINUTEBEEP          INDENT"Varje Minut"
 #define TR_BEEPCOUNTDOWN       INDENT"R\201kna Ned"
+#define TR_PERSISTENT          INDENT"Persist."
 #define TR_BACKLIGHT_LABEL     "Belysning"
 #define TR_BLDELAY             INDENT"Av efter"
 #define TR_BLONBRIGHTNESS      INDENT"ON Brightness"
@@ -568,3 +572,8 @@
 #define TR_DATE                "Datum"
 #define TR_ROTARY_ENCODER      "R.Enks"
 #define TR_CHANNELS_MONITOR    "Kanal\205versikt"
+#define TR_INTERNALRF          "Internal RF"
+#define TR_EXTERNALRF          "External RF"
+#define TR_FAILSAFE            "Failsafe mode"
+#define TR_FAILSAFESET         "FAILSAFE SETTINGS"
+#define TR_COUNTRYCODE         "Country Code"

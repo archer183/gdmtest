@@ -32,6 +32,9 @@
 #define LEN_VLCD         "\006"
 #define TR_VLCD          "NormalOptrex"
 
+#define LEN_COUNTRYCODES       TR("\002", "\007")
+#define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japan\0 ""Europe\0")
+
 #define LEN_VTRIMINC     "\006"
 #define TR_VTRIMINC      "Expo  ""ExFino""Fino  ""Medio ""Largo "
 
@@ -291,16 +294,15 @@
 #define INDENT_WIDTH           (FW/2)
 
 #if defined(PCBX9D)
-#define TR_POPUPS              "[ENTER]\010[EXIT]"
+  #define TR_ENTER             "[ENTER]"
 #else
-#define TR_POPUPS              "[MENU]\010[EXIT]"
+  #define TR_ENTER             "[MENU]"
 #endif
-#define OFS_EXIT               7
-#if defined(PCBX9D)
-  #define TR_MENUWHENDONE      CENTER"\006[ENTER]QDO PRONTO"
-#else
-  #define TR_MENUWHENDONE      CENTER"\006[MENU]QDO PRONTO"
-#endif
+
+#define TR_POPUPS              TR_ENTER"\010[EXIT]"
+#define OFS_EXIT               sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE      CENTER"\006"TR_ENTER"QDO PRONTO"
 #define TR_FREE                "Livre"
 #define TR_DELETEMODEL         "EXCLUI MODELO"
 #define TR_COPYINGMODEL        "Copiando modelo"
@@ -374,6 +376,7 @@
 #define TR_HAPTICSTRENGTH      INDENT"Forca"
 #define TR_CONTRAST            "Contraste"
 #define TR_ALARMS_LABEL        "Alarmes"
+#define TR_BATTERY_RANGE       "Battery Range"
 #define TR_BATTERYWARNING      INDENT"Bateria Baixa"
 #define TR_INACTIVITYALARM     INDENT"Inactividade"
 #define TR_MEMORYWARNING       INDENT"Memoria Baixa"
@@ -382,6 +385,7 @@
 #define TR_THROTTLEREVERSE     "Inverte Acel."
 #define TR_MINUTEBEEP          INDENT"Beep Minuto"
 #define TR_BEEPCOUNTDOWN       INDENT"Beep Regressivo"
+#define TR_PERSISTENT          INDENT"Persist."
 #define TR_BACKLIGHT_LABEL     "Backlight"
 #define TR_BLDELAY             INDENT"Tempo Backlight"
 #define TR_BLONBRIGHTNESS      INDENT"ON Brightness"
@@ -546,3 +550,8 @@
 #define TR_DATE                "Data"
 #define TR_ROTARY_ENCODER      "R.Encs"
 #define TR_CHANNELS_MONITOR    "CHANNELS MONITOR"
+#define TR_INTERNALRF          "Internal RF"
+#define TR_EXTERNALRF          "External RF"
+#define TR_FAILSAFE            "Failsafe mode"
+#define TR_FAILSAFESET         "FAILSAFE SETTINGS"
+#define TR_COUNTRYCODE         "Country Code"

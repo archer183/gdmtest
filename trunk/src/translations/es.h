@@ -54,6 +54,9 @@
 #define LEN_VLCD         "\006"
 #define TR_VLCD          "NormalOptrex"
 
+#define LEN_COUNTRYCODES       TR("\002", "\007")
+#define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japan\0 ""Europe\0")
+
 #define LEN_VTRIMINC     TR("\006","\013")
 #define TR_VTRIMINC      TR("Expo  ""ExFino""Fino  ""Medio ""Grueso","Exponencial""Extra Fino ""Fino       ""Medio      ""Grueso     ")
 
@@ -313,16 +316,15 @@
 #define INDENT_WIDTH           (FW/2)
 
 #if defined(PCBX9D)
-#define TR_POPUPS              "[INTRO]\010[SALIR]"
+  #define TR_ENTER             "[ENTER]"
 #else
-#define TR_POPUPS              "[MENU]\010[SALIR]"
+  #define TR_ENTER             "[MENU]"
 #endif
-#define OFS_EXIT               7
-#if defined(PCBX9D)
-  #define TR_MENUWHENDONE      CENTER"\006[INTRO]AL ACABAR"
-#else
-  #define TR_MENUWHENDONE      CENTER"\006[MENU]AL ACABAR"
-#endif
+
+#define TR_POPUPS              TR_ENTER"\010[SALIR]"
+#define OFS_EXIT               sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE      CENTER"\006"TR_ENTER"AL ACABAR"
 #define TR_FREE                "libre"
 #define TR_DELETEMODEL         "BORRAR MODELO"
 #define TR_COPYINGMODEL        "Copiando modelo.."
@@ -396,6 +398,7 @@
 #define TR_HAPTICSTRENGTH      INDENT"Intensidad"
 #define TR_CONTRAST            "Contraste"
 #define TR_ALARMS_LABEL        "Alarmas"
+#define TR_BATTERY_RANGE       "Battery Range"
 #define TR_BATTERYWARNING      INDENT"Bateria Baja"
 #define TR_INACTIVITYALARM     INDENT"Inactividad"
 #define TR_MEMORYWARNING       INDENT"Memoria Baja"
@@ -404,6 +407,7 @@
 #define TR_THROTTLEREVERSE     TR("Acel Invert","Invertir Acel.")
 #define TR_MINUTEBEEP          TR(INDENT"Minuto",INDENT"Cada minuto")
 #define TR_BEEPCOUNTDOWN       INDENT"Cuentaatras"
+#define TR_PERSISTENT          INDENT"Persist."
 #define TR_BACKLIGHT_LABEL     "Luz Fondo"
 #define TR_BLDELAY             INDENT"Duracion"
 #define TR_BLONBRIGHTNESS      INDENT"ON Brightness"
@@ -568,3 +572,8 @@
 #define TR_DATE                "Fecha"
 #define TR_ROTARY_ENCODER      "R.Encs"
 #define TR_CHANNELS_MONITOR    "MONITOR CANALES"
+#define TR_INTERNALRF          "Internal RF"
+#define TR_EXTERNALRF          "External RF"
+#define TR_FAILSAFE            "Failsafe mode"
+#define TR_FAILSAFESET         "FAILSAFE SETTINGS"
+#define TR_COUNTRYCODE         "Country Code"

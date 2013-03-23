@@ -802,7 +802,13 @@ NOINLINE void telemetryPoll10ms()
       uint16_t tmr10ms = g_tmr10ms;
       if (verticalSpeed < 0 || tmr10ms > s_varioTmr) {
         uint8_t SoundVarioBeepTime = (1600 - verticalSpeed) / 100;
+#if defined(PCBSTD)
+        uint8_t SoundVarioBeepFreq = max(40, (verticalSpeed * 10 + 20000) >> 8);
+#elif defined(CPUARM)
+        uint8_t SoundVarioBeepFreq = (verticalSpeed * 10 + 16000) >> 7;
+#else
         uint8_t SoundVarioBeepFreq = (verticalSpeed * 10 + 16000) >> 8;
+#endif
         s_varioTmr = tmr10ms + (SoundVarioBeepTime*2);
         AUDIO_VARIO(SoundVarioBeepFreq, SoundVarioBeepTime);
       }
@@ -941,7 +947,8 @@ void resetTelemetry()
 #ifdef SIMU
   frskyData.analog[0].set(120, UNIT_VOLTS);
   frskyData.analog[1].set(240, UNIT_VOLTS);
-  frskyData.rssi[0].set(75);
+  frskyData.rssi[0].value = 75;
+  frskyData.rssi[1].value = 75;
   frskyData.hub.fuelLevel = 75;
   frskyData.hub.rpm = 12000;
 

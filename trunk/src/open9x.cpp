@@ -80,8 +80,6 @@ OS_FlagID audioFlag;
 OS_MutexID audioMutex;
 OS_MutexID mixerMutex;
 
-char modelNames[MAX_MODELS][sizeof(g_model.name)];
-
 #endif // defined(CPUARM)
 
 #if defined(SPLASH)
@@ -284,7 +282,6 @@ void per10ms()
       rePreviousValue = reNewValue;
       putEvent(scrollRE < 0 ? EVT_ROTARY_LEFT : EVT_ROTARY_RIGHT);
     }
-    extern uint8_t s_evt;
     uint8_t evt = s_evt;
     if (EVT_KEY_MASK(evt) == BTN_REa + NAVIGATION_RE_IDX()) {
       if (IS_KEY_BREAK(evt)) {
@@ -297,7 +294,7 @@ void per10ms()
   }
 #endif
 
-#if (defined(FRSKY) || defined(MAVLINK) || defined(JETI)) && !defined(CPUARM) && !(defined(PCBSTD) && (defined(AUDIO) || defined(VOICE)))
+#if (defined(FRSKY) || defined(MAVLINK) || defined(JETI)) && !defined(CPUARM)
   if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol))
     telemetryPoll10ms();
 #endif
@@ -397,7 +394,7 @@ uint16_t evalChkSum()
   return sum;
 }
 
-#ifndef TEMPLATES
+#if !defined(TEMPLATES)
 inline void applyDefaultTemplate()
 {
   for (int i=0; i<NUM_STICKS; i++) {
@@ -411,10 +408,27 @@ inline void applyDefaultTemplate()
 }
 #endif
 
+#if defined(PXX) && defined(CPUARM)
+void checkModelIdUnique(uint8_t id)
+{
+  for (uint8_t i=0; i<MAX_MODELS; i++) {
+    if (i != id && g_model.modelId!=0 && g_model.modelId == modelIds[i]) {
+      s_warning = PSTR("Model ID already used");
+      s_warning_type = WARNING_TYPE_ASTERISK;
+    }
+  }
+}
+#endif
+
 void modelDefault(uint8_t id)
 {
   memset(&g_model, 0, sizeof(g_model));
   applyDefaultTemplate();
+
+#if defined(PXX) && defined(CPUARM)
+  modelIds[id] = g_model.modelId = id+1;
+  checkModelIdUnique(id);
+#endif
 }
 
 int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0, 25 ,50, 75, 100
@@ -596,7 +610,8 @@ uint16_t expou(uint16_t x, uint16_t k)
   bool extended;
   if (k>80) {
     extended=true;
-  } else {
+  }
+  else {
     k+=(k>>2);  // use bigger values before extend, because the effect is anyway very very low
     extended=false;
   } // endif k > 50
@@ -837,42 +852,40 @@ int16_t applyLimits(uint8_t channel, int32_t value)
   if (ofs > lim_p) ofs = lim_p;
   if (ofs < lim_n) ofs = lim_n;
 
-// because the recaling optimization would reduce the calculation reserve we activate this for all builds
-// it increases the caculation reserve from factor 20,25x to 32x, which it slightly better as original 
-// without it we would only have 16x which is slightly worse as original, we should not do this 
-// #ifdef PREVENT_ARITHMETIC_OVERFLOW  
+  // because the rescaling optimization would reduce the calculation reserve we activate this for all builds
+  // it increases the calculation reserve from factor 20,25x to 32x, which it slightly better as original
+  // without it we would only have 16x which is slightly worse as original, we should not do this
+
   // thanks to gbirkus, he motivated this change, which greatly reduces overruns 
   // unfortunately the constants and 32bit compares generates about 50 bytes codes; didn't find a way to get it down.
-
-  value = limit(int32_t(-RESXl*256),value,int32_t(RESXl*256));  // saves 2 bytes compared to other solutions up to now
-// #endif
+  value = limit(int32_t(-RESXl*256), value, int32_t(RESXl*256));  // saves 2 bytes compared to other solutions up to now
   
 #if defined(PPM_LIMITS_SYMETRICAL)
   if (value) {
-	int16_t tmp;
+    int16_t tmp;
     if (lim->symetrical)
       tmp = (value > 0) ? (lim_p) : (-lim_n);
     else
       tmp = (value > 0) ? (lim_p - ofs) : (-lim_n + ofs);
-	value = (int32_t) value * tmp;   //  div by 1024*256 -> output = -1024..1024
+    value = (int32_t) value * tmp;   //  div by 1024*256 -> output = -1024..1024
 #else    
   if (value) {
     int16_t tmp = (value > 0) ? (lim_p - ofs) : (-lim_n + ofs);
-	value = (int32_t) value * tmp;   //  div by 1024*256 -> output = -1024..1024
+    value = (int32_t) value * tmp;   //  div by 1024*256 -> output = -1024..1024
 #endif    
     
 #ifdef CORRECT_NEGATIVE_SHIFTS
-    int8_t sign=(value<0?1:0);
-    value-=sign;
-	tmp=value>>16;   // that's quite tricky: the shiftright 16 operation is assmbled just with addressmove; just forget the two least significant bytes; 
-	tmp>>=2;   // now one simple shift right for two bytes does the rest
-    tmp+=sign;
+    int8_t sign = (value<0?1:0);
+    value -= sign;
+    tmp = value>>16;   // that's quite tricky: the shiftright 16 operation is assmbled just with addressmove; just forget the two least significant bytes;
+    tmp >>= 2;   // now one simple shift right for two bytes does the rest
+    tmp += sign;
 #else
-	tmp=value>>16;   // that's quite tricky: the shiftright 16 operation is assmbled just with addressmove; just forget the two least significant bytes; 
-	tmp>>=2;   // now one simple shift right for two bytes does the rest
+    tmp = value>>16;   // that's quite tricky: the shiftright 16 operation is assmbled just with addressmove; just forget the two least significant bytes;
+    tmp >>= 2;   // now one simple shift right for two bytes does the rest
 #endif
     
-	ofs+=tmp;  // ofs can to added directly because already recalculated,
+    ofs += tmp;  // ofs can to added directly because already recalculated,
   }
 
   if (ofs > lim_p) ofs = lim_p;
@@ -887,7 +900,7 @@ int16_t applyLimits(uint8_t channel, int32_t value)
 }
 
 int16_t calibratedStick[NUM_STICKS+NUM_POTS];
-int16_t g_chans512[NUM_CHNOUT] = {0};
+int16_t channelOutputs[NUM_CHNOUT] = {0};
 int16_t ex_chans[NUM_CHNOUT] = {0}; // Outputs (before LIMITS) of the last perMain;
 #ifdef HELI
 int16_t cyc_anas[3] = {0};
@@ -930,8 +943,7 @@ int16_t getValue(uint8_t i)
 #endif
   else if (i<MIXSRC_LAST_CSW) return __getSwitch(SWSRC_THR+i+1-MIXSRC_THR) ? 1024 : -1024;
 #endif
-  else if (i<MIXSRC_PPM1+NUM_CAL_PPM) return (g_ppmIns[i+1-MIXSRC_PPM1] - g_eeGeneral.trainer.calib[i+1-MIXSRC_PPM1])*2;
-  else if (i<MIXSRC_LAST_PPM) return g_ppmIns[i+1-MIXSRC_PPM1]*2;
+  else if (i<MIXSRC_LAST_PPM) { int16_t x = g_ppmIns[i+1-MIXSRC_PPM1]; if (i<MIXSRC_PPM1+NUM_CAL_PPM) { x-= g_eeGeneral.trainer.calib[i+1-MIXSRC_PPM1]; } return x*2; }
   else if (i<MIXSRC_LAST_CH) return ex_chans[i+1-MIXSRC_CH1];
 #if defined(GVARS)
   else if (i<MIXSRC_LAST_GVAR) return GVAR_VALUE(i+1-MIXSRC_GVAR1, getGVarFlightPhase(s_perout_flight_phase, i+1-MIXSRC_GVAR1));
@@ -1220,7 +1232,7 @@ int8_t getMovedSwitch()
       if (mask)
         switches_states ^= mask;
       else {
-        switches_states = (switches_states & 0x8C) | (i-1);
+        switches_states = (switches_states & 0xFC) | (i-1);
       }
     }
   }
@@ -1462,8 +1474,9 @@ void checkBacklight()
   rotencPoll();
 #endif
 
-  if (tmr10ms != g_blinkTmr10ms) {
-    tmr10ms = g_blinkTmr10ms;
+  uint8_t x = g_blinkTmr10ms;
+  if (tmr10ms != x) {
+    tmr10ms = x;
     uint16_t tsum = stickMoveValue();
     if (tsum != inacSum) {
       inacSum = tsum;
@@ -1655,9 +1668,9 @@ void checkSwitches()
       }
 #else
       uint8_t x = 2;
-      for (uint8_t i=1; i<8; i++) {
+      for (uint8_t i=1; i<MAX_PSWITCH-1; i++) {
         uint8_t attr = (states & (1 << i)) == (switches_states & (1 << i)) ? 0 : INVERS;
-        putsSwitches(x, 5*FH, (i>2?(i+1):1+((states>>4)&0x3)), attr);
+        putsSwitches(x, 5*FH, (i>2?(i+1):1+((states>>1)&0x3)), attr);
         if (i == 1 && attr) i++;
         if (i != 1) x += 3*FW+FW/2;
       }
@@ -1743,7 +1756,7 @@ uint8_t checkTrim(uint8_t event)
   if (k>=0 && k<8 && !IS_KEY_BREAK(event)) {
 #endif
     // LH_DWN LH_UP LV_DWN LV_UP RV_DWN RV_UP RH_DWN RH_UP
-    uint8_t idx = CONVERT_MODE(1+k/2) - 1;
+    uint8_t idx = CONVERT_MODE(1+(uint8_t)k/2) - 1;
     uint8_t phase;
     int16_t before;
     bool thro;
@@ -1817,8 +1830,13 @@ uint8_t checkTrim(uint8_t event)
       after = TRIM_MAX;
     if (after < TRIM_MIN)
       after = TRIM_MIN;
+#if defined(CPUARM)
+    after >>= 1;
+    after += 120;
+#else
     after >>= 2;
     after += 60;
+#endif
 #endif
 
     if (beepTrim) {
@@ -1882,18 +1900,19 @@ uint16_t anaIn(uint8_t chan)
 #if defined(PCBX9D)
   // crossAna[]={LH,LV,RH,RV,S1,S2,LS,RS,BAT 
   // s_anaFilt[]={LH,LV,RH,RV,S1,S2,LS,RS,_BAT
-  static const uint8_t crossAna[]={0,1,2,3,4,5,6,7,8};
+  return s_anaFilt[chan];
 #elif defined(PCBSKY9X) && !defined(REVA)
   static const uint8_t crossAna[]={1,5,7,0,4,6,2,3};
   if (chan == TX_CURRENT) {
     return Current_analogue ;
   }
-#else
-  static const pm_char crossAna[] PROGMEM ={3,1,2,0,4,5,6,7};
-#endif
-
   volatile uint16_t *p = &s_anaFilt[pgm_read_byte(crossAna+chan)];
   return *p;
+#else
+  static const pm_char crossAna[] PROGMEM = {3,1,2,0,4,5,6,7};
+  volatile uint16_t *p = &s_anaFilt[pgm_read_byte(crossAna+chan)];
+  return *p;
+#endif
 }
 
 #if defined(CPUARM)
@@ -1961,7 +1980,7 @@ void getADC_bandgap()
   ADCSRB |= (1<<MUX5);
 #else
   // TODO is the next line needed (because it has been called before perMain)?
-  ADMUX=0x1E|ADC_VREF_TYPE; // Switch MUX to internal 1.22V reference
+  ADMUX = 0x1E|ADC_VREF_TYPE; // Switch MUX to internal 1.22V reference
   
 /*
   MCUCR|=0x28;  // enable Sleep (bit5) enable ADC Noise Reduction (bit2)
@@ -1973,10 +1992,9 @@ void getADC_bandgap()
   MCUCR&=0x08;  // disable sleep  
   */
 
-  ADCSRA|=0x40;
-  while ((ADCSRA & 0x10)==0);
-  ADCSRA|=0x10; // take sample
-  BandGap=ADC;
+  ADCSRA |= 0x40;
+  while (ADCSRA & 0x40);
+  BandGap = ADC;
 #endif
 }
 #endif
@@ -2064,7 +2082,11 @@ uint16_t inacSum = 0;
 BeepANACenter bpanaCenter = 0;
 
 uint16_t sDelay[MAX_MIXERS] = {0};
+#if defined(CPUARM)
 int32_t  act   [MAX_MIXERS] = {0};
+#else
+__int24  act   [MAX_MIXERS] = {0};
+#endif
 uint8_t  swOn  [MAX_MIXERS] = {0};
 uint8_t mixWarning;
 
@@ -2555,8 +2577,10 @@ void evalFunctions()
               PLAY_VALUE(param, i+1);
             }
             else {
+#if defined(GVARS)
               if (CFN_FUNC(sd) == FUNC_PLAY_TRACK && param > 250)
                 param = GVAR_VALUE(param-251, getGVarFlightPhase(s_perout_flight_phase, param-251));
+#endif
               PUSH_CUSTOM_PROMPT(active ? param : param+1, i+1);
             }
           }
@@ -2872,7 +2896,8 @@ void perOut(uint8_t mode, uint8_t tick10ms)
       if (mode == e_perout_mode_normal && (md->speedUp || md->speedDown)) { // there are delay values
 #define DEL_MULT_SHIFT 8
         // we recale to a mult 256 higher value for calculation
-        int16_t diff = v - ((int32_t) act[i]>>DEL_MULT_SHIFT);
+        int32_t tact = act[i];
+        int16_t diff = v - (tact>>DEL_MULT_SHIFT);
         if (diff) {
           // open.20.fsguruh: speed is defined in % movement per second; In menu we specify the full movement (-100% to 100%) = 200% in total
           // the unit of the stored value is the value from md->speedUp or md->speedDown divide SLOW_STEP seconds; e.g. value 4 means 4/SLOW_STEP = 2 seconds for CPU64
@@ -2887,21 +2912,21 @@ void perOut(uint8_t mode, uint8_t tick10ms)
             if (diff>0) {
               if (md->speedUp>0) {
                 // if a speed upwards is defined recalculate the new value according configured speed; the higher the speed the smaller the add value is
-                int32_t newValue = act[i]+rate/((int16_t)(100/SLOW_STEP)*md->speedUp); 
+                int32_t newValue = tact+rate/((int16_t)(100/SLOW_STEP)*md->speedUp);
                 if (newValue<currentValue) currentValue=newValue; // Endposition; prevent toggling around the destination
               }
             }
             else {  // if is <0 because ==0 is not possible
               if (md->speedDown>0) {
                 // see explanation in speedUp
-                int32_t newValue = act[i]-rate/((int16_t)(100/SLOW_STEP)*md->speedDown); 
+                int32_t newValue = tact-rate/((int16_t)(100/SLOW_STEP)*md->speedDown);
                 if (newValue>currentValue) currentValue=newValue; // Endposition; prevent toggling around the destination
               }            
             } //endif diff>0
-            act[i] = currentValue;
+            act[i] = tact = currentValue;
             // open.20.fsguruh: this implementation would save about 50 bytes code
           } // endif tick10ms ; in case no time passed assign the old value, not the current value from source
-          v = (act[i] >> DEL_MULT_SHIFT);
+          v = (tact >> DEL_MULT_SHIFT);
         } //endif diff
       } //endif speed
 
@@ -3047,7 +3072,6 @@ void doMixerCalculations()
   static ACTIVE_PHASES_TYPE s_fade_flight_phases = 0;
   static uint8_t s_last_phase = 255; // TODO reinit everything here when the model changes, no???
   uint8_t phase = getFlightPhase();
-  int32_t weight; // = 0; will be initilized below not needed here even compiler complains -> saves 6 bytes
 
   if (s_last_phase != phase) {
     if (s_last_phase != 255) PLAY_PHASE_OFF(s_last_phase);
@@ -3072,9 +3096,18 @@ void doMixerCalculations()
     s_last_phase = phase;
   }
 
+  if (tick10ms) {
+#if defined(CPUARM)
+    requiredSpeakerVolume = g_eeGeneral.speakerVolume + VOLUME_LEVEL_DEF;
+#endif
+
+    // the reason this needs to be done before limits is the applyLimit function; it checks for safety switches which would be not initialized otherwise
+    evalFunctions();
+  } //endif
+
+  int32_t weight = 0;
   if (s_fade_flight_phases) {
     memclear(sum_chans512, sizeof(sum_chans512));
-    weight = 0;  // unfortunately removing this instead of initialization do not save even 1 bytes of code, that's why it's here
     for (uint8_t p=0; p<MAX_PHASES; p++) {
       if (s_fade_flight_phases & ((ACTIVE_PHASES_TYPE)1 << p)) {
         s_perout_flight_phase = p;
@@ -3092,15 +3125,6 @@ void doMixerCalculations()
     perOut(e_perout_mode_normal, tick10ms);
   }
   
-  if (tick10ms) {
-#if defined(CPUARM)
-    requiredSpeakerVolume = g_eeGeneral.speakerVolume + VOLUME_LEVEL_DEF;
-#endif
-
-    // the reason this needs to be done before limits is the applyLimit function; it checks for safety switches which would be not initialized otherwise
-    evalFunctions();  
-  } //endif
-
   //========== LIMITS ===============
   for (uint8_t i=0; i<NUM_CHNOUT; i++) {
     // chans[i] holds data from mixer.   chans[i] = v*weight => 1024*256
@@ -3114,7 +3138,7 @@ void doMixerCalculations()
     int16_t value = applyLimits(i, q);  // applyLimits will remove the 256 100% basis
 
     cli();
-    g_chans512[i] = value;  // copy consistent word to int-level
+    channelOutputs[i] = value;  // copy consistent word to int-level
     sei();
   }
 
@@ -3138,7 +3162,7 @@ void doMixerCalculations()
 
   if (g_model.thrTraceSrc > NUM_POTS) {
     uint8_t ch = g_model.thrTraceSrc-NUM_POTS-1;
-    val = g_chans512[ch];
+    val = channelOutputs[ch];
     
     int16_t gModelMax = calc100toRESX(g_model.limitData[ch].max)+1024;
     int16_t gModelMin = calc100toRESX(g_model.limitData[ch].min)-1024;
@@ -3180,7 +3204,6 @@ void doMixerCalculations()
 #else
   val >>= (RESX_SHIFT-4); // calibrate it
 #endif
-  
 
   // Timers start
   for (uint8_t i=0; i<MAX_TIMERS; i++) {
@@ -3510,12 +3533,12 @@ void perMain()
     counter = 10;
 #if defined(PCBX9D)
     int32_t instant_vbat = anaIn(TX_VOLTAGE);
-    instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * 15 ;
-    instant_vbat /= 256  ;
+    instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * BATT_SCALE;
+    instant_vbat >>= 11;
 #elif defined(PCBSKY9X)
     int32_t instant_vbat = anaIn(TX_VOLTAGE);
-    instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * 4191 ;
-    instant_vbat /= 55296  ;
+    instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * 4191;
+    instant_vbat /= 55296;
 #elif defined(PCBGRUVIN9X)
     uint16_t instant_vbat = anaIn(TX_VOLTAGE);
     instant_vbat = ((uint32_t)instant_vbat*1112 + (int32_t)instant_vbat*g_eeGeneral.vBatCalib + (BandGap<<2)) / (BandGap<<3);
@@ -3593,24 +3616,13 @@ uint16_t getTmr16KHz()
   }
 }
 
-
-
-// new implementation
-
-// This ISR is only called if timer matches OCR0. We updated OCR0 on each call to make ISR happen.
-// If we do not do this, we have 16,385msec time before overflow causes an IRQ
-// So it's so easy instead of preventing IRQ we 
-//just do not cause it! It's enough not to write to OCR0. This gives plenty of time to finish ISR. 
-// So instead of masking we write OCR0 at the end. Max would be ISR is caused here immediately, which would not do anything, 
-// because all critical pfathes are finished. It also would give us the chance to measure if we passed the next tick and count it. 
-// It's already implemented but commented out, because of code cost.
-
-ISR(TIMER_10MS_VECT, ISR_NOBLOCK) 
-// 10ms timer
-{
-  static uint8_t accuracyWarble; // because 16M / 1024 / 100 = 156.25. we need to correct the fault; no start value needed  
-
 #if defined(PCBSTD) && (defined(AUDIO) || defined(VOICE))
+// Clocks every 128 uS
+ISR(TIMER2_OVF_vect, ISR_NOBLOCK)
+{
+  cli();
+  TIMSK &= ~ (1<<TOIE2) ; // stop reentrance
+  sei();
 
 #if defined(AUDIO)
   AUDIO_DRIVER();
@@ -3620,69 +3632,29 @@ ISR(TIMER_10MS_VECT, ISR_NOBLOCK)
   VOICE_DRIVER();
 #endif
 
-  static uint8_t cnt10ms; // no initialization needed here;  execute 10ms code once every 78 ISRs; takes 16.38msec to overrun for first round --> no problem
-
-#if defined(FRSKY) || defined(MAVLINK) || defined(JETI)
-  if (cnt10ms == 30) {
-    if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol))
-      telemetryPoll10ms();
-  }
+  cli();
+  TIMSK |= (1<<TOIE2) ;
+  sei();
+}
 #endif
 
-  if (--cnt10ms == 0) { // BEGIN { ... every 10ms ... }
-    // Begin 10ms event
-    // cnt10ms = 78;
-    cnt10ms = (!(++accuracyWarble &0x07)) ? 79 : 78;  // instead of assigning we add to take missed ISRs into account
-    // each per10ms() we are 0,016msec too fast
-    // one tick more means 0,112 msec too slow = 7*0,016msec --> in sum we are correct!!!        
-    // therefore every 8. round we need to slow down one tick
-    
-#endif
+// Clocks every 10ms
+ISR(TIMER_10MS_VECT, ISR_NOBLOCK) 
+{
+  // without correction we are 0,16% too fast; that mean in one hour we are 5,76Sek too fast; we do not like that
+  static uint8_t accuracyWarble; // because 16M / 1024 / 100 = 156.25. we need to correct the fault; no start value needed  
 
-    AUDIO_HEARTBEAT();
+  AUDIO_HEARTBEAT();
 
 #if defined(HAPTIC)
-    HAPTIC_HEARTBEAT();
+  HAPTIC_HEARTBEAT();
 #endif
 
-    per10ms();
+  per10ms();
 
-#if defined(PCBSTD) && (defined(AUDIO) || defined(VOICE))
-  } // end 10ms event
-#endif
-
-  // without correction we are 0,16% too fast; that mean in one hour we are 5,76Sek too fast; we do not like that
-#if defined(PCBGRUVIN9X)
-  // static uint8_t accuracyWarble; // because 16M / 1024 / 100 = 156.25. we need to correct the fault; not start value needed
   uint8_t bump = (!(++accuracyWarble & 0x03)) ? 157 : 156;
-  OCR2A += bump;
-#elif defined(AUDIO) || defined(VOICE)
-  // simple solution; if ISR tooks longer this round is just ignored; The problem in this case is, it takes 16msec for the next ISR --> big gap in AUDIO, VOICE and a big fault in time calculaiton if it happens
-  // cnt10ms--;
-  OCR0 += 2; // interrupt every 128us
-/*  
-  // needs to change cnt10ms to int instead uint to allow cnt10ms to be negative
-  // also remove cnt10ms-- in if statement above, because substraction is done here
-  // code oost: 34 bytes
-  // this solutions   all missed ISRs are counted and next ISR is in about 128usec (exception is wrap around)
-  cli();
-  do {
-    cnt10ms--;  
-    OCR0 += 2; // interrupt every 128us
-  } while ((OCR0<TCNT0) && (OCR0>=2)); // loop in case ISR tooks too long; If it laps around, ignore additional calcuation and stop anyway
-  // sei(); will be done anyway if ISR is left
- */
-#else
-  // static uint8_t accuracyWarble; // because 16M / 1024 / 100 = 156.25. we need to correct the fault; not start value needed
-  // each tick we are 0,016msec too fast
-  // one tick more means 0,048 msec too slow = 3*0,016msec --> in sum we are correct!!!
-  // therefore every 4 round we need to slow down one tick
-  uint8_t bump = (!(++accuracyWarble & 0x03)) ? 157 : 156;
-  OCR0 += bump;
-#endif
-
+  TIMER_10MS_COMPVAL += bump;
 }
-
 
 // Timer3 used for PPM_IN pulse width capture. Counter running at 16MHz / 8 = 2MHz
 // equating to one count every half millisecond. (2 counts = 1ms). Control channel
@@ -4052,11 +4024,6 @@ inline void open9xInit(OPEN9X_INIT_ARGS)
   // TODO startPulses should be started after the first doMixerCalculations()
 #endif
 
-#if defined(PCBX9D)
-  // TODO remove this line, it only allows the Mixer to run (until pulses are there!)
-  s_current_protocol = PROTO_PPM;
-#endif
-
 #if !defined(CPUARM)
   doMixerCalculations();
 #endif
@@ -4076,12 +4043,10 @@ void mixerTask(void * pdata)
     if (!s_pulses_paused) {
       uint16_t t0 = getTmr2MHz();
 
-      if (s_current_protocol < PROTO_NONE) {
-        CoEnterMutexSection(mixerMutex);
-        bool tick10ms = doMixerCalculations();
-        CoLeaveMutexSection(mixerMutex);
-        if (tick10ms) checkTrims();
-      }
+      CoEnterMutexSection(mixerMutex);
+      bool tick10ms = doMixerCalculations();
+      CoLeaveMutexSection(mixerMutex);
+      if (tick10ms) checkTrims();
 
       if (heartbeat == HEART_TIMER_PULSES+HEART_TIMER10ms) {
         wdt_reset();
@@ -4102,10 +4067,14 @@ void menusTask(void * pdata)
 
   while (pwrCheck() != e_power_off) {
     perMain();
+#if defined(PCBSKY9X)
     for (uint8_t i=0; i<5; i++) {
       usbMassStorage();
       CoTickDelay(1);  // 5*2ms for now
     }
+#else
+    CoTickDelay(5);  // 5*2ms for now
+#endif
   }
 
 #if defined(SDCARD)

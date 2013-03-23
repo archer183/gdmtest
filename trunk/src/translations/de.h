@@ -56,6 +56,9 @@
 #define LEN_VLCD                        "\006"
 #define TR_VLCD                         "NormalOptrex"
 
+#define LEN_COUNTRYCODES       TR("\002", "\007")
+#define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japan\0 ""Europe\0")
+
 #define LEN_VTRIMINC                    "\006"
 #define TR_VTRIMINC                     "Expo. ""X-Fein""Fein  ""Mittel""Grob  "
 
@@ -289,7 +292,7 @@
 #define TR_VSWITCHES_SHORT     "-012TREAG3456789"
 
 #if defined(PCBSKY9X)
-  #define TR_ROTARY_ENCODERS_VSRCRAW "DrG"
+  #define TR_ROTARY_ENCODERS_VSRCRAW "Dreh"
 #elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS > 2
   #define TR_ROTARY_ENCODERS_VSRCRAW "DGa ""DGb ""DGc ""DGd "
 #elif defined(PCBGRUVIN9X) && ROTARY_ENCODERS <= 2
@@ -304,7 +307,7 @@
 #define TR_CYC_VSRCRAW                  "[C1]""[C2]""[C3]"
 #endif
 
-#define TR_VSRCRAW                      "---\0""StR\0""H\203R\0""Gas\0""QuR\0" TR_POTS_VSRCRAW TR_ROTARY_ENCODERS_VSRCRAW "MAX\0""3POS" TR_CYC_VSRCRAW "TrmS" "TrmH" "TrmG" "TrmQ" TR_SW_VSRCRAW
+#define TR_VSRCRAW                      "---\0""Sei\0""H\203h\0""Gas\0""Que\0" TR_POTS_VSRCRAW TR_ROTARY_ENCODERS_VSRCRAW "MAX\0" TR_CYC_VSRCRAW "TrmS" "TrmH" "TrmG" "TrmQ" TR_SW_VSRCRAW
 
 #define LEN_VTMRMODES                   "\003"
 #define TR_VTMRMODES                    "AUS""ABS""GSs""GS%""GSt"
@@ -315,16 +318,15 @@
 #define INDENT_WIDTH           					(FW/2)
 
 #if defined(PCBX9D)
-#define TR_POPUPS              "[ENTER]\010[EXIT]"
+  #define TR_ENTER                      "[ENTER]"
 #else
-#define TR_POPUPS              "[MENU]\010[EXIT]"
+  #define TR_ENTER                      "[MENU]"
 #endif
-#define OFS_EXIT                        7
-#if defined(PCBX9D)
-  #define TR_MENUWHENDONE               CENTER"\006[ENTER] > Weiter"
-#else
-  #define TR_MENUWHENDONE               CENTER"\006[MENU] > Weiter"
-#endif
+
+#define TR_POPUPS                       TR_ENTER"\010[EXIT]"
+#define OFS_EXIT                        sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE                 CENTER"\006"TR_ENTER" > Weiter"
 #define TR_FREE                         "frei"
 #define TR_DELETEMODEL                  "Modell l\203schen?"
 #define TR_COPYINGMODEL                 "Kopiere Modell"
@@ -398,6 +400,7 @@
 #define TR_HAPTICSTRENGTH               INDENT"St\201rke"
 #define TR_CONTRAST                     "Kontrast"
 #define TR_ALARMS_LABEL        					"Alarm wenn"
+#define TR_BATTERY_RANGE                "Akku V-Bereich"
 #define TR_BATTERYWARNING               INDENT"Akku leer"
 #define TR_INACTIVITYALARM              INDENT"Inaktivit\201t"
 #define TR_MEMORYWARNING       					INDENT"Speicher voll"
@@ -406,7 +409,8 @@
 #define TR_THROTTLEREVERSE              "Gasumkehrung"
 #define TR_MINUTEBEEP                   INDENT"Minuten"
 #define TR_BEEPCOUNTDOWN                INDENT"Countdown"
-#define TR_BACKLIGHT_LABEL     					"Beleuchtung"
+#define TR_PERSISTENT                   INDENT"Persist."
+#define TR_BACKLIGHT_LABEL     		     "Beleuchtung"
 #define TR_BLDELAY                      INDENT"Dauer"
 #define TR_BLONBRIGHTNESS               INDENT"An Helligkeit"
 #define TR_BLOFFBRIGHTNESS              INDENT"Aus Helligkeit"
@@ -570,3 +574,8 @@
 #define TR_DATE                "Datum"
 #define TR_ROTARY_ENCODER      "Drehgeber"
 #define TR_CHANNELS_MONITOR    "Kanal Monitor"
+#define TR_INTERNALRF          "Internal RF"
+#define TR_EXTERNALRF          "External RF"
+#define TR_FAILSAFE            "Failsafe mode"
+#define TR_FAILSAFESET         "FAILSAFE SETTINGS"
+#define TR_COUNTRYCODE         "Country Code"

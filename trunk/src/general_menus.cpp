@@ -146,6 +146,7 @@ enum menuGeneralSetupItems {
 #endif
   IF_FRSKY(ITEM_SETUP_TIMEZONE)
   IF_FRSKY(ITEM_SETUP_GPSFORMAT)
+  IF_PXX(ITEM_SETUP_COUNTRYCODE)
   ITEM_SETUP_RX_CHANNEL_ORD,
   ITEM_SETUP_STICK_MODE_LABELS,
   ITEM_SETUP_STICK_MODE,
@@ -164,7 +165,7 @@ void menuGeneralSetup(uint8_t event)
   }
 #endif
 
-  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) IF_BATTGRAPH(1) LABEL(SOUND), 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, LABEL(BACKLIGHT), 0, 0, CASE_PWM_BACKLIGHT(0) CASE_PWM_BACKLIGHT(0) 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) 0, LABEL(TX_MODE), CASE_PCBX9D(0) 1/*to force edit mode*/});
+  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) IF_BATTGRAPH(1) LABEL(SOUND), 0, 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_CPUARM(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) 0, LABEL(BACKLIGHT), 0, 0, CASE_PWM_BACKLIGHT(0) CASE_PWM_BACKLIGHT(0) 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) IF_PXX(0) 0, LABEL(TX_MODE), CASE_PCBX9D(0) 1/*to force edit mode*/});
 
   uint8_t sub = m_posVert - 1;
 
@@ -180,7 +181,7 @@ void menuGeneralSetup(uint8_t event)
         lcd_putsLeft(y, STR_DATE);
         lcd_putc(RADIO_SETUP_DATE_COLUMN, y, '-'); lcd_putc(RADIO_SETUP_DATE_COLUMN+3*FW-1, y, '-');
         for (uint8_t j=0; j<3; j++) {
-          uint8_t rowattr = (m_posHorz==j) ? attr : 0;
+          uint8_t rowattr = (m_posHorz==j ? attr : 0);
           switch (j) {
             case 0:
               lcd_outdezAtt(RADIO_SETUP_DATE_COLUMN, y, t.tm_year+1900, rowattr);
@@ -202,6 +203,9 @@ void menuGeneralSetup(uint8_t event)
             }
           }
         }
+#if defined(PCBX9D)
+        if (attr && m_posHorz < 0) lcd_filled_rect(RADIO_SETUP_2ND_COLUMN, y, LCD_W-RADIO_SETUP_2ND_COLUMN-MENUS_SCROLLBAR_WIDTH, 8);
+#endif
         if (attr && checkIncDec_Ret)
           g_rtcTime = gmktime(&t); // update local timestamp and get wday calculated
         break;
@@ -210,7 +214,7 @@ void menuGeneralSetup(uint8_t event)
         lcd_putsLeft(y, STR_TIME);
         lcd_putc(RADIO_SETUP_TIME_COLUMN-1, y, ':'); lcd_putc(RADIO_SETUP_TIME_COLUMN+3*FW-4, y, ':');
         for (uint8_t j=0; j<3; j++) {
-          uint8_t rowattr = (m_posHorz==j) ? attr : 0;
+          uint8_t rowattr = (m_posHorz==j ? attr : 0);
           switch (j) {
             case 0:
               lcd_outdezNAtt(RADIO_SETUP_TIME_COLUMN, y, t.tm_hour, rowattr|LEADING0, 2);
@@ -226,17 +230,23 @@ void menuGeneralSetup(uint8_t event)
               break;
           }
         }
+#if defined(PCBX9D)
+        if (attr && m_posHorz < 0) lcd_filled_rect(RADIO_SETUP_2ND_COLUMN, y, LCD_W-RADIO_SETUP_2ND_COLUMN-MENUS_SCROLLBAR_WIDTH, 8);
+#endif
         if (attr && checkIncDec_Ret)
           g_rtcTime = gmktime(&t); // update local timestamp and get wday calculated
         break;
 #endif
 
-#if defined(BATTGRAPH)
+#if defined(BATTGRAPH) || defined(PCBX9D)
       case ITEM_SETUP_BATT_RANGE:
-        lcd_putsLeft(y, PSTR("Battery Range"));
+        lcd_putsLeft(y, STR_BATTERY_RANGE);
         lcd_putc(g_eeGeneral.vBatMin >= 10 ? RADIO_SETUP_2ND_COLUMN+2*FW+FWNUM-1 : RADIO_SETUP_2ND_COLUMN+2*FW+FWNUM-FW/2, y, '-');
         putsVolts(RADIO_SETUP_2ND_COLUMN, y,  90+g_eeGeneral.vBatMin, (m_posHorz==0 ? attr : 0)|LEFT|NO_UNIT);
-        putsVolts(RADIO_SETUP_2ND_COLUMN+4*FW-2, y, 120+g_eeGeneral.vBatMax, (m_posHorz!=0 ? attr : 0)|LEFT|NO_UNIT);
+        putsVolts(RADIO_SETUP_2ND_COLUMN+4*FW-2, y, 120+g_eeGeneral.vBatMax, (m_posHorz>0 ? attr : 0)|LEFT|NO_UNIT);
+#if defined(PCBX9D)
+        if (attr && m_posHorz < 0) lcd_filled_rect(RADIO_SETUP_2ND_COLUMN, y, LCD_W-RADIO_SETUP_2ND_COLUMN-MENUS_SCROLLBAR_WIDTH, 8);
+#endif
         if (attr && s_editMode>0) {
           if (m_posHorz==0)
             CHECK_INCDEC_GENVAR(event, g_eeGeneral.vBatMin, -50, g_eeGeneral.vBatMax+20); // min=4.0V
@@ -446,6 +456,12 @@ void menuGeneralSetup(uint8_t event)
 
       case ITEM_SETUP_GPSFORMAT:
         g_eeGeneral.gpsFormat = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_GPSCOORD, STR_GPSFORMAT, g_eeGeneral.gpsFormat, 0, 1, attr, event);
+        break;
+#endif
+
+#if defined(PXX)
+      case ITEM_SETUP_COUNTRYCODE:
+        g_eeGeneral.countryCode = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_COUNTRYCODE, STR_COUNTRYCODES, g_eeGeneral.countryCode, 0, 2, attr, event);
         break;
 #endif
 
@@ -762,7 +778,7 @@ void menuGeneralTrainer(uint8_t event)
       uint8_t chan = channel_order(i);
       volatile TrainerMix *td = &g_eeGeneral.trainer.mix[chan-1];
 
-      putsMixerSource(0, y, chan, 0);
+      putsMixerSource(0, y, chan, (m_posVert==i && m_posHorz<0) ? INVERS : 0);
 
       for (uint8_t j=0; j<3; j++) {
 
@@ -881,7 +897,7 @@ void menuGeneralDiagAna(uint8_t event)
 {
 #if defined(PCBSKY9X) && !defined(REVA)
 #define ANAS_ITEMS_COUNT 4
-#elif defined(CPUARM)
+#elif defined(PCBSKY9X)
 #define ANAS_ITEMS_COUNT 3
 #else
 #define ANAS_ITEMS_COUNT 2
@@ -919,12 +935,12 @@ void menuGeneralDiagAna(uint8_t event)
   uint32_t batCalV = ((uint32_t)adcBatt*1390 + (10*(int32_t)adcBatt*g_eeGeneral.vBatCalib)/8) / BandGap;
   lcd_outdezNAtt(LEN_CALIB_FIELDS*FW+4*FW, 6*FH-2, batCalV, PREC2|(m_posVert==1 ? INVERS : 0));
 #elif defined(PCBX9D)
-  lcd_putsLeft(5*FH+1, STR_BATT_CALIB);
+  lcd_putsLeft(6*FH+1, STR_BATT_CALIB);
   static uint32_t adcBatt;
   adcBatt = ((adcBatt * 7) + anaIn(8)) / 8; // running average, sourced directly (to avoid unending debate :P)
-  uint32_t batCalV = ( adcBatt + adcBatt*(g_eeGeneral.vBatCalib)/128 ) * 15 ;
-  batCalV /= 256  ;
-  putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 5*FH+1, batCalV, (m_posVert==1 ? INVERS : 0));
+  uint32_t batCalV = ( adcBatt + adcBatt*(g_eeGeneral.vBatCalib)/128 ) * BATT_SCALE;
+  batCalV >>= 11;
+  putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 6*FH+1, batCalV, (m_posVert==1 ? INVERS : 0));
 #else
   lcd_putsLeft(6*FH-2, STR_BATT_CALIB);
   putsVolts(LEN_CALIB_FIELDS*FW+4*FW, 6*FH-2, g_vbat100mV, (m_posVert==1 ? INVERS : 0));
@@ -937,7 +953,7 @@ void menuGeneralDiagAna(uint8_t event)
   if (m_posVert==2) CHECK_INCDEC_GENVAR(event, g_eeGeneral.currentCalib, -49, 49);
 #endif
 
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
   lcd_putsLeft(7*FH+1, STR_TEMP_CALIB);
   putsTelemetryValue(LEN_CALIB_FIELDS*FW+4*FW, 7*FH+1, getTemperature(), UNIT_DEGREES, (m_posVert==3 ? INVERS : 0)) ;
   if (m_posVert==3) CHECK_INCDEC_GENVAR(event, g_eeGeneral.temperatureCalib, -100, 100);
@@ -952,6 +968,7 @@ enum menuGeneralHwItems {
   ITEM_SETUP_HW_STICK_LH_GAIN,
   ITEM_SETUP_HW_STICK_RV_GAIN,
   ITEM_SETUP_HW_STICK_RH_GAIN,
+  ITEM_SETUP_HW_ROTARY_ENCODER,
   IF_BLUETOOTH(ITEM_SETUP_HW_BT_BAUDRATE)
   ITEM_SETUP_HW_MAX
 };
@@ -987,7 +1004,7 @@ void menuGeneralHardware(uint8_t event)
         lcd_puts(INDENT_WIDTH+3*FW, y, PSTR("Gain"));
         uint8_t mask = (1<<(k-ITEM_SETUP_HW_STICK_LV_GAIN));
         uint8_t val = (g_eeGeneral.sticksGain & mask ? 1 : 0);
-        lcd_putcAtt(15*FW, y, val ? '2' : '1', attr);
+        lcd_putcAtt(GENERAL_HW_PARAM_OFS, y, val ? '2' : '1', attr);
         if (attr) {
           CHECK_INCDEC_GENVAR(event, val, 0, 1);
           if (checkIncDec_Ret) {
@@ -998,9 +1015,13 @@ void menuGeneralHardware(uint8_t event)
         break;
       }
 
+      case ITEM_SETUP_HW_ROTARY_ENCODER:
+        g_eeGeneral.rotarySteps = selectMenuItem(GENERAL_HW_PARAM_OFS, y, PSTR("Rotary Encoder"), PSTR("\0062steps4steps"), g_eeGeneral.rotarySteps, 0, 1, attr, event);
+        break;
+
 #if defined(BLUETOOTH)
       case ITEM_SETUP_HW_BT_BAUDRATE:
-        g_eeGeneral.btBaudrate = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_BAUDRATE, PSTR("\005115k 9600 19200"), g_eeGeneral.btBaudrate, 0, 2, attr, event);
+        g_eeGeneral.btBaudrate = selectMenuItem(GENERAL_HW_PARAM_OFS, y, STR_BAUDRATE, PSTR("\005115k 9600 19200"), g_eeGeneral.btBaudrate, 0, 2, attr, event);
         if (attr && checkIncDec_Ret) {
           btInit();
         }

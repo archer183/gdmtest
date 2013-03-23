@@ -68,7 +68,7 @@
 #define IF_CPUARM(x)
 #endif
 
-#if defined(BATTGRAPH)
+#if defined(BATTGRAPH) || defined(PCBX9D)
 #define IF_BATTGRAPH(x) x,
 #else
 #define IF_BATTGRAPH(x)
@@ -126,6 +126,12 @@
 #define IF_FRSKY(x) x,
 #else
 #define IF_FRSKY(x)
+#endif
+
+#if defined(PXX)
+#define IF_PXX(x) x,
+#else
+#define IF_PXX(x)
 #endif
 
 #if defined(SDCARD)
@@ -363,10 +369,6 @@ enum EnumKeys {
 #endif
 
 #if defined(CPUARM)
-extern char modelNames[MAX_MODELS][sizeof(g_model.name)];
-#endif
-
-#if defined(CPUARM)
 // This doesn't need protection on this processor
 #define tmr10ms_t uint32_t
 extern volatile tmr10ms_t g_tmr10ms;
@@ -384,11 +386,11 @@ extern inline uint16_t get_tmr10ms()
 }
 #endif
 
-// TODO try to merge the 2 include files
+#include "eeprom_common.h"
 #if defined(PCBSKY9X)
-#include "eeprom_arm.h"
+#include "eeprom_raw.h"
 #else
-#include "eeprom_avr.h"
+#include "eeprom_rlc.h"
 #endif
 
 #if defined(CPUARM)
@@ -416,46 +418,51 @@ extern uint8_t s_bind_allowed;
 #endif
 
 #if defined(CPUARM)
-#define IS_PPM_PROTOCOL(protocol)     (protocol==PROTO_PPM)
+  #define IS_PPM_PROTOCOL(protocol)     (protocol==PROTO_PPM)
 #else
-#define IS_PPM_PROTOCOL(protocol)     (protocol<=PROTO_PPMSIM)
+  #define IS_PPM_PROTOCOL(protocol)     (protocol<=PROTO_PPMSIM)
 #endif
 
 #if defined(PXX)
-#define IS_PXX_PROTOCOL(protocol)  (protocol==PROTO_PXX)
+  #define IS_PXX_PROTOCOL(protocol)  (protocol==PROTO_PXX)
 #else
-#define IS_PXX_PROTOCOL(protocol)  (0)
+  #define IS_PXX_PROTOCOL(protocol)  (0)
 #endif
 
 #if defined(DSM2)
-#define IS_DSM2_PROTOCOL(protocol) (protocol>=PROTO_DSM2_LP45 && protocol<=PROTO_DSM2_DSMX)
+  #define IS_DSM2_PROTOCOL(protocol) (protocol>=PROTO_DSM2_LP45 && protocol<=PROTO_DSM2_DSMX)
 #else
-#define IS_DSM2_PROTOCOL(protocol) (0)
+  #define IS_DSM2_PROTOCOL(protocol) (0)
 #endif
 
 #if defined(DSM2_SERIAL)
-#define IS_DSM2_SERIAL_PROTOCOL(protocol)  (IS_DSM2_PROTOCOL(protocol))
+  #define IS_DSM2_SERIAL_PROTOCOL(protocol)  (IS_DSM2_PROTOCOL(protocol))
 #else
-#define IS_DSM2_SERIAL_PROTOCOL(protocol)  (0)
+  #define IS_DSM2_SERIAL_PROTOCOL(protocol)  (0)
 #endif
 
+#if defined(PCBX9D)
+  #define NUM_PORT1_CHANNELS(model) ((8+(model.ppmNCH*2)))
+#else
+  #define NUM_PORT1_CHANNELS(model) (IS_PXX_PROTOCOL(model.protocol) ? 8 : (IS_DSM2_PROTOCOL(model.protocol) ? 6 : (8+(model.ppmNCH*2))))
+#endif
 
-#define NUM_PORT1_CHANNELS (IS_PXX_PROTOCOL(g_model.protocol) ? 8 : (IS_DSM2_PROTOCOL(g_model.protocol) ? 6 : (8+(g_model.ppmNCH*2))))
 #if defined(PCBSKY9X)
-#define NUM_PORT2_CHANNELS (8+(g_model.ppm2NCH*2))
+  #define NUM_PORT2_CHANNELS(model) (8+(model.ppm2NCH*2))
 #endif
 
 #include "lcd.h"
 #include "menus.h"
-#ifdef TEMPLATES
-#include "templates.h"
+
+#if defined(TEMPLATES)
+  #include "templates.h"
 #endif
 
 #if !defined(SIMU)
-#define assert(x)
-#if !defined(CPUARM) || !defined(DEBUG)
-#define printf printf_not_allowed
-#endif
+  #define assert(x)
+  #if !defined(CPUARM) || !defined(DEBUG)
+    #define printf printf_not_allowed
+  #endif
 #endif
 
 extern const pm_uint8_t bchout_ar[];
@@ -666,24 +673,24 @@ extern uint16_t inacSum;
 extern uint8_t pxxFlag;
 #endif
 
-#define PXX_SEND_RXNUM     0x01
-#define PXX_SEND_FAILSAFE  0x02
+#define PXX_SEND_RXNUM       0x01
+#define PXX_SEND_FAILSAFE    (1 << 4)
+#define PXX_SEND_RANGECHECK  (1 << 5)
 
 #define ZCHAR_MAX (40 + LEN_SPECIAL_CHARS)
 
 extern char idx2char(int8_t idx);
 
+extern uint8_t s_evt;
+#define putEvent(evt) s_evt = evt
 void clearKeyEvents();
 void pauseEvents(uint8_t enuk);
 void killEvents(uint8_t enuk);
-
 #if defined(CPUARM)
   uint8_t getEvent(bool trim);
 #else
   uint8_t getEvent();
 #endif
-
-void putEvent(uint8_t evt);
 
 uint8_t keyDown();
 
@@ -758,9 +765,11 @@ extern void setTrimValue(uint8_t phase, uint8_t idx, int16_t trim);
 #endif
 
 #if defined(PCBGRUVIN9X)
-  #define ROTARY_ENCODER_GRANULARITY 1
+  #define ROTARY_ENCODER_GRANULARITY (1)
+#elif defined(CPUARM)
+  #define ROTARY_ENCODER_GRANULARITY (2 << g_eeGeneral.rotarySteps)
 #else
-  #define ROTARY_ENCODER_GRANULARITY 2
+  #define ROTARY_ENCODER_GRANULARITY (2)
 #endif
 
 #if defined(GVARS)
@@ -972,14 +981,12 @@ void saveTimers();
 #define saveTimers()
 #endif
 
-void eeDirty(uint8_t msk);
-void eeCheck(bool immediately=false);
-void eeReadAll();
-bool eeModelExists(uint8_t id);
-void eeLoadModelName(uint8_t id, char *name);
-void eeLoadModel(uint8_t id);
 void generalDefault();
 void modelDefault(uint8_t id);
+
+#if defined(PXX) && defined(CPUARM)
+void checkModelIdUnique(uint8_t id);
+#endif
 
 #if defined(CPUARM)
 inline int16_t calc100to256_16Bits(register int16_t x)  // @@@2 open.20.fsguruh: return x*2.56
@@ -1043,7 +1050,7 @@ extern uint8_t            ppmInState; //0=unsync 1..8= wait for value i-1
 extern int16_t            g_ppmIns[8];
 extern int32_t            chans[NUM_CHNOUT];
 extern int16_t            ex_chans[NUM_CHNOUT]; // Outputs (before LIMITS) of the last perMain
-extern int16_t            g_chans512[NUM_CHNOUT];
+extern int16_t            channelOutputs[NUM_CHNOUT];
 extern uint16_t           BandGap;
 
 extern int16_t expo(int16_t x, int16_t k);
@@ -1260,6 +1267,10 @@ enum AUDIO_SOUNDS {
 
 #if defined(RTCLOCK)
 #include "rtc.h"
+#endif
+
+#if defined(CPUARM)
+extern uint8_t requiredSpeakerVolume;
 #endif
 
 // Re-useable byte array to save having multiple buffers

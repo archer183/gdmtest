@@ -56,13 +56,53 @@
 #elif defined(PCBSKY9X)
 #define EEPROM_VER       214
 #elif defined(PCBGRUVIN9X)
-#define EEPROM_VER       213
+#define EEPROM_VER       214
 #else
-#define EEPROM_VER       213
+#define EEPROM_VER       214
 #endif
 
 #ifndef PACK
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
+#endif
+
+
+typedef int16_t gvar_t;
+
+#if !defined(CPUM64)
+typedef char gvar_name_t[6];
+#define GVAR_MAX  1024
+#endif
+
+#define RESERVE_RANGE_FOR_GVARS 10
+// even we do not spend space in EEPROM for 10 GVARS, we reserve the space inside the range of values, like offset, weight, etc.
+//combat math trig increases gvars to 10
+
+#if defined(CPUM64) && defined(GVARS)
+#if defined(TRIG)
+#define MAX_GVARS 10
+#else
+#define MAX_GVARS 5
+#endif
+  #define MODEL_GVARS_DATA gvar_t gvars[MAX_GVARS];
+  #define PHASE_GVARS_DATA
+  #define GVAR_VALUE(x, p) g_model.gvars[x]
+#elif defined(CPUM64)
+  #define MAX_GVARS 0
+  #define MODEL_GVARS_DATA
+  #define PHASE_GVARS_DATA
+#elif defined(GVARS)
+#if defined(TRIG)
+#define MAX_GVARS 10
+#else
+#define MAX_GVARS 5
+#endif
+  #define MODEL_GVARS_DATA gvar_name_t gvarsNames[MAX_GVARS];
+  #define PHASE_GVARS_DATA gvar_t gvars[MAX_GVARS]
+  #define GVAR_VALUE(x, p) g_model.phaseData[p].gvars[x]
+#else
+  #define MAX_GVARS 0
+  #define MODEL_GVARS_DATA gvar_name_t gvarsNames[5];
+  #define PHASE_GVARS_DATA gvar_t gvars[5]
 #endif
 
 PACK(typedef struct t_TrainerMix {
@@ -164,7 +204,7 @@ PACK(typedef struct t_EEGeneral {
   TrainerData trainer;
   uint8_t   view;      //index of subview in main scrren
   int8_t    spare1:3;
-  int8_t    beeperMode:2;  
+  int8_t    beeperMode:2;
   uint8_t   flashBeep:1;
   uint8_t   disableMemoryWarning:1;
   uint8_t   disableAlarmWarning:1;
@@ -173,8 +213,7 @@ PACK(typedef struct t_EEGeneral {
   uint8_t   spare2:1;
   uint8_t   inactivityTimer;
   uint8_t   throttleReversed:1;
-  uint8_t   minuteBeep:1;
-  uint8_t   preBeep:1;
+  uint8_t   spare3:2;
   SPLASH_MODE; /* 3bits */
   int8_t    hapticMode:2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
   uint8_t   blOffBright:4;
@@ -190,6 +229,8 @@ PACK(typedef struct t_EEGeneral {
   uint8_t   unexpectedShutdown:1;
   uint8_t   speakerPitch;
   int8_t    speakerVolume;
+  int8_t    vBatMin;
+  int8_t    vBatMax;
 
   EXTRA_GENERAL_FIELDS;
 
@@ -285,7 +326,24 @@ PACK(typedef struct t_MixData {
   int16_t  offset;
   char     name[LEN_EXPOMIX_NAME];
 }) MixData;
+
 #define MD_WEIGHT(md) (md->weight)
+#define MD_GETWEIGHT(var,md) var.word=md->weight
+#define MD_SETWEIGHT(var,md) md->weight=var.word
+
+PACK( union u_int8int16_t {
+  struct {
+    int8_t  lo;
+	uint8_t hi;
+  } bytes_t;
+  int16_t word;
+});
+
+
+#define MD_OFFSET(md) (md->offset)
+#define MD_GETOFFSET(var,md) var.word=md->offset;
+#define MD_SETOFFSET(var,md) md->offset=var.word;
+
 #else
 #define DELAY_STEP  2
 #define SLOW_STEP   2
@@ -311,17 +369,41 @@ PACK(typedef struct t_MixData {
   int8_t  curveParam;
   int8_t  offset;
 }) MixData;
-#if defined(GVARS)
-  #define MD_WEIGHT(md) (md->weightMode ? (int16_t)GV1_LARGE+md->weight : md->weight)
-#else
-  #define MD_WEIGHT(md) (md->weight)
-#endif
-#endif
 
-#if defined(GVARS) && !defined(CPUARM)
-#define MD_OFFSET(md) (md->offsetMode ? (int16_t)GV1_LARGE+md->offset : md->offset)
-#else
-#define MD_OFFSET(md) (md->offset)
+
+
+PACK( union u_gvarint_t {
+  struct {
+    int8_t lo;
+	uint8_t hi;
+  } bytes_t;
+  int16_t word;
+	
+  u_gvarint_t(int8_t l, uint8_t h) {bytes_t.lo=l; bytes_t.hi=h?255:0;} // hi bit is negativ sign
+
+private:
+  // prevent unwanted constructors, also saves program
+  u_gvarint_t() {}
+  u_gvarint_t(const u_gvarint_t&) {}
+}); 
+#define MD_WEIGHT(md) (u_gvarint_t(md->weight,md->weightMode).word)
+  
+PACK( union u_int8int16_t {
+  struct {
+    int8_t  lo;
+	uint8_t hi;
+  } bytes_t;
+  int16_t word;
+});
+#define MD_GETWEIGHT(var,md) var.bytes_t.lo=md->weight; var.bytes_t.hi=md->weightMode?255:0
+#define MD_SETWEIGHT(var,md)   md->weight     = var.bytes_t.lo;  \
+     if (var.word<0) md->weightMode=1; else md->weightMode=0  // set negative sign
+	 
+#define MD_OFFSET(md) (u_gvarint_t(md->offset,md->offsetMode).word)
+#define MD_GETOFFSET(var,md) var.bytes_t.lo=md->offset; var.bytes_t.hi=md->offsetMode?255:0
+#define MD_SETOFFSET(var,md)   md->offset     = var.bytes_t.lo;  \
+     if (var.word<0) md->offsetMode=1; else md->offsetMode=0  // set negative sign	 
+
 #endif
 
 #if defined(CPUARM)
@@ -345,8 +427,15 @@ PACK(typedef struct t_CustomSwData { // Custom Switches data
 #endif
 
 enum Functions {
+#if defined(CPUARM)
   FUNC_SAFETY_CH1,
   FUNC_SAFETY_CH16=FUNC_SAFETY_CH1+15,
+#else
+  FUNC_SAFETY_GROUP1,
+  FUNC_SAFETY_GROUP2,
+  FUNC_SAFETY_GROUP3,
+  FUNC_SAFETY_GROUP4,
+#endif
   FUNC_TRAINER,
   FUNC_TRAINER_RUD,
   FUNC_TRAINER_ELE,
@@ -375,7 +464,7 @@ enum Functions {
 #endif
 #if defined(GVARS)
   FUNC_ADJUST_GV1,
-  FUNC_ADJUST_GV5 = FUNC_ADJUST_GV1 + 4,
+  FUNC_ADJUST_GVLAST = (FUNC_ADJUST_GV1 + (MAX_GVARS-1)),
 #endif
 #if defined(DEBUG)
   FUNC_TEST, // should remain the last before MAX as not added in companion9x
@@ -400,21 +489,58 @@ enum ResetFunctionParam {
 };
 
 #if defined(CPUARM)
+#if defined(PCBX9D)
+ #define LEN_CFN_NAME 10
+#else
+ #define LEN_CFN_NAME 6
+#endif
 PACK(typedef struct t_CustomFnData { // Function Switches data
-  int8_t  swtch; //input
+  int8_t  swtch;
   uint8_t func;
-  char    param[6];
-  uint8_t active;
+  union {
+    char name[LEN_CFN_NAME];
+    struct {
+      uint32_t val;
+      uint16_t spare;
+    } composite;
+  } param;
+  uint8_t mode:2;
+  uint8_t active:6;
 }) CustomFnData;
-#define CFN_PARAM(p)       (*((uint32_t*)(p)->param))
-#define CFN_RESET_PARAM(p) memset(p->param, 0, sizeof(p->param))
+#define CFN_FUNC(p)        ((p)->func)
+#define CFN_ACTIVE(p)      ((p)->active)
+#define CFN_CH_NUMBER(p)   (CFN_FUNC(p))
+#define CFN_PLAY_REPEAT(p) ((p)->active)
+#define CFN_GVAR_MODE(p)   ((p)->mode)
+#define CFN_PARAM(p)       ((p)->param.composite.val)
+#define CFN_RESET_PARAM(p) memset(&(p)->param, 0, sizeof((p)->param))
 #else
 PACK(typedef struct t_CustomFnData { // Function Switches data
   int8_t  swtch; // input
-  uint8_t func:6;
-  uint8_t active:2;
+  union {
+    struct {
+      uint8_t param:3;
+      uint8_t func:5;
+    } func_param;
+
+    struct {
+      uint8_t active:1;
+      uint8_t param:2;
+      uint8_t func:5;
+    } func_param_enable;
+
+    struct {
+      uint8_t active:1;
+      uint8_t func:7;
+    } func_safety;
+  } internal;
   uint8_t param;
 }) CustomFnData;
+#define CFN_FUNC(p)        ((p)->internal.func_param.func)
+#define CFN_ACTIVE(p)      ((p)->internal.func_param_enable.active)
+#define CFN_CH_NUMBER(p)   ((p)->internal.func_safety.func)
+#define CFN_PLAY_REPEAT(p) ((p)->internal.func_param.param)
+#define CFN_GVAR_MODE(p)   ((p)->internal.func_param_enable.param)
 #define CFN_PARAM(p)       ((p)->param)
 #define CFN_RESET_PARAM(p) CFN_PARAM(p) = 0
 #endif
@@ -521,14 +647,31 @@ enum VarioSource {
   VARIO_SOURCE_LAST = VARIO_SOURCE_A2
 };
 
+#if defined(FRSKY_HUB)
+  #define NUM_TELEMETRY      TELEM_CSW_MAX
+#elif defined(WS_HOW_HIGH)
+  #define NUM_TELEMETRY      TELEM_ALT
+#elif defined(FRSKY)
+  #define NUM_TELEMETRY      TELEM_A2
+#elif defined(MAVLINK)
+  #define NUM_TELEMETRY      4
+#else
+  #define NUM_TELEMETRY      TELEM_TM2
+#endif
+
 PACK(typedef struct t_FrSkyBarData {
   uint8_t    source;
   uint8_t    barMin;           // minimum for bar display
   uint8_t    barMax;           // ditto for max display (would usually = ratio)
 }) FrSkyBarData;
 
+#if defined(PCBX9D)
+  #define NUM_LINE_ITEMS 3
+#else
+  #define NUM_LINE_ITEMS 2
+#endif
 PACK(typedef struct t_FrSkyLineData {
-  uint8_t    sources[2];
+  uint8_t    sources[NUM_LINE_ITEMS];
 }) FrSkyLineData;
 
 typedef union t_FrSkyScreenData {
@@ -655,42 +798,6 @@ PACK(typedef struct t_SwashRingData { // Swash Ring data
 #define TRIM_ARRAY int8_t trim[4]; int8_t trim_ext:8
 #else
 #define TRIM_ARRAY int16_t trim[4]
-#endif
-
-typedef int16_t gvar_t;
-
-#if !defined(CPUM64)
-typedef char gvar_name_t[6];
-#define GVAR_MAX  1024
-#endif
-
-//GDM: ADDED EXTRA GVARS
-#if defined(CPUM64) && defined(GVARS)
-#if defined(TRIG)
-#define MAX_GVARS 10
-#else
-#define MAX_GVARS 5
-#endif
-  #define MODEL_GVARS_DATA gvar_t gvars[MAX_GVARS];
-  #define PHASE_GVARS_DATA
-  #define GVAR_VALUE(x, p) g_model.gvars[x]
-#elif defined(CPUM64)
-  #define MAX_GVARS 0
-  #define MODEL_GVARS_DATA
-  #define PHASE_GVARS_DATA
-#elif defined(GVARS)
-#if defined(TRIG)
-#define MAX_GVARS 10
-#else
-#define MAX_GVARS 5
-#endif
-  #define MODEL_GVARS_DATA gvar_name_t gvarsNames[MAX_GVARS];
-  #define PHASE_GVARS_DATA gvar_t gvars[MAX_GVARS]
-  #define GVAR_VALUE(x, p) g_model.phaseData[p].gvars[x]
-#else
-  #define MAX_GVARS 0
-  #define MODEL_GVARS_DATA gvar_name_t gvarsNames[5];
-  #define PHASE_GVARS_DATA gvar_t gvars[5]
 #endif
 
 #if defined(CPUARM)
@@ -927,7 +1034,13 @@ enum MixSources {
   MIXSRC_CH14,
   MIXSRC_CH15,
   MIXSRC_CH16,
-  MIXSRC_LAST_CH = MIXSRC_CH1+NUM_CHNOUT-1
+  MIXSRC_LAST_CH = MIXSRC_CH1+NUM_CHNOUT-1,
+
+  MIXSRC_GVAR1,
+  MIXSRC_LAST_GVAR = MIXSRC_GVAR1+MAX_GVARS-1,
+
+  MIXSRC_FIRST_TELEM,
+  MIXSRC_LAST_TELEM = MIXSRC_FIRST_TELEM+NUM_TELEMETRY-1,
 };
 
 #define MIN_POINTS 3
@@ -942,14 +1055,20 @@ enum MixSources {
 #if defined(PCBGRUVIN9X) || defined(CPUARM)
 PACK(typedef struct t_TimerData {
   int8_t    mode;            // timer trigger source -> off, abs, stk, stk%, sw/!sw, !m_sw/!m_sw
-  uint16_t  start;
-  uint16_t  remanent:1;
-  uint16_t  value:15;
+  uint16_t  start:12;
+  uint16_t  countdownBeep:1;
+  uint16_t  minuteBeep:1;
+  uint16_t  persistent:1;
+  uint16_t  spare:1;
+  uint16_t  value;
 }) TimerData;
 #else
 PACK(typedef struct t_TimerData {
   int8_t    mode;            // timer trigger source -> off, abs, stk, stk%, sw/!sw, !m_sw/!m_sw
-  uint16_t  start;
+  uint16_t  start:12;
+  uint16_t  countdownBeep:1;
+  uint16_t  minuteBeep:1;
+  uint16_t  spare:2;
 }) TimerData;
 #endif
 
