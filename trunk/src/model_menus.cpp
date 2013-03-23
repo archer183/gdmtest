@@ -3025,7 +3025,7 @@ SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //ch
 #else
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES);
 #endif
-
+#endif
   int8_t  sub = m_posVert - 1;
 
   switch (event) {
