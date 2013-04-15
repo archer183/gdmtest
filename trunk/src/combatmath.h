@@ -120,7 +120,7 @@ const pm_uint8_t scp[65] PROGMEM = {255,255,255,255,255,254,253,252,251,250,
 	Might consider going to unsigned 8 bit to allow array values from 0 to 200
 	for more resolution with no memory hit.  65 parts makes the symmetric math easier.  with int16 variables on the output,
 	this should not be a problem*/
-uint8_t acosn[58]={240,238,236,233,231,229,
+const pm_uint8_t acosn[58]PROGMEM ={240,238,236,233,231,229,
 		226,224,221,219,216,214,212,209,206,204,
 		201,199,196,193,191,188,185,182,180,177,
 		174,171,168,165,162,159,155,152,149,145,
