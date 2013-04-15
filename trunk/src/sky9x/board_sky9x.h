@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -235,12 +235,13 @@ uint32_t pwrCheck();
 
 // EEPROM driver
 void eepromInit();
+#define EEPROM_MASSSTORAGE() (0)
 
 // Rotary Encoder driver
 void rotencInit();
 void rotencEnd();
 
-#if defined(ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 0
   #define rotencDown()  (!(PIOB->PIO_PDSR & 0x40))
 #else
   #define rotencDown()  0

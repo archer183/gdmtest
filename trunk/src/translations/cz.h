@@ -3,7 +3,7 @@
  * - Bertrand Songis <bsongis@gmail.com>
  * - Martin Hotar <mhotar@gmail.com>
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -68,7 +68,7 @@
   #else
     #define TR_RETA123         "SVPK123ab"
   #endif
-#elif defined(PCBX9D)
+#elif defined(PCBTARANIS)
   #define TR_RETA123           "SVPK12LR"
 #else
   #define TR_RETA123           "SVPK123"
@@ -121,8 +121,8 @@
 #define LEN_VMIXTRIMS          "\004"
 #define TR_VMIXTRIMS           "VYP\0""ZAP\0""Sm\203r""V\212\207k""Plyn""K\206id"
 
-#define LEN_VCSWFUNC           "\006"
-#define TR_VCSWFUNC            "---\0  ""v1==x\0""v1>x\0 ""v1<x\0 ""|v1|>x""|v1|<x""AND\0  ""OR\0   ""XOR\0  ""v1==v2""v1>v2\0""v1<v2\0""d>=x\0 ""|d|>=x"
+#define LEN_VCSWFUNC           "\005"
+#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x"
 
 #define LEN_VFSWFUNC           "\013"
 
@@ -138,7 +138,9 @@
   #define TR_SOUND             "P\204pnout\0   "
 #endif
 
-#if defined(HAPTIC)
+#if defined(PCBTARANIS)
+  #define TR_HAPTIC
+#elif defined(HAPTIC)
   #define TR_HAPTIC            "Vibrovat\0  "
 #else
   #define TR_HAPTIC            "[Vibrovat]\0"
@@ -195,8 +197,10 @@
   #define TR_FSW_RESET_TELEM
 #endif
 
-#if ROTARY_ENCODERS > 0
-#define TR_FSW_RESET_ROTENC     "R.Enc"
+#if ROTARY_ENCODERS == 2
+  #define TR_FSW_RESET_ROTENC  TR("REa\0 ""REb\0 ", "RotEnc A\0""RotEnc B\0")
+#elif ROTARY_ENCODERS == 1
+  #define TR_FSW_RESET_ROTENC  TR("R.Enc", "RotEnc\0  ")
 #else
 #define TR_FSW_RESET_ROTENC
 #endif
@@ -209,16 +213,23 @@
 #define LEN_VTELEMCHNS         "\004"
 #define TR_VTELEMCHNS          "---\0""Batt""Tmr1""Tmr2""Tx\0 ""Rx\0 ""A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VSpd""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Spd+""Dst+""Cur+""Acc\0""Time"
 
-#ifdef IMPERIAL_UNITS
-  #define LENGTH_UNIT          "ft\0"
-  #define SPEED_UNIT           "kts"
+#if defined(CPUARM)
+  #define LEN_VTELEMUNIT_NORM  "\003"
+  #define TR_VTELEMUNIT_NORM   "v\0 ""A\0 ""m/s""-\0 ""kmh""m\0 ""@\0 ""%\0 ""mA\0""mAh""W\0 "
+  #define LEN_VTELEMUNIT_IMP   "\003"
+  #define TR_VTELEMUNIT_IMP    "v\0 ""A\0 ""m/s""-\0 ""kts""ft\0""@\0 ""%\0 ""mA\0""mAh""W\0 "
 #else
-  #define LENGTH_UNIT          "m\0 "
-  #define SPEED_UNIT           "kmh"
+  #if defined(IMPERIAL_UNITS)
+    #define LENGTH_UNIT        "ft\0"
+    #define SPEED_UNIT         "kts"
+  #else
+    #define LENGTH_UNIT        "m\0 "
+    #define SPEED_UNIT         "kmh"
+  #endif
+  #define LEN_VTELEMUNIT       "\003"
+  #define TR_VTELEMUNIT        "v\0 ""A\0 ""m/s""-\0 " SPEED_UNIT LENGTH_UNIT "@\0 ""%\0 ""mA\0""mAh""W\0 "
 #endif
 
-#define LEN_VTELEMUNIT         "\003"
-#define TR_VTELEMUNIT          "v\0 ""A\0 ""m/s""-\0 " SPEED_UNIT LENGTH_UNIT "@\0 ""%\0 ""mA\0""mAh""W\0 "
 #define STR_V                  (STR_VTELEMUNIT+1)
 #define STR_A                  (STR_VTELEMUNIT+4)
 
@@ -251,7 +262,7 @@
 #define TR_VSWASHTYPE          "--- ""120 ""120X""140 ""90\0"
 
 #define LEN_VKEYS              "\005"
-#define TR_VKEYS               " Menu"" Exit"" Dol\211""Nhoru""Vprvo""Vlevo"
+#define TR_VKEYS               TR(" Menu"" Exit"" Dol\211""Nhoru""Vprvo""Vlevo", " Menu"" Exit""Enter"" Page"" Plus""Minus")
 
 #define LEN_VRENCODERS         "\003"
 #define TR_VRENCODERS          "REa""REb"
@@ -259,7 +270,7 @@
 #define LEN_VSWITCHES          "\003"
 #define LEN_VSRCRAW            "\004"
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define TR_POTS_VSRCRAW      "S1\0 ""S2\0 ""LS\0 ""RS\0 "
   #define TR_SW_VSRCRAW        "SA\0 ""SB\0 ""SC\0 ""SD\0 ""SE\0 ""SF\0 ""SG\0 ""SH\0 "
 #elif defined(EXTRA_3POS)
@@ -280,14 +291,11 @@
   #define TR_CUSTOMSW          "CS1""CS2""CS3""CS4""CS5""CS6""CS7""CS8""CS9""CSA""CSB""CSC"
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define TR_VSWITCHES         "SA\300""SA-""SA\301""SB\300""SB-""SB\301""SC\300""SC-""SC\301""SD\300""SD-""SD\301""SE\300""SE-""SE\301""SF\300""SF\301""SG\300""SG-""SG\301""SH\300""SH\301" TR_CUSTOMSW "ZAP"
 #else
   #define TR_VSWITCHES         TR_9X_3POS_SWITCHES "THR""RUD""ELE""AIL""GEA""TRN" TR_CUSTOMSW "ZAP"
 #endif
-
-#define LEN_VSWITCHES_SHORT    "\001"
-#define TR_VSWITCHES_SHORT     "-012TREAG3456789"
 
 #if defined(PCBSKY9X)
   #define TR_ROTARY_ENCODERS_VSRCRAW "REnc"
@@ -315,7 +323,7 @@
 #define LEN_INDENT             1
 #define INDENT_WIDTH           (FW/2)
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define TR_ENTER             "[ENTER]"
 #else
   #define TR_ENTER             "[MENU]"
@@ -373,7 +381,7 @@
 #define TR_TRIM                "Trim"
 #define TR_DREX                "DVex"
 #define TR_CURVE               "K\206ivka"
-#define TR_FPHASE              "F\200ze"
+#define TR_FLMODE              "F\200ze"
 #define TR_MIXWARNING          "Varov\200n\204"
 #define TR_OFF                 "VYP"
 #define TR_MULTPX              "Mat.Operace"
@@ -424,7 +432,7 @@
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define TR_MENUTOSTART         CENTER"\005[ENTER] = START"
 #else
   #define TR_MENUTOSTART         CENTER"\007[MENU] = START"
@@ -436,7 +444,7 @@
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
 #define TR_ACCEL               "Acc:"
-#define TR_NODATA              "NO DATA"
+#define TR_NODATA              CENTER"NO DATA"
 #define TR_TM1TM2              "TM1\032TM2"
 #define TR_THRTHP              "THR\032TH%"
 #define TR_TOT                 "TOT"
@@ -453,7 +461,7 @@
 
 #define TR_T10MSUS             "T10ms\016us"
 #define TR_FREESTACKMINB       "Free Stack\010b"
-#define TR_MENUTORESET         "[MENU] >> Reset"
+#define TR_MENUTORESET         CENTER TR_ENTER" >> Reset"
 #define TR_PPM                 "PPM"
 #define TR_CH                  "CH"
 #define TR_MODEL               "MODEL"

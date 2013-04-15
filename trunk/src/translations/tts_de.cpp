@@ -5,7 +5,7 @@
  * - Bertrand Songis <bsongis@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -22,7 +22,7 @@
  *
  */
 
-#include "../open9x.h"
+#include "../opentx.h"
 
 enum GermanPrompts {
   PROMPT_NUMBERS_BASE = 0,
@@ -89,7 +89,7 @@ enum GermanPrompts {
 
 #if defined(VOICE)
 
-PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
+PLAY_FUNCTION(playNumber, getvalue_t number, uint8_t unit, uint8_t att)
 {
 /*  if digit >= 1000000000:
       temp_digit, digit = divmod(digit, 1000000000)
@@ -102,17 +102,29 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
 */
 
   if (number < 0) {
-    PUSH_PROMPT(PROMPT_MINUS);
+    PUSH_NUMBER_PROMPT(PROMPT_MINUS);
     number = -number;
   }
+
+  if (unit) {
+    unit--;
+    convertUnit(number, unit);
+    if (IS_IMPERIAL_ENABLE()) {
+      if (unit == UNIT_METERS) {
+        unit = UNIT_FEET;
+      }
+    }
+    unit++;
+  }
+
   int8_t mode = MODE(att);
   if (mode > 0) {
     div_t qr = div(number, (mode == 1 ? 10 : 100));
     if (qr.rem > 0) {
       PLAY_NUMBER(qr.quot, 0, 0);
-      PUSH_PROMPT(PROMPT_COMMA);
+      PUSH_NUMBER_PROMPT(PROMPT_COMMA);
       if (mode==2 && qr.rem < 10)
-        PUSH_PROMPT(PROMPT_NULL);
+        PUSH_NUMBER_PROMPT(PROMPT_NULL);
       PLAY_NUMBER(qr.rem, unit, 0);
     }
     else {
@@ -124,9 +136,9 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
   if (number >= 1000) {
     if (number >= 1100) {
       PLAY_NUMBER(number / 1000, 0, 0);
-      PUSH_PROMPT(PROMPT_TAUSEND);
+      PUSH_NUMBER_PROMPT(PROMPT_TAUSEND);
     } else {
-      PUSH_PROMPT(PROMPT_TAUSEND);
+      PUSH_NUMBER_PROMPT(PROMPT_TAUSEND);
     }
     number %= 1000;
     if (number == 0)
@@ -134,23 +146,23 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
   }
   if (number >= 100) {
     if (number >= 200)
-      PUSH_PROMPT(PROMPT_NULL + number/100);
-    PUSH_PROMPT(PROMPT_HUNDERT);
+      PUSH_NUMBER_PROMPT(PROMPT_NULL + number/100);
+    PUSH_NUMBER_PROMPT(PROMPT_HUNDERT);
     number %= 100;
     if (number == 0)
       number = -1;
   }
-  PUSH_PROMPT(PROMPT_NULL+number);
+  PUSH_NUMBER_PROMPT(PROMPT_NULL+number);
 
   if (unit) {
-    PUSH_PROMPT(PROMPT_UNITS_BASE+unit-1);
+    PUSH_NUMBER_PROMPT(PROMPT_UNITS_BASE+unit-1);
   }
 }
 
 PLAY_FUNCTION(playDuration, int16_t seconds)
 {
   if (seconds < 0) {
-    PUSH_PROMPT(PROMPT_MINUS);
+    PUSH_NUMBER_PROMPT(PROMPT_MINUS);
     seconds = -seconds;
   }
 
@@ -159,7 +171,7 @@ PLAY_FUNCTION(playDuration, int16_t seconds)
   seconds %= 3600;
   if (tmp > 0) {
     PLAY_NUMBER(tmp, 0, 0);
-    PUSH_PROMPT(PROMPT_UHR);
+    PUSH_NUMBER_PROMPT(PROMPT_UHR);
   }
 
   tmp = seconds / 60;
@@ -167,17 +179,17 @@ PLAY_FUNCTION(playDuration, int16_t seconds)
   if (tmp > 0 || ore >0) {
     PLAY_NUMBER(tmp, 0, 0);
     if (tmp != 1) {
-      PUSH_PROMPT(PROMPT_MINUTEN);
+      PUSH_NUMBER_PROMPT(PROMPT_MINUTEN);
     } else {
-      PUSH_PROMPT(PROMPT_MINUTE);
+      PUSH_NUMBER_PROMPT(PROMPT_MINUTE);
     }
-    PUSH_PROMPT(PROMPT_UND);
+    PUSH_NUMBER_PROMPT(PROMPT_UND);
   }
   PLAY_NUMBER(seconds, 0, 0);
   if (seconds != 1) {
-    PUSH_PROMPT(PROMPT_SECUNDEN);
+    PUSH_NUMBER_PROMPT(PROMPT_SECUNDEN);
   } else {
-    PUSH_PROMPT(PROMPT_SECUNDE);
+    PUSH_NUMBER_PROMPT(PROMPT_SECUNDE);
   }
 }
 

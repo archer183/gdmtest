@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -97,9 +97,8 @@ typedef const uint16_t pm_uint16_t;
 typedef const uint8_t pm_uint8_t;
 typedef const int16_t pm_int16_t;
 typedef const int8_t pm_int8_t;
-typedef int32_t __int24;
 
-#if defined(PCBX9D) || defined(PCBACT)
+#if defined(PCBTARANIS)
 extern GPIO_TypeDef gpioa;
 #undef GPIOA
 #define GPIOA (&gpioa)
@@ -325,7 +324,7 @@ void StartMainThread(bool tests=true);
 void StartEepromThread(const char *filename="eeprom.bin");
 
 extern const char *eepromFile;
-#if defined(PCBX9D) || defined(PCBACT)
+#if defined(PCBTARANIS) || defined(PCBACT)
 void eeprom_read_block (void *pointer_ram, uint16_t pointer_eeprom, size_t size);
 #else
 void eeprom_read_block (void *pointer_ram, const void *pointer_eeprom, size_t size);
@@ -357,7 +356,7 @@ void eeprom_read_block (void *pointer_ram, const void *pointer_eeprom, size_t si
 #define UART_Stop(...)
 #define UART3_Stop(...)
 
-#if defined(PCBX9D) || defined(PCBACT)
+#if defined(PCBTARANIS)
 inline void GPIO_Init(GPIO_TypeDef* GPIOx, GPIO_InitTypeDef* GPIO_InitStruct) { }
 #define GPIO_SetBits(GPIOx, pin) GPIOx->BSRRL |= pin
 #define GPIO_ResetBits(GPIOx, pin) GPIOx->BSRRL &= ~pin

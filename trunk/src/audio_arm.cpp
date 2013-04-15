@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,7 +34,7 @@
  *
  */
 
-#include "open9x.h"
+#include "opentx.h"
 
 // Must NOT be in flash, PDC needs a RAM source.
 // Amplitude reduced to 30% to allow for voice volume
@@ -362,9 +362,14 @@ void AudioQueue::sdWakeup(AudioContext & context)
       dacStop();
       memset(&fragment, 0, sizeof(fragment));
       f_close(&context.wavFile);
-      CoSetTmrCnt(audioTimer, (WAV_BUFFER_SIZE * 1000) / context.pcmFreq, 0);
-      CoStartTmr(audioTimer);
-      CoClearFlag(audioFlag);
+      if (context.pcmFreq) {
+        CoSetTmrCnt(audioTimer, (WAV_BUFFER_SIZE * 1000) / context.pcmFreq, 0);
+        CoStartTmr(audioTimer);
+        CoClearFlag(audioFlag);
+      }
+      else {
+        CoSetFlag(audioFlag);
+      }
       state = AUDIO_RESUMING;
     }
     else {
@@ -547,11 +552,11 @@ void AudioQueue::wakeup()
 inline uint8_t getToneLength(uint8_t tLen)
 {
   uint8_t result = tLen; // default
-  if (g_eeGeneral.beeperLength < 0) {
-    result /= (1-g_eeGeneral.beeperLength);
+  if (g_eeGeneral.beepLength < 0) {
+    result /= (1-g_eeGeneral.beepLength);
   }
-  if (g_eeGeneral.beeperLength > 0) {
-    result *= (1+g_eeGeneral.beeperLength);
+  if (g_eeGeneral.beepLength > 0) {
+    result *= (1+g_eeGeneral.beepLength);
   }
   return result;
 }
@@ -705,12 +710,13 @@ void audioEvent(uint8_t e, uint8_t f)
   haptic.event(e); //do this before audio to help sync timings
 #endif
 
-  if (g_eeGeneral.flashBeep && (e <= AU_ERROR || e >= AU_WARNING1)) {
-    if (lightOffCounter < FLASH_DURATION)
-      lightOffCounter = FLASH_DURATION;
+  if (e <= AU_ERROR || e >= AU_WARNING1) {
+    if (g_eeGeneral.alarmsFlash) {
+      flashCounter = FLASH_DURATION;
+    }
   }
 
-  if (g_eeGeneral.beeperMode>0 || (g_eeGeneral.beeperMode==0 && e>=AU_TRIM_MOVE) || (g_eeGeneral.beeperMode>=-1 && e<=AU_ERROR)) {
+  if (g_eeGeneral.beepMode>0 || (g_eeGeneral.beepMode==0 && e>=AU_TRIM_MOVE) || (g_eeGeneral.beepMode>=-1 && e<=AU_ERROR)) {
 #if defined(SDCARD)
     if (e < AU_FRSKY_FIRST && isAudioFileAvailable(e, filename)) {
       audioQueue.playFile(filename);
@@ -794,23 +800,23 @@ void audioEvent(uint8_t e, uint8_t f)
           break;
         // mix warning 1
         case AU_MIX_WARNING_1:
-          audioQueue.play(BEEP_DEFAULT_FREQ+100, 12, 0, PLAY_NOW);
+          audioQueue.play(BEEP_DEFAULT_FREQ+96, 12, 0);
           break;
         // mix warning 2
         case AU_MIX_WARNING_2:
-          audioQueue.play(BEEP_DEFAULT_FREQ+104, 12, 0, PLAY_NOW);
+          audioQueue.play(BEEP_DEFAULT_FREQ+104, 12, 8, PLAY_REPEAT(1));
           break;
         // mix warning 3
         case AU_MIX_WARNING_3:
-          audioQueue.play(BEEP_DEFAULT_FREQ+108, 12, 0, PLAY_NOW);
+          audioQueue.play(BEEP_DEFAULT_FREQ+112, 12, 8, PLAY_REPEAT(2));
           break;
         // time 30 seconds left
         case AU_TIMER_30:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, 2|PLAY_NOW);
+          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, PLAY_REPEAT(2)|PLAY_NOW);
           break;
         // time 20 seconds left
         case AU_TIMER_20:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, 1|PLAY_NOW);
+          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, PLAY_REPEAT(1)|PLAY_NOW);
           break;
         // time 10 seconds left
         case AU_TIMER_10:
@@ -821,15 +827,15 @@ void audioEvent(uint8_t e, uint8_t f)
           audioQueue.play(BEEP_DEFAULT_FREQ+10, 30, 6, PLAY_NOW);
           break;
         case AU_FRSKY_BEEP1:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 15, 2, 0);
+          audioQueue.play(BEEP_DEFAULT_FREQ, 15, 2);
           audioQueue.pause(200);
           break;
         case AU_FRSKY_BEEP2:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 2, 0);
+          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 2);
           audioQueue.pause(200);
           break;
         case AU_FRSKY_BEEP3:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 50, 2, 0);
+          audioQueue.play(BEEP_DEFAULT_FREQ, 50, 2);
           audioQueue.pause(200);
           break;
         case AU_FRSKY_WARN1:

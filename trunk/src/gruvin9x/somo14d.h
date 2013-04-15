@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,15 +34,17 @@
  *
  */
 
-#define PROMPT_SYSTEM_BASE      230
-#define PROMPT_CUSTOM_BASE      256
+#define PROMPT_CUSTOM_BASE      0
+#define PROMPT_I18N_BASE        256
+#define PROMPT_SYSTEM_BASE      480
 
 extern void pushPrompt(uint16_t prompt);
 extern bool isPlaying();
 
 #define PLAY_FUNCTION(x, ...) void x(__VA_ARGS__)
-#define PUSH_PROMPT(p) pushPrompt((p))
 #define PUSH_CUSTOM_PROMPT(p, id) pushPrompt(PROMPT_CUSTOM_BASE+(p))
+#define PUSH_NUMBER_PROMPT(p) pushPrompt(PROMPT_I18N_BASE+(p))
+#define PUSH_SYSTEM_PROMPT(p) pushPrompt(PROMPT_SYSTEM_BASE+(p))
 #define PLAY_NUMBER(n, u, a) playNumber((n), (u), (a))
 #define PLAY_DURATION(d) playDuration((d))
 #define IS_PLAYING(id) isPlaying()

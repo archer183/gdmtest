@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -67,9 +67,9 @@
 #define EOFS(x)  ( OFS_##x + sizeof(TR_##x) )
 
 #if LCD_W >= 212
-#define TR(x,y) y
+  #define TR(x,y) y
 #else
-#define TR(x,y) x
+  #define TR(x,y) x
 #endif
 
 // The non-0-terminated-strings
@@ -111,8 +111,14 @@ extern const pm_char STR_OPEN9X[];
 #define OFS_FUNCSOUNDS         (OFS_VFSWRESET + sizeof(TR_VFSWRESET))
 #define OFS_VTELEMCHNS         (OFS_FUNCSOUNDS + sizeof(TR_FUNCSOUNDS))
 #if defined(FRSKY) || defined(CPUARM)
-  #define OFS_VTELEMUNIT       (OFS_VTELEMCHNS + sizeof(TR_VTELEMCHNS))
-  #define OFS_VALARM           (OFS_VTELEMUNIT + sizeof(TR_VTELEMUNIT))
+  #if defined(CPUARM)
+   #define OFS_VTELEMUNIT_IMP  (OFS_VTELEMCHNS + sizeof(TR_VTELEMCHNS))
+   #define OFS_VTELEMUNIT_NORM (OFS_VTELEMUNIT_IMP + sizeof(TR_VTELEMUNIT_IMP))
+   #define OFS_VALARM          (OFS_VTELEMUNIT_NORM + sizeof(TR_VTELEMUNIT_NORM))
+  #else
+   #define OFS_VTELEMUNIT      (OFS_VTELEMCHNS + sizeof(TR_VTELEMCHNS))
+   #define OFS_VALARM          (OFS_VTELEMUNIT + sizeof(TR_VTELEMUNIT))
+  #endif
   #define OFS_VALARMFN         (OFS_VALARM + sizeof(TR_VALARM))
   #define OFS_VTELPROTO        (OFS_VALARMFN + sizeof(TR_VALARMFN))
   #define OFS_GPSFORMAT        (OFS_VTELPROTO + sizeof(TR_VTELPROTO))
@@ -134,8 +140,7 @@ extern const pm_char STR_OPEN9X[];
   #define OFS_VKEYS            (OFS_VSWASHTYPE)
 #endif
 #define OFS_VSWITCHES          (OFS_VKEYS + sizeof(TR_VKEYS))
-#define OFS_VSWITCHES_SHORT    (OFS_VSWITCHES + sizeof(TR_VSWITCHES))
-#define OFS_VSRCRAW            (OFS_VSWITCHES_SHORT + sizeof(TR_VSWITCHES_SHORT))
+#define OFS_VSRCRAW            (OFS_VSWITCHES + sizeof(TR_VSWITCHES))
 #define OFS_VTMRMODES          (OFS_VSRCRAW + sizeof(TR_VSRCRAW))
 #define OFS_DATETIME           (OFS_VTMRMODES + sizeof(TR_VTMRMODES))
 #if defined(PCBGRUVIN9X) || defined(CPUARM)
@@ -181,7 +186,11 @@ extern const pm_char STR_OPEN9X[];
 #define STR_VTELEMCHNS         (STR_OPEN9X + OFS_VTELEMCHNS)
 
 #if defined(FRSKY) || defined(CPUARM)
-#define STR_VTELEMUNIT         (STR_OPEN9X + OFS_VTELEMUNIT)
+  #if defined(CPUARM)
+    #define STR_VTELEMUNIT     (STR_OPEN9X + (g_eeGeneral.imperial ? OFS_VTELEMUNIT_IMP : OFS_VTELEMUNIT_NORM))
+  #else
+    #define STR_VTELEMUNIT     (STR_OPEN9X + OFS_VTELEMUNIT)
+  #endif
 #define STR_VALARM             (STR_OPEN9X + OFS_VALARM)
 #define STR_VALARMFN           (STR_OPEN9X + OFS_VALARMFN)
 #define STR_VTELPROTO          (STR_OPEN9X + OFS_VTELPROTO)
@@ -202,7 +211,6 @@ extern const pm_char STR_OPEN9X[];
 
 #define STR_VKEYS              (STR_OPEN9X + OFS_VKEYS)
 #define STR_VSWITCHES          (STR_OPEN9X + OFS_VSWITCHES)
-#define STR_VSWITCHES_SHORT    (STR_OPEN9X + OFS_VSWITCHES_SHORT)
 #define STR_VSRCRAW            (STR_OPEN9X + OFS_VSRCRAW)
 #define STR_VTMRMODES          (STR_OPEN9X + OFS_VTMRMODES)
 
@@ -263,6 +271,13 @@ extern const pm_char STR_ELEDIRECTION[];
 extern const pm_char STR_AILDIRECTION[];
 extern const pm_char STR_COLDIRECTION[];
 extern const pm_char STR_MODE[];
+#if defined(AUDIO) && defined(BUZZER)
+extern const pm_char STR_SPEAKER[];
+extern const pm_char STR_BUZZER[];
+#else
+#define STR_SPEAKER STR_MODE
+#define STR_BUZZER  STR_MODE
+#endif
 extern const pm_char STR_NOFREEEXPO[];
 extern const pm_char STR_NOFREEMIXER[];
 extern const pm_char STR_INSERTMIX[];
@@ -276,7 +291,7 @@ extern const pm_char STR_OFFSET[];
 extern const pm_char STR_TRIM[];
 extern const pm_char STR_DREX[];
 extern const pm_char STR_CURVE[];
-extern const pm_char STR_FPHASE[];
+extern const pm_char STR_FLMODE[];
 extern const pm_char STR_MIXWARNING[];
 extern const pm_char STR_OFF[];
 extern const pm_char STR_MULTPX[];
@@ -301,7 +316,7 @@ extern const pm_char STR_HAPTIC_LABEL[];
 extern const pm_char STR_HAPTICSTRENGTH[];
 extern const pm_char STR_CONTRAST[];
 extern const pm_char STR_ALARMS_LABEL[];
-#if defined(BATTGRAPH) || defined(PCBX9D)
+#if defined(BATTGRAPH) || defined(PCBTARANIS)
 extern const pm_char STR_BATTERY_RANGE[];
 #endif
 extern const pm_char STR_BATTERYWARNING[];
@@ -392,7 +407,10 @@ extern const pm_char STR_MENUTELEMETRY[];
 extern const pm_char STR_MENUTEMPLATES[];
 extern const pm_char STR_MENUSTAT[];
 extern const pm_char STR_MENUDEBUG[];
+extern const pm_char STR_MENUGLOBALVARS[];
 extern const pm_char STR_INVERT_THR[];
+extern const pm_char STR_AND_SWITCH[];
+extern const pm_char STR_CF[];
 
 #if defined(DSM2) || defined(PXX)
 extern const pm_char STR_RXNUM[];
@@ -412,6 +430,7 @@ extern const pm_char STR_INTERNALRF[];
 extern const pm_char STR_EXTERNALRF[];
 extern const pm_char STR_FAILSAFE[];
 extern const pm_char STR_FAILSAFESET[];
+extern const pm_char STR_VFAILSAFE[]; // TODO non-zero terminated
 extern const pm_char STR_COUNTRYCODE[];
 #endif
 
@@ -439,6 +458,8 @@ extern const pm_char STR_CURRENT[];
 #if defined(CPUARM)
   extern const pm_char STR_CURRENT_CALIB[];
   #define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
+  extern const pm_char STR_UNITSSYSTEM[];
+  extern const pm_char STR_VUNITSSYSTEM[];
 #else
   #define LEN_CALIB_FIELDS PSIZE(TR_BATT_CALIB)
 #endif
@@ -449,7 +470,20 @@ extern const pm_char STR_CURRENT[];
   extern const pm_char STR_COPY_MODEL[];
   extern const pm_char STR_MOVE_MODEL[];
   extern const pm_char STR_DELETE_MODEL[];
+  extern const pm_char STR_EDIT[];
+  extern const pm_char STR_INSERT_BEFORE[];
+  extern const pm_char STR_INSERT_AFTER[];
+  extern const pm_char STR_COPY[];
+  extern const pm_char STR_MOVE[];
+  extern const pm_char STR_DELETE[];
+  extern const pm_char STR_RESET_FLIGHT[];
+  extern const pm_char STR_RESET_TIMER1[];
+  extern const pm_char STR_RESET_TIMER2[];
+  extern const pm_char STR_RESET_TELEMETRY[];
+  extern const pm_char STR_STATISTICS[];
 #endif
+
+extern const pm_char STR_RESET[];
 
 #if defined(SDCARD)
   extern const pm_char STR_BACKUP_MODEL[];
@@ -527,7 +561,7 @@ extern const pm_char STR_DATE[];
 extern const pm_char STR_CHANNELS_MONITOR[];
 
 #if defined(VOICE)
-  PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att);
+  PLAY_FUNCTION(playNumber, getvalue_t number, uint8_t unit, uint8_t att);
   PLAY_FUNCTION(playDuration, int16_t seconds);
 #endif
 
@@ -542,5 +576,25 @@ extern const pm_char STR_CHANNELS_MONITOR[];
   #define STR_MIXNAME   STR_NAME
   #define STR_EXPONAME  STR_NAME
 #endif
+
+#if LCD_W >= 212
+  extern const char * STR_PHASES_HEADERS[];
+  extern const char * STR_LIMITS_HEADERS[];
+  extern const char * STR_CSW_HEADERS[];
+#endif
+
+#if defined(PCBTARANIS)
+  extern const pm_char STR_BYTES[];
+  extern const pm_char STR_MODULE_BIND[];
+  extern const pm_char STR_MODULE_RANGE[];
+  extern const pm_char STR_SET[];
+  extern const pm_char STR_TRAINER[];
+#endif
+
+// TODO move to translations files
+#define CHR_SHORT  's'
+#define CHR_LONG   'l'
+#define CHR_TOGGLE 't'
+#define CHR_HOUR   'h'
 
 #endif

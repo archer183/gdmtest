@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -36,7 +36,7 @@
 
 #if defined(SIMU)
   #define WRITE_DELAY_10MS 200
-#elif defined(PCBX9D)
+#elif defined(PCBTARANIS)
   #define WRITE_DELAY_10MS 500
 #elif defined(PCBSKY9X) && !defined(REV0)
   #define WRITE_DELAY_10MS 500

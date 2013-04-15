@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -73,13 +73,24 @@ inline void displayColumnHeader(const char **headers, uint8_t index)
 #define lcd_putsColumnLeft(x, y, str) lcd_putsLeft(y, str)
 #endif
 
+// Menus related stuff ...
 #if defined(SDCARD)
-typedef uint16_t pgofs_t;
+  typedef uint16_t vertpos_t;
 #else
-typedef uint8_t pgofs_t;
+  typedef uint8_t vertpos_t;
 #endif
 
-extern pgofs_t s_pgOfs;
+#if defined(PCBTARANIS)
+  typedef uint8_t & check_event_t;
+  #define horzpos_t int8_t
+#else
+  typedef uint8_t check_event_t;
+  #define horzpos_t uint8_t
+#endif
+
+extern vertpos_t m_posVert;
+extern horzpos_t m_posHorz;
+extern vertpos_t s_pgOfs;
 extern uint8_t s_noHi;
 extern uint8_t s_noScroll;
 
@@ -102,6 +113,7 @@ inline MenuFuncP lastPopMenu()
 
 void drawPotsBars();
 void doMainScreenGraphics();
+void onMainViewMenu(const char *result);
 void menuMainView(uint8_t event);
 void menuGeneralDiagAna(uint8_t event);
 #if defined(FRSKY)
@@ -121,6 +133,12 @@ void menuStatisticsDebug(uint8_t event);
   #define p1valdiff 0
 #endif
 
+#if defined(NAVIGATION_POT2)
+  extern int8_t p2valdiff;
+#else
+  #define p2valdiff 0
+#endif
+
 extern int8_t checkIncDec_Ret;  // global helper vars
 
 #define EDIT_SELECT_MENU   -1
@@ -134,6 +152,7 @@ extern int8_t s_editMode;       // global editmode
 #define EE_MODEL        0x02
 #define NO_INCDEC_MARKS 0x04
 #define INCDEC_SWITCH   0x08
+#define INCDEC_SOURCE   0x10
 int16_t checkIncDec(uint8_t event, int16_t i_pval, int16_t i_min, int16_t i_max, uint8_t i_flags);
 
 #if defined(CPUM64)
@@ -161,28 +180,17 @@ int8_t checkIncDecGen(uint8_t event, int8_t i_val, int8_t i_min, int8_t i_max);
 #define CHECK_INCDEC_MODELSWITCH CHECK_INCDEC_MODELVAR
 #endif
 
+#if defined(AUTOSOURCE)
+#define CHECK_INCDEC_MODELSOURCE(event, var, min, max) \
+  var = checkIncDec(event,var,min,max,EE_MODEL|INCDEC_SOURCE)
+#else
+#define CHECK_INCDEC_MODELSOURCE CHECK_INCDEC_MODELVAR
+#endif
+
 #define CHECK_INCDEC_GENVAR(event, var, min, max) \
   var = checkIncDecGen(event,var,min,max)
 
-// Menus related stuff ...
-#if defined(SDCARD)
-  #define vertpos_t uint16_t
-#else
-  #define vertpos_t uint8_t
-#endif
-
-#if defined(PCBX9D)
-  typedef uint8_t & check_event_t;
-  #define horzpos_t int8_t
-#else
-  typedef uint8_t check_event_t;
-  #define horzpos_t uint8_t
-#endif
-
-extern vertpos_t m_posVert;
-extern horzpos_t m_posHorz;
-
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define NAVIGATION_LINE_BY_LINE  0x40
 #else
   #define NAVIGATION_LINE_BY_LINE  0
@@ -261,20 +269,11 @@ void displayWarning(uint8_t event);
 #if defined(SDCARD) || (defined(ROTARY_ENCODER_NAVIGATION) && !defined(CPUM64))
   #define NAVIGATION_MENUS
   #define MENU_ADD_ITEM(s) s_menu[s_menu_count++] = s
-  #if defined(SDCARD) && defined(ROTARY_ENCODER_NAVIGATION)
-    #define MENU_MAX_LINES 6
-  #else
-    #define MENU_MAX_LINES 4
-  #endif
+  #define MENU_MAX_LINES 6
   #if defined(SDCARD)
     #define MENU_ADD_SD_ITEM(s) MENU_ADD_ITEM(s)
   #else
     #define MENU_ADD_SD_ITEM(s)
-  #endif
-  #if defined(ROTARY_ENCODER_NAVIGATION)
-    #define MENU_ADD_NAVIGATION_ITEM(s) MENU_ADD_ITEM(s)
-  #else
-    #define MENU_ADD_NAVIGATION_ITEM(s)
   #endif
   #define MENU_LINE_LENGTH (LEN_MODEL_NAME+1)
   extern const char *s_menu[MENU_MAX_LINES];
@@ -282,6 +281,7 @@ void displayWarning(uint8_t event);
   extern uint8_t s_menu_flags;
   extern uint16_t s_menu_offset;
   const char * displayMenu(uint8_t event);
+  extern void (*menuHandler)(const char *result);
 #else
   #define s_menu_count 0
 #endif
@@ -295,11 +295,11 @@ void displayWarning(uint8_t event);
   #define drawStatusLine()
 #endif
 
-void menuChannelsMonitor(uint8_t event);
+void menuChannelsView(uint8_t event);
 
 #define LABEL(...) (uint8_t)-1
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define KEY_MOVE_UP    KEY_PLUS
   #define KEY_MOVE_DOWN  KEY_MINUS
   #define CURSOR_MOVED_LEFT(event)  (EVT_KEY_MASK(event) == KEY_PLUS)
@@ -319,7 +319,7 @@ void menuChannelsMonitor(uint8_t event);
   #define IS_ROTARY_MOVE_LEFT        IS_ROTARY_LEFT
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define REPEAT_LAST_CURSOR_MOVE() { if (CURSOR_MOVED_LEFT(event) || CURSOR_MOVED_RIGHT(event)) putEvent(event); else m_posHorz = 0; }
 #elif defined(ROTARY_ENCODER_NAVIGATION)
   #define REPEAT_LAST_CURSOR_MOVE() { if (EVT_KEY_MASK(event) >= 0x0e) putEvent(event); else m_posHorz = 0; }
@@ -327,7 +327,7 @@ void menuChannelsMonitor(uint8_t event);
   #define REPEAT_LAST_CURSOR_MOVE() m_posHorz = 0;
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define POS_VERT_INIT   (menuTab ? (MAXCOL((uint16_t)1) == 255 ? 2 : 1) : 0)
   #define POS_HORZ_INIT(posVert)   ((COLATTR(posVert) & NAVIGATION_LINE_BY_LINE) ? -1 : 0)
   #define EDIT_MODE_INIT  0 // TODO enum

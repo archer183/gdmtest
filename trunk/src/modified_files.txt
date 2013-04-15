@@ -1,7 +1,7 @@
-en.h   				XXX
-makefile   			XXX
-open9x .cpp & .h		XXX
-combatmath.h   			XXX
-myeeprom.h			XXX
-model_menus cpp and h         	XXX
-translations.cpp and .h		XXX
+en.h   				XXXX
+makefile   			XXXX
+opentx .cpp & .h		XXXX
+combatmath.h   			XXXX
+myeeprom.h			XXXX
+menu_model cpp and h         	XXXX
+translations.cpp and .h		XXXX

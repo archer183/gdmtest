@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -54,6 +54,9 @@ inline void resumePulses() { s_pulses_paused = false; }
 void setupPulses();
 void DSM2_Init();
 void DSM2_Done();
+
+#define SEND_FAILSAFE_NOW()
+#define SEND_FAILSAFE_1S()
 
 #endif
 /*eof*/

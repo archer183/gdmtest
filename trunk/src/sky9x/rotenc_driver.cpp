@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,7 +34,7 @@
  *
  */
 
-#include "../open9x.h"
+#include "../opentx.h"
 
 void rotencInit()
 {
@@ -61,16 +61,12 @@ extern "C" void PIOC_IRQHandler()
   dummy = PIOC->PIO_PDSR ;                // Read Rotary encoder (PC19, PC21)
   dummy >>= 19 ;
   dummy &= 0x05 ;                 // pick out the three bits
-  if ( dummy != ( Rotary_position & 0x05 ) )
-  {
+  if ( dummy != ( Rotary_position & 0x05 ) ) {
     if ( ( Rotary_position & 0x01 ) ^ ( ( dummy & 0x04) >> 2 ) )
-    {
-      incRotaryEncoder(0, +1);
-    }
-    else
-    {
       incRotaryEncoder(0, -1);
-    }
+    else
+      incRotaryEncoder(0, +1);
+
     Rotary_position &= ~0x45 ;
     Rotary_position |= dummy ;
   }

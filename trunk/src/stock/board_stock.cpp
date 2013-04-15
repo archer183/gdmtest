@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,7 +34,7 @@
  *
  */
 
-#include "../open9x.h"
+#include "../opentx.h"
 
 #if defined(ROTARY_ENCODER_NAVIGATION)
 
@@ -65,8 +65,7 @@ void rotencPoll()
 
   asm(" rjmp 1f") ;
   asm("1:") ;
-//      asm(" nop") ;
-//      asm(" nop") ;
+
   uint8_t rotary ;
   rotary = PINA ;
   DDRA = 0xFF ;           // Back to all outputs
@@ -106,14 +105,14 @@ inline void boardInit()
   DDRF = 0x00;  PORTF = 0x00; //anain
   DDRG = 0x14;  PORTG = 0xfb; //pullups + SIM_CTL=1 = phonejack = ppm_in, Haptic output and off (0)
 
-  ADMUX=ADC_VREF_TYPE;
-  ADCSRA=0x85; // ADC enabled, pre-scaler division=32 (no interrupt, no auto-triggering)
+  ADMUX  = ADC_VREF_TYPE;
+  ADCSRA = 0x85; // ADC enabled, pre-scaler division=32 (no interrupt, no auto-triggering)
 
   // TCNT0  10ms = 16MHz/1024/156 periodic timer (9.984ms)
   // (with 1:4 duty at 157 to average 10.0ms)
   // Timer overflows at about 61Hz or once every 16ms.
   TCCR0  = (0b111 << CS00); // Norm mode, clk/1024
-  OCR0 = 156;
+  OCR0   = 156;
 
 #if defined(AUDIO) || defined(VOICE)
   TCCR2  = (0b010 << CS00); // Norm mode, clk/8
@@ -306,7 +305,7 @@ bool getBackLightState()
   return (bl_target==g_eeGeneral.blOnBright);
 }
 
-void fadeBacklight() //called from per10ms()
+void backlightFade() //called from per10ms()
 {
   if (bl_target != bl_current) {
     if (bl_target > bl_current)

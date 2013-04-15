@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -67,8 +67,8 @@
 #define PIN_TRIM_RV_DN         (1<<INP_D_TRM_RV_DWN)
 #define PIN_TRIM_RH_R          (1<<INP_D_TRM_RH_UP)
 
-#define TIMER_16KHZ_VECT TIMER0_OVF_vect
-#define COUNTER_16KHZ TCNT0
+#define TIMER_16KHZ_VECT    TIMER0_OVF_vect
+#define COUNTER_16KHZ       TCNT0
 
 #define TIMER_10MS_VECT  TIMER0_COMP_vect
 #define TIMER_10MS_COMPVAL OCR0
@@ -100,7 +100,7 @@ void backlightFadeOff();
 #define __BACKLIGHT_OFF backlightFadeOff()
 bool getBackLightState();
 #define IS_BACKLIGHT_ON() getBackLightState()
-void fadeBacklight();
+void backlightFade();
 #else
 
 #if defined(SP22)
@@ -214,5 +214,7 @@ void fadeBacklight();
 extern uint8_t RotEncoder ;
 void rotencPoll();
 #endif
+
+#define EEPROM_MASSSTORAGE() (0)
 
 #endif

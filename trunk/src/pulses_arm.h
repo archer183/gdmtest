@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -39,10 +39,14 @@
 
 extern uint8_t s_current_protocol;
 extern uint8_t s_pulses_paused;
+extern uint32_t failsafeCounter;
 
 void startPulses();
 inline bool pulsesStarted() { return s_current_protocol != 255; }
 inline void pausePulses() { s_pulses_paused = true; }
 inline void resumePulses() { s_pulses_paused = false; }
+
+#define SEND_FAILSAFE_NOW() failsafeCounter = 1
+#define SEND_FAILSAFE_1S()  failsafeCounter = 100
 
 #endif

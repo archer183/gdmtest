@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,7 +34,7 @@
  *
  */
 
-#include "open9x.h"
+#include "opentx.h"
 #include "stdio.h"
 #include "inttypes.h"
 #include "string.h"
@@ -162,7 +162,11 @@ static void EeFsFlush()
 
 uint16_t EeFsGetFree()
 {
+#if defined(CPUARM)
+  int32_t ret = 0;
+#else
   int16_t ret = 0;
+#endif
   blkid_t i = eeFs.freeList;
   while (i) {
     ret += BS-1;
@@ -809,7 +813,7 @@ bool eeLoadGeneral()
   if (theFile.readRlc((uint8_t*)&g_eeGeneral, 1) == 1 && g_eeGeneral.version == EEPROM_VER) {
     theFile.openRlc(FILE_GENERAL);
     if (theFile.readRlc((uint8_t*)&g_eeGeneral, sizeof(g_eeGeneral)) <= sizeof(EEGeneral)) {
-#if defined(CPUM64)
+#if defined(PCBSTD)
       if (g_eeGeneral.variant == EEPROM_VARIANT && g_eeGeneral.chkSum == evalChkSum()) {
         return true;
       }
@@ -914,6 +918,8 @@ void eeLoadModel(uint8_t id)
 #endif
 
     LOAD_MODEL_BITMAP();
+
+    SEND_FAILSAFE_1S();
   }
 }
 
@@ -955,6 +961,10 @@ void eeReadAll()
 
 void eeCheck(bool immediately)
 {
+  if (EEPROM_MASSSTORAGE()) {
+    return;
+  }
+
   if (immediately) {
     eeFlush();
   }

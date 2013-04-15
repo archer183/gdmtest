@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -39,24 +39,28 @@
 
 #include <inttypes.h>
 
-#if defined(CPUARM)
-#define blkid_t    uint16_t
-#define EESIZE     (32*1024)
-#define EEFS_VERS  5
-#define MAXFILES   62
-#define BS         64
+#if defined(PCBTARANIS)
+  #define blkid_t    uint16_t
+  #if defined(REV3)
+    #define EESIZE   (32*1024)
+  #else
+    #define EESIZE   (64*1024)
+  #endif
+  #define EEFS_VERS  5
+  #define MAXFILES   62
+  #define BS         64
 #elif defined(PCBGRUVIN9X) || defined(CPUM128)
-#define blkid_t    uint8_t
-#define EESIZE     4096
-#define EEFS_VERS  5
-#define MAXFILES   36
-#define BS         16
+  #define blkid_t    uint8_t
+  #define EESIZE     4096
+  #define EEFS_VERS  5
+  #define MAXFILES   36
+  #define BS         16
 #else
-#define blkid_t    uint8_t
-#define EESIZE     2048
-#define EEFS_VERS  4
-#define MAXFILES   20
-#define BS         16
+  #define blkid_t    uint8_t
+  #define EESIZE     2048
+  #define EEFS_VERS  4
+  #define MAXFILES   20
+  #define BS         16
 #endif
 
 PACK(struct DirEnt{

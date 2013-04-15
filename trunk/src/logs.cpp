@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,7 +34,7 @@
  *
  */
 
-#include "open9x.h"
+#include "opentx.h"
 #include "FatFs/ff.h"
 
 FIL g_oLogFile = {0};
@@ -104,16 +104,16 @@ const pm_char * openLogs()
 #endif
 
 #if defined(FRSKY_HUB)
-    if (g_model.frsky.usrProto == USR_PROTO_FRSKY)
+    if (IS_USR_PROTO_FRSKY_HUB())
       f_puts("GPS Date,GPS Time,Long,Lat,Course,GPS Speed,GPS Alt,Baro Alt,Temp1,Temp2,RPM,Fuel,Volts,AccelX,AccelY,AccelZ,", &g_oLogFile);
 #endif
 
 #if defined(WS_HOW_HIGH)
-    if (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH)
+    if (IS_USR_PROTO_WS_HOW_HIGH())
       f_puts("WSHH Alt,", &g_oLogFile);
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
     // TODO
 #else
     f_puts("Rud,Ele,Thr,Ail,P1,P2,P3,THR,RUD,ELE,ID0,ID1,ID2,AIL,GEA,TRN\n", &g_oLogFile);
@@ -173,7 +173,7 @@ void writeLogs()
 #endif
 
 #if defined(FRSKY_HUB)
-      if (g_model.frsky.usrProto == USR_PROTO_FRSKY) {
+      if (IS_USR_PROTO_FRSKY_HUB()) {
         f_printf(&g_oLogFile, "%4d-%02d-%02d,", frskyData.hub.year+2000, frskyData.hub.month, frskyData.hub.day);
         f_printf(&g_oLogFile, "%02d:%02d:%02d,", frskyData.hub.hour, frskyData.hub.min, frskyData.hub.sec);
         f_printf(&g_oLogFile, "%03d.%04d%c,", frskyData.hub.gpsLongitude_bp, frskyData.hub.gpsLongitude_ap,
@@ -181,9 +181,9 @@ void writeLogs()
         f_printf(&g_oLogFile, "%03d.%04d%c,", frskyData.hub.gpsLatitude_bp, frskyData.hub.gpsLatitude_ap,
             frskyData.hub.gpsLatitudeNS ? frskyData.hub.gpsLatitudeNS : '-');
         f_printf(&g_oLogFile, "%03d.%d,", frskyData.hub.gpsCourse_bp, frskyData.hub.gpsCourse_ap);
-        f_printf(&g_oLogFile, "%d.%d,", frskyData.hub.gpsSpeed_bp, frskyData.hub.gpsSpeed_ap);
-        f_printf(&g_oLogFile, "%03d.%d,", frskyData.hub.gpsAltitude_bp, frskyData.hub.gpsAltitude_ap);
-        f_printf(&g_oLogFile, "%d.%d,", frskyData.hub.baroAltitude_bp, frskyData.hub.baroAltitude_ap);
+        f_printf(&g_oLogFile, "%d.%d,", TELEMETRY_GPS_SPEED_BP, TELEMETRY_GPS_SPEED_AP);
+        f_printf(&g_oLogFile, "%03d.%d,", TELEMETRY_GPS_ALT_BP, TELEMETRY_GPS_ALT_AP);
+        f_printf(&g_oLogFile, "%d.%d,", TELEMETRY_ALT_BP, TELEMETRY_ALT_AP);
         f_printf(&g_oLogFile, "%d,%d,", frskyData.hub.temperature1, frskyData.hub.temperature2);
         f_printf(&g_oLogFile, "%d,", frskyData.hub.rpm);
         f_printf(&g_oLogFile, "%d,", frskyData.hub.fuelLevel);
@@ -193,12 +193,12 @@ void writeLogs()
 #endif
 
 #if defined(WS_HOW_HIGH)
-      if (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH) {
-        f_printf(&g_oLogFile, "%d,", frskyData.hub.baroAltitude_bp);
+      if (IS_USR_PROTO_WS_HOW_HIGH()) {
+        f_printf(&g_oLogFile, "%d,", TELEMETRY_GPS_ALT_BP);
       }
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
       // TODO
 #else
       for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {

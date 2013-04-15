@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,7 +34,7 @@
  *
  */
 
-#include "open9x.h"
+#include "opentx.h"
 
 uint8_t displayBuf[DISPLAY_BUF_SIZE];
 #define DISPLAY_END (displayBuf+DISPLAY_PLAN_SIZE)
@@ -62,7 +62,7 @@ void lcd_img(xcoord_t x, uint8_t y, const pm_uchar * img, uint8_t idx, LcdFlags 
     for (xcoord_t i=0; i<w; i++){
       uint8_t b = pgm_read_byte(q++);
       ASSERT_IN_DISPLAY(p);
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
       uint8_t val = inv ? ~b : b;
       if (!(att & GREY(1)))
         *p = val;
@@ -210,11 +210,10 @@ void lcd_putcAtt(xcoord_t x, uint8_t y, const unsigned char c, LcdFlags flags)
 
     uint8_t ym8 = (y & 0x07);
     p += 5;
-    for (int8_t i=5; i>=0; i--) {
-      uint8_t b = (i!=5 ? pgm_read_byte(q--) : 0);
+    for (uint8_t i=6, b=0; i>0; i--, b=pgm_read_byte(q--)) {
       if (inv) b = ~b;
 
-      if (condense && i==1) {
+      if (condense && i==2) {
         /*condense the letter by skipping column 4 */
         continue;
       }
@@ -279,6 +278,7 @@ void lcd_putsnAtt(xcoord_t x, uint8_t y, const pm_char * s, uint8_t len, LcdFlag
 #endif
       lcd_putcAtt(x, y, c, mode);
       x += FW;
+      if (c == '|') x -= 4;
       if (mode&DBLSIZE) x += FW-1;
       else if (mode&MIDSIZE) x += FW-3;
       else if (mode&SMLSIZE) x -= 1;
@@ -405,7 +405,7 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags flags, uint8_t
     div_t qr = div((uint16_t)val, 10);
     char c = qr.rem + '0';
     LcdFlags f = flags;
-#if !defined(PCBX9D)
+#if !defined(PCBTARANIS)
     if (dblsize) {
       if (c=='1' && i==len && xn>x+10) { x+=2; f|=CONDENSED; }
       if ((uint16_t)val >= 1000) { x+=FWNUM; f&=~DBLSIZE; }
@@ -430,8 +430,10 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags flags, uint8_t
       else if (tinsize) {
         x--;
         lcd_plot(x-1, y+4);
-        if ((flags&INVERS) && ((~flags & BLINK) || BLINK_ON_PHASE))
-          lcd_vline(x, y, 8);
+        if ((flags&INVERS) && ((~flags & BLINK) || BLINK_ON_PHASE)) {
+          lcd_vline(x-1, y, 6);
+          lcd_vline(x, y, 6);
+        }
         x--;
       }
       else {
@@ -442,7 +444,7 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags flags, uint8_t
         x--;
       }
     }
-#if !defined(PCBX9D)
+#if !defined(PCBTARANIS)
     if (dblsize && (uint16_t)val >= 1000 && (uint16_t)val < 10000) x-=2;
 #endif
     val = qr.quot;
@@ -468,7 +470,7 @@ void lcd_outdezNAtt(xcoord_t x, uint8_t y, lcdint_t val, LcdFlags flags, uint8_t
   if (neg) lcd_putcAtt(x, y, '-', flags);
 }
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
 void lcd_mask(uint8_t *p, uint8_t mask, LcdFlags att)
 {
   ASSERT_IN_DISPLAY(p);
@@ -667,7 +669,7 @@ void lcd_invert_line(int8_t y)
   uint8_t *p  = &displayBuf[y * LCD_W];
   for (xcoord_t x=0; x<LCD_W; x++) {
     ASSERT_IN_DISPLAY(p);
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
     *(p+3*DISPLAY_PLAN_SIZE) ^= 0xff;
     *(p+2*DISPLAY_PLAN_SIZE) ^= 0xff;
     *(p+DISPLAY_PLAN_SIZE)   ^= 0xff;
@@ -676,7 +678,7 @@ void lcd_invert_line(int8_t y)
   }
 }
 
-#if !defined(PCBX9D) // TODO test inversion
+#if !defined(PCBTARANIS) // TODO test inversion
 void lcdDrawTelemetryTopBar()
 {
   putsModelName(0, 0, g_model.name, g_eeGeneral.currModel, 0);
@@ -728,11 +730,12 @@ void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2
 
   qr = div(tme, 60);
 
-#if defined(CPUARM)
+#if defined(PCBTARANIS)
   if (att & MIDSIZE) {
     div_t qr2 = div(qr.quot, 60);
     LCD_2DOTS(x+2*8-6, y, att);
     lcd_outdezNAtt(x, y, qr2.quot, att|LEADING0|LEFT, 2);
+    qr.quot = qr2.rem;
     x += 2*8+1;
   }
 #define separator ':'
@@ -740,7 +743,7 @@ void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2
   char separator = ':';
   if (tme >= 3600 && (~att & DBLSIZE)) {
     qr = div(qr.quot, 60);
-    separator = 'h';
+    separator = CHR_HOUR;
   }
 #else
 #define separator ':'
@@ -775,7 +778,7 @@ void putsTime(xcoord_t x, uint8_t y, putstime_t tme, LcdFlags att, LcdFlags att2
 void putsVolts(xcoord_t x, uint8_t y, uint16_t volts, LcdFlags att)
 {
   lcd_outdezAtt(x, y, (int16_t)volts, (~NO_UNIT) & (att | ((att&PREC2)==PREC2 ? 0 : PREC1)));
-  if (~att & NO_UNIT) lcd_putcAtt(lcdLastPos, y, 'v', att&(~INVERS));
+  if (~att & NO_UNIT) lcd_putcAtt(lcdLastPos, y, 'v', att);
 }
 
 void putsVBat(xcoord_t x, uint8_t y, LcdFlags att)
@@ -795,7 +798,7 @@ void putsStrIdx(xcoord_t x, uint8_t y, const pm_char *str, uint8_t idx, LcdFlags
 
 void putsMixerSource(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags att)
 {
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   if (idx < MIXSRC_SW1)
     lcd_putsiAtt(x, y, STR_VSRCRAW, idx, att);
   else if (idx < MIXSRC_PPM1)
@@ -810,7 +813,7 @@ void putsMixerSource(xcoord_t x, uint8_t y, uint8_t idx, LcdFlags att)
     putsStrIdx(x, y, STR_PPM, idx-MIXSRC_PPM1+1, att);
   else if (idx <= MIXSRC_LAST_CH)
     putsStrIdx(x, y, STR_CH, idx-MIXSRC_CH1+1, att);
-#if defined(GVARS)
+#if defined(GVARS) || !defined(PCBSTD)
   else if (idx <= MIXSRC_LAST_GVAR)
     putsStrIdx(x, y, STR_GV, idx-MIXSRC_GVAR1+1, att);
 #endif
@@ -849,43 +852,40 @@ void putsSwitches(xcoord_t x, uint8_t y, int8_t idx, LcdFlags att)
   }
 
 #if ROTARY_ENCODERS > 0
-  if (idx >= SWSRC_FIRST_ROTENC_SWITCH) {
-    if (idx <= SWSRC_LAST_ROTENC_SWITCH) {
-      idx -= SWSRC_FIRST_ROTENC_SWITCH;
-      char suffix;
-      if (idx < ROTARY_ENCODERS) {
-        suffix = 's';
-      }
-      else {
-        idx -= ROTARY_ENCODERS;
-        suffix = 'l';
-      }
-      lcd_putcAtt(x+3*FW, y, suffix, att);
-      return lcd_putsiAtt(x, y, STR_VRENCODERS, idx, att);
+  else if (idx >= SWSRC_FIRST_ROTENC_SWITCH) {
+    idx -= SWSRC_FIRST_ROTENC_SWITCH;
+    char suffix = (idx & 1) ? CHR_LONG : CHR_SHORT;
+    lcd_putcAtt(x+3*FW, y, suffix, att);
+    return lcd_putsiAtt(x, y, STR_VRENCODERS, idx/2, att);
+  }
+#endif
+
+#if !defined(PCBSTD)
+  else if (idx >= SWSRC_TRAINER_SHORT) {
+    idx -= SWSRC_TRAINER_SHORT;
+    lcd_putcAtt(x+3*FW, y, (idx & 1) ? CHR_LONG : CHR_SHORT, att);
+#if ROTARY_ENCODERS > 0
+    if (idx >= 2) {
+      idx -= 2;
+      return lcd_putsiAtt(x, y, STR_VRENCODERS, idx/2, att);
     }
-    idx -= 2*ROTARY_ENCODERS;
+    else
+#endif
+    {
+      return lcd_putsiAtt(x, y, STR_VSWITCHES, SWSRC_TRAINER-1, att);
+    }
   }
 #endif
 
   if (idx > SWSRC_ON) {
     idx -= SWSRC_ON;
-    char suffix = 'm';
-#if defined(CPUARM)
-    if (idx > SWSRC_ON) {
-      suffix = 's';
-      idx -= SWSRC_ON;
-      if (idx > MAX_PSWITCH) {
-        suffix = 'l';
-        idx -= MAX_PSWITCH;
-      }
-    }
-#endif
-    if (~att & SWCONDENSED) lcd_putcAtt(x+3*FW, y, suffix, att);
+    char suffix = CHR_TOGGLE;
+    if (idx != SWSRC_ON && (~att & SWCONDENSED)) lcd_putcAtt(x+3*FW, y, suffix, att);
   }
   lcd_putsiAtt(x, y, STR_VSWITCHES, idx-1, att);
 }
 
-#ifdef FLIGHT_PHASES
+#if defined(FLIGHT_MODES)
 void putsFlightPhase(xcoord_t x, uint8_t y, int8_t idx, LcdFlags att)
 {
   if (idx==0) { lcd_putsiAtt(x, y, STR_MMMINV, 0, att); return; }
@@ -940,7 +940,7 @@ void putsTrimMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdFlags at
   }
 }
 
-#if defined(ROTARY_ENCODERS)
+#if ROTARY_ENCODERS > 0
 void putsRotaryEncoderMode(xcoord_t x, uint8_t y, uint8_t phase, uint8_t idx, LcdFlags att)
 {
 #if ROTARY_ENCODERS > 2

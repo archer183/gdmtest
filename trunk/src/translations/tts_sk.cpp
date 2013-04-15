@@ -18,7 +18,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -35,7 +35,7 @@
  *
  */
 
-#include "../open9x.h"
+#include "../opentx.h"
 
 enum SlovakPrompts {
   PROMPT_NUMBERS_BASE = 0,
@@ -116,19 +116,30 @@ enum SlovakPrompts {
 PLAY_FUNCTION(pushUnitPrompt, int16_t number, uint8_t unitprompt)
 {
   if (number == 1)
-    PUSH_PROMPT(unitprompt);
+    PUSH_NUMBER_PROMPT(unitprompt);
   else if (number > 1 && number < 5)
-    PUSH_PROMPT(unitprompt+1);
+    PUSH_NUMBER_PROMPT(unitprompt+1);
   else
-    PUSH_PROMPT(unitprompt+2);
+    PUSH_NUMBER_PROMPT(unitprompt+2);
 }
 
-PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
+PLAY_FUNCTION(playNumber, getvalue_t number, uint8_t unit, uint8_t att)
 {
 
   if (number < 0) {
-    PUSH_PROMPT(PROMPT_MINUS);
+    PUSH_NUMBER_PROMPT(PROMPT_MINUS);
     number = -number;
+  }
+
+  if (unit) {
+    unit--;
+    convertUnit(number, unit);
+    if (IS_IMPERIAL_ENABLE()) {
+      if (unit == UNIT_METERS) {
+        unit = UNIT_FEET;
+      }
+    }
+    unit++;
   }
 
   int8_t mode = MODE(att);
@@ -138,11 +149,11 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
       if (qr.rem) {
         PLAY_NUMBER(qr.quot, 0, ZENSKY);
         if (qr.quot == 0)
-          PUSH_PROMPT(PROMPT_CELA);
+          PUSH_NUMBER_PROMPT(PROMPT_CELA);
         else
           PUSH_UNIT_PROMPT(qr.quot, PROMPT_CELA);
         PLAY_NUMBER(qr.rem, 0, ZENSKY);
-        PUSH_PROMPT(PROMPT_UNITS_BASE+((unit-1)*4)+3);
+        PUSH_NUMBER_PROMPT(PROMPT_UNITS_BASE+((unit-1)*4)+3);
         return;
       }
       else
@@ -173,17 +184,17 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
   }
 
   if ((number == 1) && (att == MUZSKY)) {
-    PUSH_PROMPT(PROMPT_JEDEN);
+    PUSH_NUMBER_PROMPT(PROMPT_JEDEN);
     number = -1;
   }
   
   if ((number == 1) && (att == STREDNI)) {
-    PUSH_PROMPT(PROMPT_JEDNO);
+    PUSH_NUMBER_PROMPT(PROMPT_JEDNO);
     number = -1;
   }
   
   if ((number == 2) && ((att == ZENSKY) || (att == STREDNI))) {
-    PUSH_PROMPT(PROMPT_DVE);
+    PUSH_NUMBER_PROMPT(PROMPT_DVE);
     number = -1;
   }
   
@@ -191,23 +202,23 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
     if (number >= 3000)
       PLAY_NUMBER(number / 1000, 0, 0);     
     if (number >= 2000 && number < 3000)
-      PUSH_PROMPT(PROMPT_DVETISIC);
+      PUSH_NUMBER_PROMPT(PROMPT_DVETISIC);
     else
-      PUSH_PROMPT(PROMPT_TISIC);
+      PUSH_NUMBER_PROMPT(PROMPT_TISIC);
 
     number %= 1000;
     if (number == 0)
       number = -1;
   }
   if (number >= 100) {
-    PUSH_PROMPT(PROMPT_STO + (number/100)-1);
+    PUSH_NUMBER_PROMPT(PROMPT_STO + (number/100)-1);
     number %= 100;
     if (number == 0)
       number = -1;
   }
   
   if (number >= 0) {
-    PUSH_PROMPT(PROMPT_NULA+number);
+    PUSH_NUMBER_PROMPT(PROMPT_NULA+number);
   }
 
   if (unit) {
@@ -218,7 +229,7 @@ PLAY_FUNCTION(playNumber, int16_t number, uint8_t unit, uint8_t att)
 PLAY_FUNCTION(playDuration, int16_t seconds)
 {
   if (seconds < 0) {
-    PUSH_PROMPT(PROMPT_MINUS);
+    PUSH_NUMBER_PROMPT(PROMPT_MINUS);
     seconds = -seconds;
   }
 

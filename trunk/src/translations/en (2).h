@@ -68,6 +68,9 @@
 #define LEN_VLCD               "\006"
 #define TR_VLCD                "NormalOptrex"
 
+#define LEN_COUNTRYCODES       TR("\002", "\007")
+#define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japan\0 ""Europe\0")
+
 #define LEN_VTRIMINC           TR("\006","\013")
 #define TR_VTRIMINC            TR("Expo  ""ExFine""Fine  ""Medium""Coarse","Exponential""Extra Fine ""Fine       ""Medium     ""Coarse     ")
 
@@ -340,16 +343,15 @@
 #define INDENT_WIDTH           (FW/2)
 
 #if defined(PCBX9D)
-#define TR_POPUPS              "[ENTER]\010[EXIT]"
+  #define TR_ENTER             "[ENTER]"
 #else
-#define TR_POPUPS              "[MENU]\010[EXIT]"
+  #define TR_ENTER             "[MENU]"
 #endif
-#define OFS_EXIT               7
-#if defined(PCBX9D)
-  #define TR_MENUWHENDONE      CENTER"\006[ENTER] WHEN DONE"
-#else
-  #define TR_MENUWHENDONE      CENTER"\006[MENU] WHEN DONE"
-#endif
+
+#define TR_POPUPS              TR_ENTER"\010[EXIT]"
+#define OFS_EXIT               sizeof(TR_ENTER)
+
+#define TR_MENUWHENDONE        CENTER"\006"TR_ENTER" WHEN DONE"
 #define TR_FREE                "free"
 #define TR_DELETEMODEL         "DELETE MODEL"
 #define TR_COPYINGMODEL        "Copying model..."
@@ -423,6 +425,7 @@
 #define TR_HAPTICSTRENGTH      INDENT"Strength"
 #define TR_CONTRAST            "Contrast"
 #define TR_ALARMS_LABEL        "Alarms"
+#define TR_BATTERY_RANGE       "Battery Range"
 #define TR_BATTERYWARNING      INDENT"Battery Low"
 #define TR_INACTIVITYALARM     INDENT"Inactivity"
 #define TR_MEMORYWARNING       INDENT"Memory Low"
@@ -431,6 +434,7 @@
 #define TR_THROTTLEREVERSE     TR("Thr reverse","Throttle reverse")
 #define TR_MINUTEBEEP          TR(INDENT"Minute",INDENT"Every minute")
 #define TR_BEEPCOUNTDOWN       INDENT"Countdown"
+#define TR_PERSISTENT          TR(INDENT"Persist.",INDENT"Persistent")
 #define TR_BACKLIGHT_LABEL     "Backlight"
 #define TR_BLDELAY             INDENT"Duration"
 #define TR_BLONBRIGHTNESS      INDENT"ON Brightness"
@@ -446,13 +450,7 @@
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-
-#if defined(PCBX9D)
-  #define TR_MENUTOSTART       CENTER"\006[ENTER] TO START"
-#else
-  #define TR_MENUTOSTART       CENTER"\006[MENU] TO START"
-#endif
-
+#define TR_MENUTOSTART         CENTER"\006"TR_ENTER" TO START"
 #define TR_SETMIDPOINT         CENTER"\003SET STICKS MIDPOINT"
 #define TR_MOVESTICKSPOTS      CENTER"\006MOVE STICKS/POTS"
 #define TR_RXBATT              "Rx Batt:"
@@ -487,7 +485,7 @@
 #define TR_PRESSANYKEYTOSKIP   CENTER"Press any key to skip"
 #define TR_THROTTLENOTIDLE     CENTER"Throttle not idle"
 #define TR_ALARMSDISABLED      CENTER"Alarms Disabled"
-#define TR_PRESSANYKEY         TR("\010Press any Key",CENTER"Press any Key")
+#define TR_PRESSANYKEY         TR("\010Press any Key", CENTER"Press any Key")
 #define TR_BADEEPROMDATA       CENTER"Bad EEprom Data"
 #define TR_EEPROMFORMATTING    CENTER"Formatting EEPROM"
 #define TR_EEPROMOVERFLOW      CENTER"EEPROM overflow"
@@ -522,14 +520,14 @@
 #define TR_MENUTEMPLATES       "TEMPLATES"
 #define TR_MENUSTAT            "STATS"
 #define TR_MENUDEBUG           "DEBUG"
-#define TR_RXNUM               TR("RxNum","Receiver No.")
-#define TR_SYNCMENU            "Sync [MENU]"
+#define TR_RXNUM               TR("RxNum", INDENT"Receiver No.")
+#define TR_SYNCMENU            "Sync "TR_ENTER
 #define TR_LIMIT               INDENT"Limit"
 #define TR_MINRSSI             "Min Rssi"
 #define TR_LATITUDE            "Latitude"
 #define TR_LONGITUDE           "Longitude"
-#define TR_GPSCOORD            TR("GPS Coords","GPS coordinate format")
-#define TR_VARIO               TR("Vario","Variometer")
+#define TR_GPSCOORD            TR("GPS Coords", "GPS coordinate format")
+#define TR_VARIO               TR("Vario", "Variometer")
 #define TR_SHUTDOWN            "SHUTTING DOWN"
 #define TR_BATT_CALIB          "Battery Calib"
 #define TR_CURRENT_CALIB       "Current Calib"
@@ -595,3 +593,8 @@
 #define TR_DATE                "Date"
 #define TR_ROTARY_ENCODER      "R.Encs"
 #define TR_CHANNELS_MONITOR    "CHANNEL MONITOR"
+#define TR_INTERNALRF          "Internal RF"
+#define TR_EXTERNALRF          "External RF"
+#define TR_FAILSAFE            "Failsafe mode"
+#define TR_FAILSAFESET         "FAILSAFE SETTINGS"
+#define TR_COUNTRYCODE         "Country Code"

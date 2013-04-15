@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -499,7 +499,7 @@
 ///// MCI Card Detect pin.
 #define BOARD_SD_PIN_CD             PIN_MCI_CD
 
-#define CardIsConnected() ( (PIOB->PIO_PDSR & PIO_PB7) == 0 )
+#define SD_CARD_PRESENT() ( (PIOB->PIO_PDSR & PIO_PB7) == 0 )
 
 // States for initialising card
 #define SD_ST_ERR               -1

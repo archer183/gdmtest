@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -48,11 +48,11 @@
 #define BITMAPS_PATH  "."
 #else
 #define ROOT_PATH           "/"
-#define MODELS_PATH         "/9XMODELS"
-#define LOGS_PATH           "/9XLOGS"   // no trailing slash = important
-#define SOUNDS_PATH         "/9XSOUNDS" // no trailing slash = important
+#define MODELS_PATH         "/MODELS"
+#define LOGS_PATH           "/LOGS"   // no trailing slash = important
+#define SOUNDS_PATH         "/SOUNDS" // no trailing slash = important
 #define SYSTEM_SOUNDS_PATH  SOUNDS_PATH "/SYSTEM" // no trailing slash = important
-#define BITMAPS_PATH        "/9XBMP"
+#define BITMAPS_PATH        "/BMP"
 #endif
 
 #define MODELS_EXT   ".bin"
@@ -75,14 +75,12 @@ inline const pm_char *SDCARD_ERROR(FRESULT result)
     return STR_SDCARD_ERROR;
 }
 
-#if defined(PCBACT)
-#define O9X_FOURCC 0x3478396F // o9x for ACT
-#elif defined(PCBX9D)
-#define O9X_FOURCC 0x3378396F // o9x for X9D
+#if defined(PCBTARANIS)
+  #define O9X_FOURCC 0x3378396F // o9x for Taranis
 #elif defined(PCBSKY9X)
-#define O9X_FOURCC 0x3278396F // o9x for sky9x
+  #define O9X_FOURCC 0x3278396F // o9x for sky9x
 #elif defined(PCBGRUVIN9X)
-#define O9X_FOURCC 0x3178396F // o9x for gruvin9x
+  #define O9X_FOURCC 0x3178396F // o9x for gruvin9x
 #endif
 
 #endif
