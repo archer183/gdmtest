@@ -140,25 +140,25 @@ int16_t INTCOS(int16_t x){
 			x = x + 256;
 		}
 		if (x < -125) { //create 256 value from table above
-			x=-4*(scp[128-abs(x)]+1);
+			x=-4*(pgm_read_byte(&scp[128-abs(x)])+1);
 		}
 		else if ( x < -64) {
-			x=-4*scp[128-abs(x)];
+			x=-4*pgm_read_byte(&scp[128-abs(x)]);
 		}
 		else if (x < -2) {
-			x=4*scp[abs(x)];
+			x=4*pgm_read_byte(&scp[abs(x)]);
 		}
 		else if (x < 3) {
-			x=4*(scp[abs(x)]+1);
+			x=4*(pgm_read_byte(&scp[abs(x)])+1);
 		}
 		else if (x < 65) {
-			x = 4*scp[x];
+			x = 4*pgm_read_byte(&scp[x]);
 		}
 		else if (x < 126) {  //new code adds the 256 value to the origninal 255 to correctly scale the cosine to +/-1024
-			x = -4*scp[128-x];
+			x = -4*pgm_read_byte(&scp[128-x]);
 		}
 		else if (x < 129) {  //create the +256 end point
-			x = -4*(scp[128-x]+1);
+			x = -4*(pgm_read_byte(&scp[128-x])+1);
 		}
 
       return x; // will add actual after verification of function of this change
@@ -172,25 +172,25 @@ int16_t INTSIN(int16_t x){
 			x = x + 256;
 		}
 		if /*( x < -64) {
-			x=-4*scp[abs(x+64)];
+			x=-4*pgm_read_byte(&scp[abs(x+64)];
 		}
 		else if*/ (x < 0) {  //takes care of the pesky 256 value
 			if (x < -67 && x > -61){
-				x=-4*(scp[abs(x+64)]+1);
+				x=-4*(pgm_read_byte(&scp[abs(x+64)])+1);
 			}
 			else {
-			x=-4*scp[abs(x+64)];
+			x=-4*pgm_read_byte(&scp[abs(x+64)]);
 			}
 		}
 		/*else if (x < 65) {
-			x = 4*scp[128-(64+x)];
+			x = 4*pgm_read_byte(&scp[128-(64+x)];
 		}*/
 		else if (x < 129) {
 			if (x < 67 && x > 61){
-				x=4*(scp[abs(x-64)]+1);
+				x=4*(pgm_read_byte(&scp[abs(x-64)])+1);
 			}
 			else {
-			x = 4*scp[abs(x-64)];
+			x = 4*pgm_read_byte(&scp[abs(x-64)]);
 			}
 		}
 		return x;
@@ -206,13 +206,13 @@ int16_t INTACOS(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 			x = 128;
 		}
 		else if (x<-70) {
-			x=1024-(4*acosn[abs(x)-71])/3;
+			x=1024-(4*pgm_read_byte(&acosn[abs(x)-71]))/3;
 		}
 		else if (x < 71) { //curve fit for middle section of arccos}
 			x=(((-10*x)/15)+128)*4;  //the 4x multiplier takes range from +/-255 to +/- 1024 effectively
 		}
 		else if (x < 129) {
-			x=(4*acosn[x-71])/3;
+			x=(4*pgm_read_byte(&acosn[x-71]))/3;
 		}
 		else {
 			x = 0;
@@ -232,13 +232,13 @@ int16_t INTASIN(int16_t x){ // NOTE:  CURVE MUST BE SCALED SUCH THAT INPUT IS +/
 			x = 128;
 		}
 		else if (x<-70) {
-			x=1024-(4*acosn[abs(x)-71])/3;
+			x=1024-(4*pgm_read_byte(&acosn[abs(x)-71]))/3;
 		}
 		else if (x < 71) { //curve fit for middle section of arccos}
 			x=(((-10*x)/15)+128)*4;  //the 4x multiplier takes range from +/-255 to +/- 1024 effectively
 		}
 		else if (x < 129) {
-			x=(4*acosn[x-71])/3;
+			x=(4*pgm_read_byte(&acosn[x-71]))/3;
 		}
 		else {
 			x = 0;
