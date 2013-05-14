@@ -41,15 +41,15 @@
 
 #if defined(PCBTARANIS)
   #define blkid_t    uint16_t
-  #if defined(REV3)
-    #define EESIZE   (32*1024)
-  #else
+  #if defined(REV4a)
     #define EESIZE   (64*1024)
+  #else
+    #define EESIZE   (32*1024)
   #endif
   #define EEFS_VERS  5
   #define MAXFILES   62
   #define BS         64
-#elif defined(PCBGRUVIN9X) || defined(CPUM128)
+#elif defined(PCBGRUVIN9X) || defined(CPUM2561) || defined(CPUM128)
   #define blkid_t    uint8_t
   #define EESIZE     4096
   #define EEFS_VERS  5
@@ -144,11 +144,6 @@ class EFile
 #define eeFileSize(f)   eeFs.files[f].size
 #define eeModelSize(id) eeFileSize(FILE_MODEL(id))
 
-#if defined(PXX)
-uint8_t eeLoadModelIdAfterName();
-#define eeLoadModelId(id) eeLoadModelIdAfterName()
-#endif
-
 #define ERR_NONE 0
 #define ERR_FULL 1
 extern uint8_t  s_write_err;    // error reasons
@@ -232,8 +227,6 @@ inline void eeFlush() { theFile.flush(); }
 #else
 #define DISPLAY_PROGRESS_BAR(x)
 #endif
-
-uint16_t evalChkSum();
 
 #define eeDeleteModel(x) EFile::rm(FILE_MODEL(x))
 

@@ -122,6 +122,8 @@ PACK(typedef struct {
 
 bool eeConvert()
 {
+  return false;
+
   if (g_eeGeneral.version == 212) {
     g_eeGeneral.optrexDisplay = 0;
     g_eeGeneral.backlightBright = 0;
@@ -155,7 +157,7 @@ bool eeConvert()
         }
         read32_eeprom_data((File_system[id+1].block_no << 12) + sizeof(struct t_eeprom_header), (uint8_t *)&oldModel, size);
 
-        memcpy(g_model.name, oldModel.name, 10);
+        memcpy(g_model.header.name, oldModel.name, 10);
         for (uint8_t i=0; i<2; i++) {
           g_model.timers[i].mode = oldModel.timers[i].mode;
           g_model.timers[i].start = oldModel.timers[i].val;
@@ -164,13 +166,13 @@ bool eeConvert()
         }
         g_model.protocol = oldModel.protocol;
         g_model.thrTrim = oldModel.thrTrim;
-        g_model.ppmNCH = oldModel.ppmNCH;
+        g_model.moduleData[0].channelsCount = oldModel.ppmNCH*2;
         g_model.trimInc = oldModel.trimInc;
         g_model.disableThrottleWarning = oldModel.disableThrottleWarning;
-        g_model.pulsePol = oldModel.pulsePol;
+        g_model.moduleData[0].ppmPulsePol = oldModel.pulsePol;
         g_model.extendedLimits = oldModel.extendedLimits;
         g_model.extendedTrims = oldModel.extendedTrims;
-        g_model.ppmDelay = oldModel.ppmDelay;
+        g_model.moduleData[0].ppmDelay = oldModel.ppmDelay;
         g_model.beepANACenter = oldModel.beepANACenter;
         for (uint8_t i=0; i<64; i++) {
           g_model.mixData[i].destCh = oldModel.mixData[i].destCh;
@@ -218,9 +220,9 @@ bool eeConvert()
           memcpy(g_model.phaseData[i].trim, oldModel.phaseData[i].trim, 4*sizeof(int16_t));
           memcpy(g_model.phaseData[i].rotaryEncoders, oldModel.phaseData[i].rotaryEncoders, 1*sizeof(int16_t));
         }
-        g_model.ppmFrameLength = oldModel.ppmFrameLength;
+        g_model.moduleData[0].ppmFrameLength = oldModel.ppmFrameLength;
         g_model.thrTraceSrc = oldModel.thrTraceSrc;
-        g_model.modelId = oldModel.modelId;
+        g_model.header.modelId = oldModel.modelId;
         g_model.switchWarningStates = oldModel.switchWarningStates;
         g_model.frsky.usrProto = oldModel.frsky.usrProto;
         g_model.frsky.voltsSource = oldModel.frsky.voltsSource;

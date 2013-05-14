@@ -54,6 +54,13 @@ GPIO_TypeDef gpiob;
 GPIO_TypeDef gpioc;
 GPIO_TypeDef gpiod;
 GPIO_TypeDef gpioe;
+TIM_TypeDef tim1;
+TIM_TypeDef tim3;
+TIM_TypeDef tim8;
+RCC_TypeDef rcc;
+DMA_Stream_TypeDef dma2_stream2;
+DMA_Stream_TypeDef dma2_stream6;
+DMA_TypeDef dma2;
 #elif defined(PCBSKY9X)
 Pio Pioa, Piob, Pioc;
 Pwm pwm;
@@ -260,6 +267,7 @@ void *eeprom_write_function(void *)
 
 uint8_t main_thread_running = 0;
 char * main_thread_error = NULL;
+extern void opentxStart();
 void *main_thread(void *)
 {
 #ifdef SIMU_EXCEPTIONS
@@ -269,7 +277,7 @@ void *main_thread(void *)
   try {
 #endif
 
-    s_current_protocol = 255;
+    s_current_protocol[0] = 255;
 
     g_menuStackPtr = 0;
     g_menuStack[0] = menuMainView;
@@ -280,16 +288,7 @@ void *main_thread(void *)
     if (g_eeGeneral.backlightMode != e_backlight_mode_off) backlightOn(); // on Tx start turn the light on
 
     if (main_thread_running == 1) {
-#if defined(SPLASH)
-      doSplash();
-#endif
-
-#if defined(CPUARM)
-      eeLoadModel(g_eeGeneral.currModel);
-#endif
-
-      checkAlarm(); // TODO why not in checkAll()
-      checkAll();
+      opentxStart();
     }
     else {
 #if defined(CPUARM)
@@ -297,7 +296,7 @@ void *main_thread(void *)
 #endif
     }
 
-    s_current_protocol = 0;
+    s_current_protocol[0] = 0;
 
     while (main_thread_running) {
       perMain();

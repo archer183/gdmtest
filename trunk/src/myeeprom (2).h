@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -51,26 +51,79 @@
 #define WARN_MEM     (!(g_eeGeneral.warnOpts & WARN_MEM_BIT))
 #define BEEP_VAL     ( (g_eeGeneral.warnOpts & WARN_BVAL_BIT) >>3 )
 
-#if defined(PCBX9D)
-#define EEPROM_VER       214
+#if defined(PCBTARANIS)
+  #define EEPROM_VER       214
 #elif defined(PCBSKY9X)
-#define EEPROM_VER       214
+  #define EEPROM_VER       214
 #elif defined(PCBGRUVIN9X)
-#define EEPROM_VER       213
+  #define EEPROM_VER       214
+#elif defined(CPUM128)
+  #define EEPROM_VER       215
 #else
-#define EEPROM_VER       213
+  #define EEPROM_VER       213
 #endif
 
 #ifndef PACK
 #define PACK( __Declaration__ ) __Declaration__ __attribute__((__packed__))
 #endif
 
+#if defined(CPUARM)
+  #define MAX_MODELS 60
+  #define NUM_CHNOUT 32 // number of real output channels CH1-CH32
+  #define MAX_PHASES 9
+  #define MAX_MIXERS 64
+  #define MAX_EXPOS  32
+  #define NUM_CSW    32 // number of custom switches
+  #define NUM_CFN    32 // number of functions assigned to switches
+#elif defined(PCBGRUVIN9X)
+  #define MAX_MODELS 30
+  #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
+  #define MAX_PHASES 6
+  #define MAX_MIXERS 32
+  #define MAX_EXPOS  16
+  #define NUM_CSW    15 // number of custom switches
+  #define NUM_CFN    24 // number of functions assigned to switches
+#elif defined(CPUM128)
+  #define MAX_MODELS 30
+  #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
+  #define MAX_PHASES 5
+  #define MAX_MIXERS 32
+  #define MAX_EXPOS  14
+  #define NUM_CSW    15 // number of custom switches
+  #define NUM_CFN    24 // number of functions assigned to switches
+#else
+  #define MAX_MODELS 16
+  #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
+  #define MAX_PHASES 5
+  #define MAX_MIXERS 32
+  #define MAX_EXPOS  14
+  #define NUM_CSW    12 // number of custom switches
+  #define NUM_CFN    16 // number of functions assigned to switches
+#endif
+
+#define MAX_TIMERS 2
+
+#if defined(CPUARM)
+  #define MAX_CURVES 16
+  #define NUM_POINTS 512
+  #define CURVTYPE   int16_t
+#else
+  #define MAX_CURVES 8
+  #define NUM_POINTS (112-MAX_CURVES)
+  #define CURVTYPE   int8_t
+#endif
+
+#if defined(PCBTARANIS)
+  #define NUM_MODULES 2
+#else
+  #define NUM_MODULES 1
+#endif
 
 typedef int16_t gvar_t;
 
-#if !defined(CPUM64)
-typedef char gvar_name_t[6];
-#define GVAR_MAX  1024
+#if !defined(PCBSTD)
+  typedef char gvar_name_t[6];
+  #define GVAR_MAX  1024
 #endif
 //CHANGE FOR GVARS > 10
 
@@ -78,16 +131,16 @@ typedef char gvar_name_t[6];
 // even we do not spend space in EEPROM for 10 GVARS, we reserve the space inside the range of values, like offset, weight, etc.
 //combat math trig increases gvars to 10+
 
-#if defined(CPUM64) && defined(GVARS)
+#if defined(PCBSTD) && defined(GVARS)
 #if defined(TRIG)
 #define MAX_GVARS 10
 #else
-#define MAX_GVARS 5
+  #define MAX_GVARS 5
 #endif
   #define MODEL_GVARS_DATA gvar_t gvars[MAX_GVARS];
   #define PHASE_GVARS_DATA
   #define GVAR_VALUE(x, p) g_model.gvars[x]
-#elif defined(CPUM64)
+#elif defined(PCBSTD)
   #define MAX_GVARS 0
   #define MODEL_GVARS_DATA
   #define PHASE_GVARS_DATA
@@ -95,15 +148,11 @@ typedef char gvar_name_t[6];
 #if defined(TRIG)
 #define MAX_GVARS 10
 #else
-#define MAX_GVARS 5
+  #define MAX_GVARS 5
 #endif
   #define MODEL_GVARS_DATA gvar_name_t gvarsNames[MAX_GVARS];
   #define PHASE_GVARS_DATA gvar_t gvars[MAX_GVARS]
   #define GVAR_VALUE(x, p) g_model.phaseData[p].gvars[x]
-#else
-  #define MAX_GVARS 0
-  #define MODEL_GVARS_DATA gvar_name_t gvarsNames[5];
-  #define PHASE_GVARS_DATA gvar_t gvars[5]
 #endif
 
 PACK(typedef struct t_TrainerMix {
@@ -122,7 +171,7 @@ PACK(typedef struct t_FrSkyRSSIAlarm {
   int8_t    value:6;
 }) FrSkyRSSIAlarm;
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
 enum MainViews {
   VIEW_TIMERS,
   VIEW_INPUTS,
@@ -159,19 +208,28 @@ enum BeeperMode {
   uint8_t  optrexDisplay; \
   uint8_t  sticksGain; \
   uint8_t  rotarySteps; \
-  uint8_t  countryCode;
+  uint8_t  countryCode; \
+  uint8_t  imperial;
 #elif defined(PXX)
   #define EXTRA_GENERAL_FIELDS uint8_t  countryCode;
 #else
   #define EXTRA_GENERAL_FIELDS
 #endif
 
-#if defined(PCBX9D)
-#define MODELDATA_EXTRA   char bitmap[10]; int8_t rfProtocol; uint8_t ppmSCH; uint8_t failsafeMode; int16_t failsafeChannels[16];
+PACK(typedef struct t_ModuleData {
+  int8_t  rfProtocol;
+  uint8_t channelsStart;
+  int8_t  channelsCount; // 0=8 channels
+  uint8_t failsafeMode;
+  int16_t failsafeChannels[NUM_CHNOUT];
+}) ModuleData;
+
+#if defined(PCBTARANIS)
+#define MODELDATA_EXTRA   char bitmap[10]; uint8_t externalModule; ModuleData moduleData[NUM_MODULES]; uint8_t trainerMode;
 #define LIMITDATA_EXTRA   char name[6];
 #define swstate_t         uint16_t
 #elif defined(PCBSKY9X)
-#define MODELDATA_EXTRA   uint8_t ppmSCH; int8_t ppm2SCH; int8_t ppm2NCH; int8_t rfProtocol; uint8_t rfCountryCode;
+#define MODELDATA_EXTRA   uint8_t ppmSCH; int8_t ppm2SCH; int8_t ppm2NCH; ModuleData moduleData[NUM_MODULES];
 #define LIMITDATA_EXTRA
 #define swstate_t         uint8_t
 #else
@@ -208,28 +266,28 @@ PACK(typedef struct t_EEGeneral {
   int8_t    vBatCalib;
   int8_t    backlightMode;
   TrainerData trainer;
-  uint8_t   view;      //index of subview in main scrren
-  int8_t    spare1:3;
-  int8_t    beeperMode:2;
-  uint8_t   flashBeep:1;
+  uint8_t   view;            // index of view in main screen
+  int8_t    buzzerMode:2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
+  uint8_t   spare1:1;
+  int8_t    beepMode:2;      // -2=quiet, -1=only alarms, 0=no keys, 1=all
+  uint8_t   alarmsFlash:1;
   uint8_t   disableMemoryWarning:1;
   uint8_t   disableAlarmWarning:1;
   uint8_t   stickMode:2;
   int8_t    timezone:5;
   uint8_t   spare2:1;
   uint8_t   inactivityTimer;
-  uint8_t   throttleReversed:1;
-  uint8_t   spare3:2;
+  uint8_t   spare3:3;
   SPLASH_MODE; /* 3bits */
   int8_t    hapticMode:2;    // -2=quiet, -1=only alarms, 0=no keys, 1=all
   uint8_t   blOffBright:4;
   uint8_t   blOnBright:4;
   uint8_t   lightAutoOff;
-  uint8_t   templateSetup;  //RETA order according to chout_ar array 
+  uint8_t   templateSetup;   // RETA order for receiver channels
   int8_t    PPM_Multiplier;
   int8_t    hapticLength;
-  uint8_t   reNavigation; // not used on STOCK board
-  int8_t    beeperLength:3;
+  uint8_t   reNavigation;    // not used on STOCK board
+  int8_t    beepLength:3;
   uint8_t   hapticStrength:3;
   uint8_t   gpsFormat:1;
   uint8_t   unexpectedShutdown:1;
@@ -242,7 +300,7 @@ PACK(typedef struct t_EEGeneral {
 
 }) EEGeneral;
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
 #define LEN_MODEL_NAME     12
 #define LEN_EXPOMIX_NAME   10
 #define LEN_FP_NAME        10
@@ -266,14 +324,25 @@ PACK(typedef struct t_ExpoData {
   char    name[LEN_EXPOMIX_NAME];
   int8_t  curveParam;
 }) ExpoData;
-#else
+#elif defined(PCBSTD)
 PACK(typedef struct t_ExpoData {
   uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
   int8_t  swtch:6;
   uint8_t chn:2;
   uint8_t phases:5;
   uint8_t curveMode:1;
-  uint8_t weight;         // we have one bit spare here :)
+  uint8_t weight;         // One spare bit here (used for GVARS)
+  int8_t  curveParam;
+}) ExpoData;
+#else
+PACK(typedef struct t_ExpoData {
+  uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
+  uint8_t chn:2;
+  uint8_t curveMode:1;
+  uint8_t spare:3;
+  uint8_t phases;
+  int8_t  swtch;
+  uint8_t weight;
   int8_t  curveParam;
 }) ExpoData;
 #endif
@@ -289,7 +358,6 @@ PACK(typedef struct t_LimitData {
   LIMITDATA_EXTRA
 
 }) LimitData;
-
 
 #define TRIM_OFF    (1)
 #define TRIM_ON     (0)
@@ -356,6 +424,8 @@ PACK( union u_int8int16_t {
 #define SLOW_STEP   2
 #define DELAY_MAX   15 /* 7.5 seconds */
 #define SLOW_MAX    15 /* 7.5 seconds */
+
+#if defined(PCBSTD)
 PACK(typedef struct t_MixData {
   uint8_t destCh:4;          // 0, 1..NUM_CHNOUT
   uint8_t curveMode:1;       // O=curve, 1=differential
@@ -376,7 +446,29 @@ PACK(typedef struct t_MixData {
   int8_t  curveParam;
   int8_t  offset;
 }) MixData;
-
+#else
+PACK(typedef struct t_MixData {
+  uint8_t destCh:4;          // 0, 1..NUM_CHNOUT
+  uint8_t curveMode:1;       // O=curve, 1=differential
+  uint8_t noExpo:1;
+  uint8_t weightMode:1;
+  uint8_t offsetMode:1;
+  uint8_t srcRaw;
+  int8_t  weight;
+  int8_t  swtch;
+  uint8_t phases;
+  uint8_t mltpx:2;           // multiplex method: 0 means +=, 1 means *=, 2 means :=
+  int8_t  carryTrim:3;
+  uint8_t mixWarn:2;         // mixer warning
+  uint8_t spare:1;
+  uint8_t delayUp:4;
+  uint8_t delayDown:4;
+  uint8_t speedUp:4;
+  uint8_t speedDown:4;
+  int8_t  curveParam;
+  int8_t  offset;
+}) MixData;
+#endif
 PACK( union u_gvarint_t {
   struct {
     int8_t lo;
@@ -415,15 +507,17 @@ PACK( union u_int8int16_t {
 #if defined(CPUARM)
 #define MAX_CSW_DURATION 120 /*60s*/
 #define MAX_CSW_DELAY    120 /*60s*/
+#define MAX_CSW_ANDSW    MAX_SWITCH
 PACK(typedef struct t_CustomSwData { // Custom Switches data
-  int8_t  v1; //input
-  int8_t  v2; //offset
+  int8_t  v1;
+  int8_t  v2;      // TODO EEPROM change
   uint8_t func;
   uint8_t delay;
   uint8_t duration;
-  uint8_t andsw;  
+  int8_t  andsw;
 }) CustomSwData;
 #else
+#define MAX_CSW_ANDSW    15
 PACK(typedef struct t_CustomSwData { // Custom Switches data
   int8_t  v1; //input
   int8_t  v2; //offset
@@ -449,7 +543,9 @@ enum Functions {
   FUNC_TRAINER_AIL,
   FUNC_INSTANT_TRIM,
   FUNC_PLAY_SOUND,
+#if !defined(PCBTARANIS)
   FUNC_HAPTIC,
+#endif
   FUNC_RESET,
   FUNC_VARIO,
   FUNC_PLAY_TRACK,
@@ -491,11 +587,12 @@ enum ResetFunctionParam {
 #if ROTARY_ENCODERS > 1
   FUNC_RESET_ROTENC2,
 #endif
-  FUNC_RESET_PARAMS_COUNT
+  FUNC_RESET_PARAMS_COUNT,
+  FUNC_RESET_PARAM_LAST = FUNC_RESET_PARAMS_COUNT-1
 };
 
 #if defined(CPUARM)
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
  #define LEN_CFN_NAME 10
 #else
  #define LEN_CFN_NAME 6
@@ -506,7 +603,9 @@ PACK(typedef struct t_CustomFnData { // Function Switches data
   PACK(union {
     char name[LEN_CFN_NAME];
     struct {
-      uint32_t val;
+      int16_t val;
+      int16_t ext1;
+      int16_t ext2;
     } composite;
   }) param;
   uint8_t mode:2;
@@ -670,7 +769,7 @@ PACK(typedef struct t_FrSkyBarData {
   uint8_t    barMax;           // ditto for max display (would usually = ratio)
 }) FrSkyBarData;
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define NUM_LINE_ITEMS 3
 #else
   #define NUM_LINE_ITEMS 2
@@ -768,7 +867,7 @@ PACK(typedef struct t_SwashRingData { // Swash Ring data
 
 #define ROTARY_ENCODER_MAX  1024
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
 #define NUM_ROTARY_ENCODERS 0
 #define NUM_ROTARY_ENCODERS_EXTRA 0
 #define ROTARY_ENCODER_ARRAY_EXTRA
@@ -795,15 +894,17 @@ PACK(typedef struct t_SwashRingData { // Swash Ring data
 #define ROTARY_ENCODER_ARRAY_EXTRA
 #endif
 
-#if defined(CPUM64)
-#define TRIM_ARRAY int8_t trim[4]; int8_t trim_ext:8
+#if defined(PCBSTD)
+  #define TRIMS_ARRAY       int8_t trim[4]; int8_t trim_ext:8
+  #define TRIMS_ARRAY_SIZE  5
 #else
-#define TRIM_ARRAY int16_t trim[4]
+  #define TRIMS_ARRAY       int16_t trim[4]
+  #define TRIMS_ARRAY_SIZE  8
 #endif
 
 #if defined(CPUARM)
 PACK(typedef struct t_PhaseData {
-  TRIM_ARRAY;
+  TRIMS_ARRAY;
   int8_t swtch;       // swtch of phase[0] is not used
   char name[LEN_FP_NAME];
   uint8_t fadeIn;
@@ -813,7 +914,7 @@ PACK(typedef struct t_PhaseData {
 }) PhaseData;
 #else
 PACK(typedef struct t_PhaseData {
-  TRIM_ARRAY;
+  TRIMS_ARRAY;
   int8_t swtch;       // swtch of phase[0] is not used
   char name[LEN_FP_NAME];
   uint8_t fadeIn:4;
@@ -823,50 +924,10 @@ PACK(typedef struct t_PhaseData {
 }) PhaseData;
 #endif
 
-#if defined(CPUARM)
-  #define MAX_MODELS 60
-  #define NUM_CHNOUT 32 // number of real output channels CH1-CH32
-  #define MAX_PHASES 9
-  #define MAX_MIXERS 64
-  #define MAX_EXPOS  32
-  #define NUM_CSW    32 // number of custom switches
-  #define NUM_CFN    32 // number of functions assigned to switches
-#elif defined(PCBGRUVIN9X) || defined(CPUM128)
-  #define MAX_MODELS 30
-  #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
-  #define MAX_PHASES 6
-  #define MAX_MIXERS 32
-  #define MAX_EXPOS  16
-  #define NUM_CSW    15 // number of custom switches
-  #define NUM_CFN    24 // number of functions assigned to switches
-#else
-  #define MAX_MODELS 16
-  #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
-  #define MAX_PHASES 5
-  #define MAX_MIXERS 32
-  #define MAX_EXPOS  14
-  #define NUM_CSW    12 // number of custom switches
-  #define NUM_CFN    16 // number of functions assigned to switches
-#endif
-
-#define MAX_TIMERS 2
-
-#if defined(CPUARM)
-  #define MAX_CURVES 16
-  #define NUM_POINTS 512
-  #define CURVTYPE   int16_t
-#else
-  #define MAX_CURVES 8
-  #define NUM_POINTS (112-MAX_CURVES)
-  #define CURVTYPE   int8_t
-#endif
-
-#define MAX_SWITCH (MAX_PSWITCH+NUM_CSW)
-
 enum SwitchSources {
   SWSRC_NONE = 0,
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   SWSRC_SA0,
   SWSRC_SA1,
   SWSRC_SA2,
@@ -926,23 +987,22 @@ enum SwitchSources {
   SWSRC_FIRST_MOMENT_SWITCH,
   SWSRC_LAST_MOMENT_SWITCH = SWSRC_FIRST_MOMENT_SWITCH+SWSRC_ON-1,
 
+#if !defined(PCBSTD)
+  SWSRC_TRAINER_SHORT,
+  SWSRC_TRAINER_LONG,
+#endif
+
 #if ROTARY_ENCODERS > 0
   SWSRC_FIRST_ROTENC_SWITCH,
   SWSRC_LAST_ROTENC_SWITCH = SWSRC_FIRST_ROTENC_SWITCH+(2*ROTARY_ENCODERS)-1,
-#endif
-
-#if defined(CPUARM)
-  SWSRC_FIRST_SHORT_SWITCH,
-  SWSRC_LAST_SHORT_SWITCH = SWSRC_FIRST_SHORT_SWITCH + MAX_PSWITCH - 1,
-  SWSRC_FIRST_LONG_SWITCH,
-  SWSRC_LAST_LONG_SWITCH = SWSRC_FIRST_LONG_SWITCH + MAX_PSWITCH - 1,
 #endif
 
   SWSRC_COUNT,
   SWSRC_FIRST = -SWSRC_LAST_MOMENT_SWITCH,
   SWSRC_LAST = SWSRC_COUNT-1,
 
-  SWSRC_OFF = -SWSRC_ON
+  SWSRC_OFF = -SWSRC_ON,
+  SWSRC_TRAINER = SWSRC_SW1-1,
 };
 
 enum MixSources {
@@ -953,7 +1013,7 @@ enum MixSources {
   MIXSRC_Ail,
 
   MIXSRC_Pot1,
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   MIXSRC_S1 = MIXSRC_Pot1,
   MIXSRC_S2,
   MIXSRC_S3,
@@ -988,8 +1048,10 @@ enum MixSources {
   MIXSRC_TrimThr,
   MIXSRC_TrimAil,
 
-#if defined(PCBX9D)
-  MIXSRC_SA,
+  MIXSRC_FIRST_SWITCH,
+
+#if defined(PCBTARANIS)
+  MIXSRC_SA = MIXSRC_FIRST_SWITCH,
   MIXSRC_SB,
   MIXSRC_SC,
   MIXSRC_SD,
@@ -998,7 +1060,7 @@ enum MixSources {
   MIXSRC_SG,
   MIXSRC_SH,
 #else
-  MIXSRC_3POS,
+  MIXSRC_3POS = MIXSRC_FIRST_SWITCH,
   #if defined(EXTRA_3POS)
     MIXSRC_3POS2,
   #endif
@@ -1098,12 +1160,21 @@ enum Protocols {
   PROTO_NONE
 };
 
-enum RfProtocols {
+enum RFProtocols {
   RF_PROTO_OFF = -1,
   RF_PROTO_X16,
   RF_PROTO_D8,
   RF_PROTO_LR12,
   RF_PROTO_LAST = RF_PROTO_LR12
+};
+
+enum ModuleTypes {
+  MODULE_TYPE_NONE = 0,
+  MODULE_TYPE_PPM,
+  MODULE_TYPE_XJT,
+  MODULE_TYPE_DJT,
+  MODULE_TYPE_DSM2,
+  MODULE_TYPE_LAST = MODULE_TYPE_DJT
 };
 
 enum FailsafeModes {
@@ -1115,7 +1186,7 @@ enum FailsafeModes {
 
 #if defined(MAVLINK)
 #define TELEMETRY_DATA MavlinkData mavlink;
-#elif defined(FRSKY) || !defined(CPUM64)
+#elif defined(FRSKY)
 #define TELEMETRY_DATA FrSkyData frsky;
 #else
 #define TELEMETRY_DATA
@@ -1133,15 +1204,15 @@ PACK(typedef struct t_ModelData {
   TimerData timers[MAX_TIMERS];
   uint8_t   protocol:3;
   uint8_t   thrTrim:1;            // Enable Throttle Trim
-  int8_t    ppmNCH:4;
+  int8_t    ppmNCH:4;             /* TODO EEPROM change */
   uint8_t   trimInc:3;            // Trim Increments
   uint8_t   disableThrottleWarning:1;
   uint8_t   pulsePol:1;
   uint8_t   extendedLimits:1;
   uint8_t   extendedTrims:1;
-  uint8_t   spare1:1;
+  uint8_t   throttleReversed:1;
   int8_t    ppmDelay;
-  BeepANACenter   beepANACenter;        // 1<<0->A1.. 1<<6->A7
+  BeepANACenter beepANACenter;        // 1<<0->A1.. 1<<6->A7
   MixData   mixData[MAX_MIXERS];
   LimitData limitData[NUM_CHNOUT];
   ExpoData  expoData[MAX_EXPOS];
@@ -1150,7 +1221,7 @@ PACK(typedef struct t_ModelData {
   int8_t    points[NUM_POINTS];
   
   CustomSwData customSw[NUM_CSW];
-  CustomFnData  funcSw[NUM_CFN];
+  CustomFnData funcSw[NUM_CFN];
   SwashRingData swashR;
   PhaseData phaseData[MAX_PHASES];
 

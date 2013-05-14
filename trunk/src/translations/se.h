@@ -299,7 +299,7 @@
 
 #if defined(CPUARM)
   #define TR_CUSTOMSW          "LB1""LB2""LB3""LB4""LB5""LB6""LB7""LB8""LB9""LBA""LBB""LBC""LBD""LBE""LBF""LBG""LBH""LBI""LBJ""LBK""LBL""LBM""LBN""LBO""LBP""LBQ""LBR""LBS""LBT""LBU""LBV""LBW"
-#elif defined(PCBGRUVIN9X) || defined(CPUM128)
+#elif defined(PCBGRUVIN9X) || defined(CPUM2561) || defined(CPUM128)
   #define TR_CUSTOMSW          "LB1""LB2""LB3""LB4""LB5""LB6""LB7""LB8""LB9""LBA""LBB""LBC""LBD""LBE""LBF"
 #else
   #define TR_CUSTOMSW          "LB1""LB2""LB3""LB4""LB5""LB6""LB7""LB8""LB9""LBA""LBB""LBC"
@@ -582,7 +582,7 @@
 #define TR_SD_SPEED            "Hastighet:"
 #define TR_SD_SECTORS          "Sektorer:"
 #define TR_SD_SIZE             "Strl:"
-#define TR_CURVE_TYPE          "Typ "
+#define TR_TYPE          "Typ "
 #define TR_GLOBAL_VARS         "Globala Variabler"
 #define TR_OWN                 "Egen"
 #define TR_DATE                "Datum"

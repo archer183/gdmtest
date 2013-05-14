@@ -52,10 +52,12 @@
 #define BEEP_VAL     ( (g_eeGeneral.warnOpts & WARN_BVAL_BIT) >>3 )
 
 #if defined(PCBTARANIS)
-  #define EEPROM_VER       214
+  #define EEPROM_VER       215
 #elif defined(PCBSKY9X)
-  #define EEPROM_VER       214
+  #define EEPROM_VER       215
 #elif defined(PCBGRUVIN9X)
+  #define EEPROM_VER       214
+#elif defined(CPUM2561)
   #define EEPROM_VER       214
 #elif defined(CPUM128)
   #define EEPROM_VER       215
@@ -76,6 +78,14 @@
   #define NUM_CSW    32 // number of custom switches
   #define NUM_CFN    32 // number of functions assigned to switches
 #elif defined(PCBGRUVIN9X)
+  #define MAX_MODELS 30
+  #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
+  #define MAX_PHASES 6
+  #define MAX_MIXERS 32
+  #define MAX_EXPOS  16
+  #define NUM_CSW    15 // number of custom switches
+  #define NUM_CFN    24 // number of functions assigned to switches
+#elif defined(CPUM2561)
   #define MAX_MODELS 30
   #define NUM_CHNOUT 16 // number of real output channels CH1-CH16
   #define MAX_PHASES 6
@@ -113,7 +123,7 @@
   #define CURVTYPE   int8_t
 #endif
 
-#if defined(PCBTARANIS)
+#if defined(PCBTARANIS) || defined(PCBSKY9X)
   #define NUM_MODULES 2
 #else
   #define NUM_MODULES 1
@@ -209,7 +219,8 @@ enum BeeperMode {
   uint8_t  sticksGain; \
   uint8_t  rotarySteps; \
   uint8_t  countryCode; \
-  uint8_t  imperial;
+  uint8_t  imperial; \
+  char     ttsLanguage[2];
 #elif defined(PXX)
   #define EXTRA_GENERAL_FIELDS uint8_t  countryCode;
 #else
@@ -222,17 +233,28 @@ PACK(typedef struct t_ModuleData {
   int8_t  channelsCount; // 0=8 channels
   uint8_t failsafeMode;
   int16_t failsafeChannels[NUM_CHNOUT];
+  int8_t  ppmDelay;
+  int8_t  ppmFrameLength;
+  uint8_t ppmPulsePol;
 }) ModuleData;
 
 #if defined(PCBTARANIS)
-#define MODELDATA_EXTRA   char bitmap[10]; uint8_t externalModule; ModuleData moduleData[NUM_MODULES]; uint8_t trainerMode;
+enum ModuleIndex {
+  INTERNAL_MODULE,
+  EXTERNAL_MODULE,
+  TRAINER_MODULE
+};
+#define MODELDATA_BITMAP  char bitmap[LEN_BITMAP_NAME];
+#define MODELDATA_EXTRA   uint8_t externalModule; uint8_t trainerMode; ModuleData moduleData[NUM_MODULES+1]; char curveNames[MAX_CURVES][6];
 #define LIMITDATA_EXTRA   char name[6];
 #define swstate_t         uint16_t
 #elif defined(PCBSKY9X)
-#define MODELDATA_EXTRA   uint8_t ppmSCH; int8_t ppm2SCH; int8_t ppm2NCH; ModuleData moduleData[NUM_MODULES];
+#define MODELDATA_BITMAP
+#define MODELDATA_EXTRA   ModuleData moduleData[NUM_MODULES];
 #define LIMITDATA_EXTRA
 #define swstate_t         uint8_t
 #else
+#define MODELDATA_BITMAP
 #define MODELDATA_EXTRA
 #define LIMITDATA_EXTRA
 #define swstate_t         uint8_t
@@ -302,6 +324,7 @@ PACK(typedef struct t_EEGeneral {
 
 #if defined(PCBTARANIS)
 #define LEN_MODEL_NAME     12
+#define LEN_BITMAP_NAME    10
 #define LEN_EXPOMIX_NAME   10
 #define LEN_FP_NAME        10
 #elif defined(PCBSKY9X)
@@ -315,26 +338,16 @@ PACK(typedef struct t_EEGeneral {
 
 #if defined(CPUARM)
 PACK(typedef struct t_ExpoData {
-  uint8_t mode;         // 0=end, 1=pos, 2=neg, 3=both
-  uint8_t chn;
-  int8_t  swtch;
+  uint8_t  mode;         // 0=end, 1=pos, 2=neg, 3=both
+  uint8_t  chn;
+  int8_t   swtch;
   uint16_t phases;
-  int8_t  weight;
-  uint8_t curveMode;
-  char    name[LEN_EXPOMIX_NAME];
-  int8_t  curveParam;
+  int8_t   weight;
+  uint8_t  curveMode;
+  char     name[LEN_EXPOMIX_NAME];
+  int8_t   curveParam;
 }) ExpoData;
-#elif defined(PCBSTD)
-PACK(typedef struct t_ExpoData {
-  uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
-  int8_t  swtch:6;
-  uint8_t chn:2;
-  uint8_t phases:5;
-  uint8_t curveMode:1;
-  uint8_t weight;         // One spare bit here (used for GVARS)
-  int8_t  curveParam;
-}) ExpoData;
-#else
+#elif defined(PCBGRUVIN9X) || defined(CPUM2561)
 PACK(typedef struct t_ExpoData {
   uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
   uint8_t chn:2;
@@ -343,6 +356,16 @@ PACK(typedef struct t_ExpoData {
   uint8_t phases;
   int8_t  swtch;
   uint8_t weight;
+  int8_t  curveParam;
+}) ExpoData;
+#else
+PACK(typedef struct t_ExpoData {
+  uint8_t mode:2;         // 0=end, 1=pos, 2=neg, 3=both
+  int8_t  swtch:6;
+  uint8_t chn:2;
+  uint8_t phases:5;
+  uint8_t curveMode:1;
+  uint8_t weight;         // One spare bit here (used for GVARS)
   int8_t  curveParam;
 }) ExpoData;
 #endif
@@ -425,28 +448,7 @@ PACK( union u_int8int16_t {
 #define DELAY_MAX   15 /* 7.5 seconds */
 #define SLOW_MAX    15 /* 7.5 seconds */
 
-#if defined(PCBSTD)
-PACK(typedef struct t_MixData {
-  uint8_t destCh:4;          // 0, 1..NUM_CHNOUT
-  uint8_t curveMode:1;       // O=curve, 1=differential
-  uint8_t noExpo:1;
-  uint8_t weightMode:1;
-  uint8_t offsetMode:1;
-  int8_t  weight;
-  int8_t  swtch:6;
-  uint8_t mltpx:2;           // multiplex method: 0 means +=, 1 means *=, 2 means :=
-  uint8_t phases:5;
-  int8_t  carryTrim:3;
-  uint8_t srcRaw:6;
-  uint8_t mixWarn:2;         // mixer warning
-  uint8_t delayUp:4;
-  uint8_t delayDown:4;
-  uint8_t speedUp:4;
-  uint8_t speedDown:4;
-  int8_t  curveParam;
-  int8_t  offset;
-}) MixData;
-#else
+#if defined(PCBGRUVIN9X) || defined(CPUM2561)
 PACK(typedef struct t_MixData {
   uint8_t destCh:4;          // 0, 1..NUM_CHNOUT
   uint8_t curveMode:1;       // O=curve, 1=differential
@@ -461,6 +463,27 @@ PACK(typedef struct t_MixData {
   int8_t  carryTrim:3;
   uint8_t mixWarn:2;         // mixer warning
   uint8_t spare:1;
+  uint8_t delayUp:4;
+  uint8_t delayDown:4;
+  uint8_t speedUp:4;
+  uint8_t speedDown:4;
+  int8_t  curveParam;
+  int8_t  offset;
+}) MixData;
+#else
+PACK(typedef struct t_MixData {
+  uint8_t destCh:4;          // 0, 1..NUM_CHNOUT
+  uint8_t curveMode:1;       // O=curve, 1=differential
+  uint8_t noExpo:1;
+  uint8_t weightMode:1;
+  uint8_t offsetMode:1;
+  int8_t  weight;
+  int8_t  swtch:6;
+  uint8_t mltpx:2;           // multiplex method: 0 means +=, 1 means *=, 2 means :=
+  uint8_t phases:5;
+  int8_t  carryTrim:3;
+  uint8_t srcRaw:6;
+  uint8_t mixWarn:2;         // mixer warning
   uint8_t delayUp:4;
   uint8_t delayDown:4;
   uint8_t speedUp:4;
@@ -509,8 +532,8 @@ PACK( union u_int8int16_t {
 #define MAX_CSW_DELAY    120 /*60s*/
 #define MAX_CSW_ANDSW    MAX_SWITCH
 PACK(typedef struct t_CustomSwData { // Custom Switches data
-  int8_t  v1;
-  int8_t  v2;      // TODO EEPROM change
+  int16_t v1;
+  int16_t v2;
   uint8_t func;
   uint8_t delay;
   uint8_t duration;
@@ -1184,10 +1207,10 @@ enum FailsafeModes {
   FAILSAFE_LAST = FAILSAFE_NOPULSES
 };
 
-#if defined(MAVLINK)
-#define TELEMETRY_DATA MavlinkData mavlink;
-#elif defined(FRSKY)
+#if defined(FRSKY) || !defined(PCBSTD)
 #define TELEMETRY_DATA FrSkyData frsky;
+#elif defined(MAVLINK)
+#define TELEMETRY_DATA MavlinkData mavlink;
 #else
 #define TELEMETRY_DATA
 #endif
@@ -1198,13 +1221,18 @@ enum FailsafeModes {
 #define BeepANACenter uint8_t
 #endif
 
-PACK(typedef struct t_ModelData {
+PACK(typedef struct t_ModelHeader {
   char      name[LEN_MODEL_NAME]; // must be first for eeLoadModelName
   uint8_t   modelId;
+  MODELDATA_BITMAP
+}) ModelHeader;
+
+PACK(typedef struct t_ModelData {
+  ModelHeader header;
   TimerData timers[MAX_TIMERS];
   uint8_t   protocol:3;
   uint8_t   thrTrim:1;            // Enable Throttle Trim
-  int8_t    ppmNCH:4;             /* TODO EEPROM change */
+  int8_t    ppmNCH:4;
   uint8_t   trimInc:3;            // Trim Increments
   uint8_t   disableThrottleWarning:1;
   uint8_t   pulsePol:1;

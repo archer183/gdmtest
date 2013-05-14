@@ -105,7 +105,7 @@ void eeDeleteModel(uint8_t id)
 {
   eeCheck(true);
 
-  memset(modelNames[id], 0, sizeof(g_model.name));
+  memset(modelHeaders[id].name, 0, sizeof(g_model.header.name));
 
   Eeprom32_source_address = (uint8_t *)&g_model ;   // Get data from here
   Eeprom32_data_size = 0 ;                          // This much
@@ -121,10 +121,10 @@ bool eeCopyModel(uint8_t dst, uint8_t src)
   uint16_t size = File_system[src+1].size ;
   read32_eeprom_data( (File_system[src+1].block_no << 12) + sizeof( struct t_eeprom_header), ( uint8_t *)&Eeprom_buffer.data.model_data, size) ;
 
-  if (size > sizeof(g_model.name))
-    memcpy(modelNames[dst], Eeprom_buffer.data.model_data.name, sizeof(g_model.name));
+  if (size > sizeof(g_model.header.name))
+    memcpy(modelHeaders[dst].name, Eeprom_buffer.data.model_data.header.name, sizeof(g_model.header.name));
   else
-    memset(modelNames[dst], 0, sizeof(g_model.name));
+    memset(modelHeaders[dst].name, 0, sizeof(g_model.header.name));
 
   Eeprom32_source_address = (uint8_t *)&Eeprom_buffer.data.model_data;    // Get data from here
   Eeprom32_data_size = sizeof(g_model) ;                                  // This much
@@ -146,12 +146,12 @@ void eeSwapModels(uint8_t id1, uint8_t id2)
   // block_no(id1) has been shifted now, but we have the size
 
   // TODO flash saving with function above ...
-  if (id2_size > sizeof(g_model.name)) {
+  if (id2_size > sizeof(g_model.header.name)) {
     read32_eeprom_data( (id2_block_no << 12) + sizeof( struct t_eeprom_header), ( uint8_t *)&Eeprom_buffer.data.model_data, id2_size);
-    memcpy(modelNames[id1], Eeprom_buffer.data.model_data.name, sizeof(g_model.name));
+    memcpy(modelHeaders[id1].name, Eeprom_buffer.data.model_data.header.name, sizeof(g_model.header.name));
   }
   else {
-    memset(modelNames[id1], 0, sizeof(g_model.name));
+    memset(modelHeaders[id1].name, 0, sizeof(g_model.header.name));
   }
 
   Eeprom32_source_address = (uint8_t *)&Eeprom_buffer.data.model_data;    // Get data from here
@@ -332,21 +332,12 @@ bool eeLoadGeneral()
   }
 
   if (g_eeGeneral.version != EEPROM_VER) {
+    TRACE_DEBUG("EEPROM version %d (%d) instead of %d (%d)\n", g_eeGeneral.version, g_eeGeneral.variant, EEPROM_VER, EEPROM_VARIANT);
     if (!eeConvert())
       return false;
   }
 
-  uint16_t sum = evalChkSum();
-  if (g_eeGeneral.chkSum == sum) {
-    return true;
-  }
-
-#ifdef SIMU
-  printf("EEPROM version %d (%d) instead of %d (%d)\n", g_eeGeneral.version, g_eeGeneral.variant, EEPROM_VER, EEPROM_VARIANT);
-  fflush(stdout);
-#endif
-
-  return false;
+  return true;
 }
 
 void eeLoadModel(uint8_t id)
@@ -427,26 +418,25 @@ bool eeModelExists(uint8_t id)
 
 void eeLoadModelName(uint8_t id, char *name)
 {
-  memclear(name, sizeof(g_model.name));
+  memclear(name, sizeof(g_model.header.name));
   if (id < MAX_MODELS) {
     id += 1;
-    if (File_system[id].size > sizeof(g_model.name) ) {
-      read32_eeprom_data( ( File_system[id].block_no << 12) + 8, ( uint8_t *)name, sizeof(g_model.name));
+    if (File_system[id].size > sizeof(g_model.header.name) ) {
+      read32_eeprom_data((File_system[id].block_no << 12)+8, (uint8_t *)name, sizeof(g_model.header.name));
     }
   }
 }
 
-#if defined(PXX)
-uint8_t eeLoadModelId(uint8_t id)
+#if defined(CPUARM)
+void eeLoadModelHeader(uint8_t id, ModelHeader *header)
 {
-  uint8_t modelId = 0;
+  memclear(header, sizeof(ModelHeader));
   if (id < MAX_MODELS) {
     id += 1;
-    if (File_system[id].size > sizeof(g_model.name) + 1) {
-      read32_eeprom_data( ( File_system[id].block_no << 12) + 8 + sizeof(g_model.name), &modelId, 1);
+    if (File_system[id].size > sizeof(ModelHeader)) {
+      read32_eeprom_data((File_system[id].block_no << 12)+8, (uint8_t *)header, sizeof(ModelHeader));
     }
   }
-  return modelId;
 }
 #endif
 
@@ -484,10 +474,20 @@ void eeReadAll()
     STORE_MODELVARS;
   }
   else {
-    eeLoadModelNames() ;
+    eeLoadModelHeaders() ;
   }
 
-  stickMode = g_eeGeneral.stickMode; // TODO common!
+  // TODO common!
+  stickMode = g_eeGeneral.stickMode;
+
+#if defined(CPUARM)
+  for (uint8_t i=0; languagePacks[i]!=NULL; i++) {
+    if (!strncmp(g_eeGeneral.ttsLanguage, languagePacks[i]->id, 2)) {
+      currentLanguagePackIdx = i;
+      currentLanguagePack = languagePacks[i];
+    }
+  }
+#endif
 }
 
 void eeWaitFinished()
@@ -689,7 +689,7 @@ void ee32_process()
 #if defined(SDCARD)
 const pm_char * eeBackupModel(uint8_t i_fileSrc)
 {
-  char *buf = reusableBuffer.models.mainname;
+  char *buf = reusableBuffer.modelsel.mainname;
   FIL archiveFile;
   DIR archiveFolder;
   UINT written;
@@ -746,7 +746,7 @@ const pm_char * eeBackupModel(uint8_t i_fileSrc)
 
 const pm_char * eeRestoreModel(uint8_t i_fileDst, char *model_name)
 {
-  char *buf = reusableBuffer.models.mainname;
+  char *buf = reusableBuffer.modelsel.mainname;
   FIL restoreFile;
   UINT read;
 
@@ -795,10 +795,10 @@ const pm_char * eeRestoreModel(uint8_t i_fileDst, char *model_name)
   }
 
   // TODO flash saving ...
-  if (read > sizeof(g_model.name))
-    memcpy(modelNames[i_fileDst], Eeprom_buffer.data.model_data.name, sizeof(g_model.name));
+  if (read > sizeof(g_model.header.name))
+    memcpy(modelHeaders[i_fileDst].name, Eeprom_buffer.data.model_data.header.name, sizeof(g_model.header.name));
   else
-    memset(modelNames[i_fileDst], 0, sizeof(g_model.name));
+    memset(modelHeaders[i_fileDst].name, 0, sizeof(g_model.header.name));
 
   Eeprom32_source_address = (uint8_t *)&Eeprom_buffer.data.model_data;    // Get data from here
   Eeprom32_data_size = sizeof(g_model);                                   // This much

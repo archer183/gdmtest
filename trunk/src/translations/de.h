@@ -121,7 +121,7 @@
 #define TR_VMLTPX2             "+=""*="":="
 
 #define LEN_VMIXTRIMS          "\003"
-#define TR_VMIXTRIMS           "AUSF""EIN""Rud""Ele""Thr""Ail"
+#define TR_VMIXTRIMS           "AUS""EIN""Sei""H\203e""Gas""Que" //Mixer Trim Werte
 
 #define LEN_VCSWFUNC           "\005"
 #define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x"
@@ -150,7 +150,7 @@
 
 #if defined(VOICE)
   #if defined(PCBSKY9X)
-    #define TR_PY_TRACK        "Spiel\0    "
+    #define TR_PLAY_TRACK      "Spiel\0    "
   #else
     #define TR_PLAY_TRACK      "Sag Text\0 "
   #endif
@@ -272,7 +272,7 @@
 #define LEN_VSWITCHES          "\003"
 #define LEN_VSRCRAW            "\004"
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define TR_POTS_VSRCRAW      "S1\0 ""S2\0 ""LS\0 ""RS\0 "  //4 Potis S1,S2,Links,Rechts  
   #define TR_SW_VSRCRAW        "SA\0 ""SB\0 ""SC\0 ""SD\0 ""SE\0 ""SF\0 ""SG\0 ""SH\0 "
 #elif defined(EXTRA_3POS)
@@ -286,8 +286,8 @@
 #endif
 
 #if defined(CPUARM)
-  #define TR_CUSTOMSW        "PS1""PS2""PS3""PS4""PS5""PS6""PS7""PS8""PS9""PSA""PSB""PSC""PSD""PSE""PSF""PSG""PSH""PSI""PSJ""PSK""PSL""PSM""PSN""PSO""PSP""PSQ""PSR""PSS""PST""PSU""PSV""PSW"
-#elif defined(PCBGRUVIN9X) || defined(CPUM128)
+  #define TR_CUSTOMSW          "PS1""PS2""PS3""PS4""PS5""PS6""PS7""PS8""PS9""PSA""PSB""PSC""PSD""PSE""PSF""PSG""PSH""PSI""PSJ""PSK""PSL""PSM""PSN""PSO""PSP""PSQ""PSR""PSS""PST""PSU""PSV""PSW"
+#elif defined(PCBGRUVIN9X) || defined(CPUM2561) || defined(CPUM128)
   #define TR_CUSTOMSW          "PS1""PS2""PS3""PS4""PS5""PS6""PS7""PS8""PS9""PSA""PSB""PSC""PSD""PSE""PSF"
 #else
   #define TR_CUSTOMSW          "PS1""PS2""PS3""PS4""PS5""PS6""PS7""PS8""PS9""PSA""PSB""PSC"
@@ -325,7 +325,7 @@
 #define LEN_INDENT             1
 #define INDENT_WIDTH           (FW/2)
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define TR_ENTER             "[ENTER]"
 #else
   #define TR_ENTER             "[MENU]"
@@ -401,7 +401,7 @@
 #define TR_USRDATA             "Daten"
 #define TR_BLADES              INDENT"Bl\201tter"
 #define TR_SCREEN              "Bild "
-#define TR_SOUND_LABEL         "Ton"
+#define TR_SOUND_LABEL         "T\203ne"
 #define TR_LENGTH	       INDENT"Dauer"
 #define TR_SPKRPITCH           INDENT"Tonh\203he"
 #define TR_HAPTIC_LABEL        "Vibration"
@@ -409,7 +409,7 @@
 #define TR_CONTRAST            "Kontrast"
 #define TR_ALARMS_LABEL        "Alarm wenn"
 #define TR_BATTERY_RANGE       "Akku Spannung V"
-#define TR_BATTERYWARNING      INDENT"Akku leer kl."
+#define TR_BATTERYWARNING      INDENT"Akku Spg kl."
 #define TR_INACTIVITYALARM     INDENT"Inaktivit\201t "
 #define TR_MEMORYWARNING       INDENT"Speicher voll"
 #define TR_ALARMWARNING        INDENT"Ton aus"
@@ -417,7 +417,7 @@
 #define TR_THROTTLEREVERSE     TR("Vollgas hinten?", "Vollgas hinten?")
 #define TR_MINUTEBEEP          TR(INDENT"Minute",INDENT"Jede Minute")
 #define TR_BEEPCOUNTDOWN       INDENT"Countdown"
-#define TR_PERSISTENT          TR(INDENT"Dauernd",INDENT"Dauernd ein")
+#define TR_PERSISTENT          TR(INDENT"M-Zeit",INDENT"Modell Zeit")
 #define TR_BACKLIGHT_LABEL     "LCD Licht an"
 #define TR_BLDELAY             INDENT"Dauer"
 #define TR_BLONBRIGHTNESS      INDENT"An Helligkeit"
@@ -427,7 +427,7 @@
 #define TR_SWITCHWARNING       TR("Sch. Alarm","Schalter Alarm")
 #define TR_TIMEZONE            TR("Zeitzone","GPS Zeit Zone")
 #define TR_RXCHANNELORD        TR("Kanalanordnung","Kanalvoreinstellung")
-#define TR_SLAVE               "Sch\205ler"
+#define TR_SLAVE               "Sch\205ler PPM1-8 als Ausgang"
 #define TR_MODESRC             " Modus\002% Quelle"
 #define TR_MULTIPLIER          "Multiplikator"
 #define TR_CAL                 "Kal."
@@ -570,7 +570,7 @@
 #define TR_SD_SPEED            "Geschw:"
 #define TR_SD_SECTORS          "Sektoren:"
 #define TR_SD_SIZE             "Gr\203\206e:"
-#define TR_CURVE_TYPE          "Typ"
+#define TR_TYPE          "Typ"
 #define TR_GLOBAL_VARS         "Globale Variablen"
 #define TR_OWN                 "Eigen"
 #define TR_DATE                "Datum:"

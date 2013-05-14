@@ -17,7 +17,7 @@
  * - Romolo Manfredini <romolo.manfredini@gmail.com>
  * - Thomas Husterer
  *
- * open9x is based on code named
+ * opentx is based on code named
  * gruvin9x by Bryan J. Rentoul: http://code.google.com/p/gruvin9x/,
  * er9x by Erez Raviv: http://code.google.com/p/er9x/,
  * and the original (and ongoing) project by
@@ -34,15 +34,15 @@
  *
  */
 
-#ifndef open9x_h
-#define open9x_h
+#ifndef opentx_h
+#define opentx_h
 
 #include <inttypes.h>
 #include <string.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
 #define IF_9X(x)
 #else
 #define IF_9X(x) x,
@@ -54,12 +54,12 @@
 #define IF_PCBSKY9X(x)
 #endif
 
-#if defined(PCBX9D)
-#define IF_PCBX9D()    true
-#define CASE_PCBX9D(x) x,
+#if defined(PCBTARANIS)
+#define IF_PCBTARANIS()    true
+#define CASE_PCBTARANIS(x) x,
 #else
-#define IF_PCBX9D()    false
-#define CASE_PCBX9D(x)
+#define IF_PCBTARANIS()    false
+#define CASE_PCBTARANIS(x)
 #endif
 
 #if defined(CPUARM)
@@ -68,7 +68,7 @@
 #define IF_CPUARM(x)
 #endif
 
-#if defined(BATTGRAPH) || defined(PCBX9D)
+#if defined(BATTGRAPH) || defined(PCBTARANIS)
 #define IF_BATTGRAPH(x) x,
 #else
 #define IF_BATTGRAPH(x)
@@ -84,6 +84,12 @@
 #define IF_RTCLOCK(x) x,
 #else
 #define IF_RTCLOCK(x)
+#endif
+
+#if defined(BUZZER)
+#define IF_BUZZER(x) x,
+#else
+#define IF_BUZZER(x)
 #endif
 
 #if defined(AUDIO)
@@ -158,10 +164,10 @@
 #define IF_TEMPLATES(x)
 #endif
 
-#if defined(FLIGHT_PHASES)
-#define IF_FLIGHT_PHASES(x) x,
+#if defined(FLIGHT_MODES)
+#define IF_FLIGHT_MODES(x) x,
 #else
-#define IF_FLIGHT_PHASES(x)
+#define IF_FLIGHT_MODES(x)
 #endif
 
 #if defined(CURVES)
@@ -177,37 +183,41 @@
 #endif
 
 #if ROTARY_ENCODERS > 0
-#define ROTARY_ENCODER_NAVIGATION
+  #define ROTARY_ENCODER_NAVIGATION
+#endif
+
+#if defined(SIMU) || defined(CPUARM) || GCC_VERSION < 472
+  typedef int32_t int24_t;
+#else
+  typedef __int24 int24_t;
 #endif
 
 #if defined(SIMU)
-#ifndef FORCEINLINE
-#define FORCEINLINE
-#endif
-#ifndef NOINLINE
-#define NOINLINE
-#endif
-#define CONVERT_PTR(x) ((uint32_t)(uint64_t)(x))
+  #ifndef FORCEINLINE
+    #define FORCEINLINE
+  #endif
+  #if !defined(NOINLINE)
+    #define NOINLINE
+  #endif
+  #define CONVERT_PTR(x) ((uint32_t)(uint64_t)(x))
 #else
-#define FORCEINLINE inline __attribute__ ((always_inline))
-#define NOINLINE __attribute__ ((noinline))
-#define SIMU_SLEEP(x)
-#define CONVERT_PTR(x) ((uint32_t)(x))
+  #define FORCEINLINE inline __attribute__ ((always_inline))
+  #define NOINLINE __attribute__ ((noinline))
+  #define SIMU_SLEEP(x)
+  #define CONVERT_PTR(x) ((uint32_t)(x))
 #endif
 
-#if defined(PCBX9D)
-#include "x9d/board_x9d.h"
+#if defined(PCBTARANIS)
+  #include "taranis/board_taranis.h"
 #elif defined(PCBSKY9X)
-#include "sky9x/board_sky9x.h"
+  #include "sky9x/board_sky9x.h"
 #elif defined(PCBGRUVIN9X)
-#include "gruvin9x/board_gruvin9x.h"
+  #include "gruvin9x/board_gruvin9x.h"
 #else
-#include "stock/board_stock.h"
+  #include "stock/board_stock.h"
 #endif
 
-#if defined(CPUARM)
 #include "debug.h"
-#endif
 
 #if defined(SIMU)
 #include "simpgmspace.h"
@@ -244,7 +254,7 @@ extern void boardInit();
 enum EnumKeys {
   KEY_MENU,
   KEY_EXIT,
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   KEY_ENTER,
   KEY_PAGE,
   KEY_PLUS,
@@ -276,7 +286,7 @@ enum EnumKeys {
   NUM_KEYS,
   SW_BASE=NUM_KEYS,
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   SW_SA0=SW_BASE,
   SW_SA1,
   SW_SA2,
@@ -319,7 +329,7 @@ enum EnumKeys {
 
 };
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define NUM_SWITCHES  8
   #define IS_3POS(sw)   ((sw) != 5 && (sw) != 7)
   #define MAX_PSWITCH   (SW_SH2-SW_SA0+1)
@@ -341,7 +351,7 @@ enum EnumKeys {
 
 #define MAX_SWITCH    (MAX_PSWITCH+NUM_CSW)
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
 #define KEY_RIGHT  KEY_PLUS
 #define KEY_LEFT   KEY_MINUS
 #define KEY_UP     KEY_PLUS
@@ -355,66 +365,71 @@ enum EnumKeys {
 #include "myeeprom.h"
 
 #if ROTARY_ENCODERS > 0
-#define IF_ROTARY_ENCODERS(x) x,
+  #define IF_ROTARY_ENCODERS(x) x,
 #else
-#define IF_ROTARY_ENCODERS(x)
+  #define IF_ROTARY_ENCODERS(x)
 #endif
 
 #define PPM_CENTER 1500
 
 #if defined(PPM_CENTER_ADJUSTABLE)
-#define PPM_CH_CENTER(ch) (PPM_CENTER+limitaddress(ch)->ppmCenter)
+  #define PPM_CH_CENTER(ch) (PPM_CENTER+limitaddress(ch)->ppmCenter)
 #else
-#define PPM_CH_CENTER(ch) (PPM_CENTER)
+  #define PPM_CH_CENTER(ch) (PPM_CENTER)
 #endif
 
 #if defined(CPUARM)
-// This doesn't need protection on this processor
-#define tmr10ms_t uint32_t
-extern volatile tmr10ms_t g_tmr10ms;
-#define get_tmr10ms() g_tmr10ms
+  // This doesn't need protection on this processor
+  #define tmr10ms_t uint32_t
+  extern volatile tmr10ms_t g_tmr10ms;
+  #define get_tmr10ms() g_tmr10ms
+  typedef int32_t rotenc_t;
+  typedef int32_t getvalue_t;
 #else
-#define tmr10ms_t uint16_t
-extern volatile tmr10ms_t g_tmr10ms;
-extern inline uint16_t get_tmr10ms()
-{
-  uint16_t time  ;
-  cli();
-  time = g_tmr10ms ;
-  sei();
-  return time ;
-}
+  #define tmr10ms_t uint16_t
+  extern volatile tmr10ms_t g_tmr10ms;
+  extern inline uint16_t get_tmr10ms()
+  {
+    uint16_t time  ;
+    cli();
+    time = g_tmr10ms ;
+    sei();
+    return time ;
+  }
+  typedef int8_t rotenc_t;
+  typedef int16_t getvalue_t;
 #endif
 
 #include "eeprom_common.h"
+
 #if defined(PCBSKY9X)
-#include "eeprom_raw.h"
+  #include "eeprom_raw.h"
 #else
-#include "eeprom_rlc.h"
+  #include "eeprom_rlc.h"
 #endif
 
 #if defined(CPUARM)
-#include "pulses_arm.h"
+  #include "pulses_arm.h"
 #else
-#include "pulses_avr.h"
+  #include "pulses_avr.h"
 #endif
 
-#if defined(PCBX9D)
-#define MODEL_BITMAP_WIDTH  64
-#define MODEL_BITMAP_HEIGHT 32
-#define MODEL_BITMAP_SIZE   (2+4*(MODEL_BITMAP_WIDTH*MODEL_BITMAP_HEIGHT/8))
-extern uint8_t modelBitmap[MODEL_BITMAP_SIZE];
-extern pm_char * modelBitmapLoaded;
-void loadModelBitmap();
-#define LOAD_MODEL_BITMAP() loadModelBitmap()
+#if defined(PCBTARANIS)
+  #define MODEL_BITMAP_WIDTH  64
+  #define MODEL_BITMAP_HEIGHT 32
+  #define MODEL_BITMAP_SIZE   (2+4*(MODEL_BITMAP_WIDTH*MODEL_BITMAP_HEIGHT/8))
+  extern uint8_t modelBitmap[MODEL_BITMAP_SIZE];
+  extern pm_char * modelBitmapLoaded;
+  void loadModelBitmap();
+  #define LOAD_MODEL_BITMAP() loadModelBitmap()
 #else
-#define LOAD_MODEL_BITMAP()
+  #define LOAD_MODEL_BITMAP()
 #endif
 
 #if defined(DSM2)
-extern bool s_bind_mode;
-extern bool s_rangecheck_mode;
-extern uint8_t s_bind_allowed;
+  extern bool s_bind_mode;
+  extern bool s_rangecheck_mode;
+  extern uint8_t s_bind_allowed;
 #endif
 
 #if defined(CPUARM)
@@ -441,14 +456,18 @@ extern uint8_t s_bind_allowed;
   #define IS_DSM2_SERIAL_PROTOCOL(protocol)  (0)
 #endif
 
-#if defined(PCBX9D)
-  #define NUM_PORT1_CHANNELS(model) ((8+(model.ppmNCH*2)))
+#if defined(PCBTARANIS)
+  static const int8_t maxChannelsModules[] = { 0, 8, 8, 0, 0 };
+  static const int8_t maxChannelsXJT[] = { 0, 8, 0, 4 };
+  #define IS_MODULE_XJT(idx)        ((idx==0 || g_model.externalModule == MODULE_TYPE_XJT) && (g_model.moduleData[idx].rfProtocol != RF_PROTO_OFF))
+  #define IS_MODULE_PPM(idx)        (idx==1 && g_model.externalModule == MODULE_TYPE_PPM)
+  #define NUM_CHANNELS(idx)         (8+g_model.moduleData[idx].channelsCount)
+  #define MAX_PORT1_CHANNELS()      (maxChannelsXJT[1+g_model.moduleData[0].rfProtocol])
+  #define MAX_PORT2_CHANNELS()      ((g_model.externalModule == MODULE_TYPE_XJT) ? maxChannelsXJT[1+g_model.moduleData[1].rfProtocol] : maxChannelsModules[g_model.externalModule])
+  #define MAX_CHANNELS(idx)         (idx==0 ? MAX_PORT1_CHANNELS() : MAX_PORT2_CHANNELS())
 #else
-  #define NUM_PORT1_CHANNELS(model) (IS_PXX_PROTOCOL(model.protocol) ? 8 : (IS_DSM2_PROTOCOL(model.protocol) ? 6 : (8+(model.ppmNCH*2))))
-#endif
-
-#if defined(PCBSKY9X)
-  #define NUM_PORT2_CHANNELS(model) (8+(model.ppm2NCH*2))
+  #define NUM_PORT1_CHANNELS()      (IS_PXX_PROTOCOL(g_model.protocol) ? 8 : (IS_DSM2_PROTOCOL(g_model.protocol) ? 6 : (8+(g_model.ppmNCH*2))))
+  #define NUM_PORT2_CHANNELS()      (8+(g_model.ppm2NCH*2))
 #endif
 
 #include "lcd.h"
@@ -580,36 +599,37 @@ enum CswFunctions {
 #define SPLASH_TIMEOUT  (4*100)  // 4 seconds
 #endif
 
-#define EVT_KEY_MASK(e)    ((e) & 0x0f)
+#define EVT_KEY_MASK(e)      ((e) & 0x1f)
 
-#define _MSK_KEY_BREAK     0x20
-#define _MSK_KEY_REPT      0x40
-#define _MSK_KEY_FIRST     0x60
-#define _MSK_KEY_LONG      0x80
+#define _MSK_KEY_BREAK       0x20
+#define _MSK_KEY_REPT        0x40
+#define _MSK_KEY_FIRST       0x60
+#define _MSK_KEY_LONG        0x80
 
-#define EVT_KEY_BREAK(key) ((key)|_MSK_KEY_BREAK)
-#define EVT_KEY_FIRST(key) ((key)|_MSK_KEY_FIRST)
-#define EVT_KEY_REPT(key)  ((key)|_MSK_KEY_REPT)
-#define EVT_KEY_LONG(key)  ((key)|_MSK_KEY_LONG)
+#define EVT_KEY_BREAK(key)   ((key)|_MSK_KEY_BREAK)
+#define EVT_KEY_FIRST(key)   ((key)|_MSK_KEY_FIRST)
+#define EVT_KEY_REPT(key)    ((key)|_MSK_KEY_REPT)
+#define EVT_KEY_LONG(key)    ((key)|_MSK_KEY_LONG)
 
-#define IS_KEY_BREAK(evt)  (((evt)&0xf0) ==  _MSK_KEY_BREAK)
-#define IS_KEY_FIRST(evt)  (((evt)&0xf0) ==  _MSK_KEY_FIRST)
-#define IS_KEY_LONG(evt)   (((evt)&0xf0) ==  _MSK_KEY_LONG)
+#define IS_KEY_BREAK(evt)    (((evt)&0xe0) == _MSK_KEY_BREAK)
+#define IS_KEY_FIRST(evt)    (((evt)&0xe0) == _MSK_KEY_FIRST)
+#define IS_KEY_LONG(evt)     (((evt)&0xe0) == _MSK_KEY_LONG)
 
-#define EVT_ENTRY          0xbf
-#define EVT_ENTRY_UP       0xbe
+#define EVT_ENTRY            0xbf
+#define EVT_ENTRY_UP         0xbe
+#define EVT_MENU_UP          0xbd
 
-#if defined(PCBX9D)
-#define EVT_ROTARY_BREAK   EVT_KEY_BREAK(KEY_ENTER)
-#define EVT_ROTARY_LONG    EVT_KEY_LONG(KEY_ENTER)
+#if defined(PCBTARANIS)
+  #define EVT_ROTARY_BREAK   EVT_KEY_BREAK(KEY_ENTER)
+  #define EVT_ROTARY_LONG    EVT_KEY_LONG(KEY_ENTER)
 #else
-#define EVT_ROTARY_BREAK   0xcf
-#define EVT_ROTARY_LONG    0xce
-#define EVT_ROTARY_LEFT    0xdf
-#define EVT_ROTARY_RIGHT   0xde
+  #define EVT_ROTARY_BREAK   0xcf
+  #define EVT_ROTARY_LONG    0xce
+  #define EVT_ROTARY_LEFT    0xdf
+  #define EVT_ROTARY_RIGHT   0xde
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define IS_ROTARY_LEFT(evt)   (evt==EVT_KEY_FIRST(KEY_MINUS) || evt==EVT_KEY_REPT(KEY_MINUS))
   #define IS_ROTARY_RIGHT(evt)  (evt==EVT_KEY_FIRST(KEY_PLUS) || evt==EVT_KEY_REPT(KEY_PLUS))
   #define IS_ROTARY_UP(evt)     (evt==EVT_KEY_FIRST(KEY_PLUS) || evt==EVT_KEY_REPT(KEY_PLUS))
@@ -647,7 +667,7 @@ enum CswFunctions {
   #define CASE_EVT_ROTARY_RIGHT
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   #define IS_RE_NAVIGATION_ENABLE()   true
   #define NAVIGATION_RE_IDX()         0
 #elif defined(ROTARY_ENCODERS)
@@ -670,7 +690,7 @@ extern uint16_t inacCounter;
 extern uint16_t inacSum;
 
 #if defined(PXX)
-extern uint8_t pxxFlag;
+extern uint8_t pxxFlag[NUM_MODULES];
 #endif
 
 #define PXX_SEND_RXNUM       0x01
@@ -742,13 +762,16 @@ void perOut(uint8_t mode, uint8_t tick10ms);
 void perMain();
 NOINLINE void per10ms();
 
-int16_t getValue(uint8_t i);
-bool    getSwitch(int8_t swtch, bool nc);
+getvalue_t getValue(uint8_t i);
+bool       getSwitch(int8_t swtch, bool nc);
 
 extern swstate_t switches_states;
 int8_t  getMovedSwitch();
+#if defined(AUTOSOURCE)
+int8_t getMovedSource();
+#endif
 
-#ifdef FLIGHT_PHASES
+#if defined(FLIGHT_MODES)
   extern uint8_t getFlightPhase();
 #else
   #define getFlightPhase() 0
@@ -773,7 +796,7 @@ extern void setTrimValue(uint8_t phase, uint8_t idx, int16_t trim);
 #endif
 
 #if defined(GVARS)
-  #if defined(CPUM64)
+  #if defined(PCBSTD)
     int16_t getGVarValue(int16_t x, int16_t min, int16_t max);
     void setGVarValue(uint8_t x, int8_t value);
     #define GET_GVAR(x, min, max, p) getGVarValue(x, min, max)
@@ -846,7 +869,7 @@ extern uint16_t lastMixerDuration;
   extern int8_t s_traceCnt;
 #endif
 
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   static inline uint16_t getTmr2MHz() { return 0; }
 #elif defined(PCBSKY9X)
   static inline uint16_t getTmr2MHz() { return TC1->TC_CHANNEL[0].TC_CV; }
@@ -892,7 +915,7 @@ enum Analogs {
   STICK2,
   STICK3,
   STICK4,
-#if defined(PCBX9D)
+#if defined(PCBTARANIS)
   POT1,
   POT2,
   SLIDER1,
@@ -1063,10 +1086,11 @@ extern uint16_t anaIn(uint8_t chan);
 extern int16_t thrAnaIn(uint8_t chan);
 extern int16_t calibratedStick[NUM_STICKS+NUM_POTS];
 
-#define FLASH_DURATION 50 /*500ms*/
+#define FLASH_DURATION 20 /*200ms*/
 
 extern uint8_t beepAgain;
 extern uint16_t lightOffCounter;
+extern uint8_t flashCounter;
 extern uint8_t mixWarning;
 
 extern PhaseData *phaseaddress(uint8_t idx);
@@ -1137,12 +1161,6 @@ inline bool isFunctionActive(uint8_t func)
   return activeFunctions & ((MASK_FUNC_TYPE)1 << (func-FUNC_TRAINER));
 }
 
-#if defined(CPUARM)
-  typedef int32_t rotenc_t;
-#else
-  typedef int8_t rotenc_t;
-#endif
-
 #if defined(ROTARY_ENCODERS)
   // Global rotary encoder registers
   extern volatile rotenc_t g_rotenc[ROTARY_ENCODERS];
@@ -1150,35 +1168,31 @@ inline bool isFunctionActive(uint8_t func)
   extern volatile rotenc_t g_rotenc[1];
 #endif
 
-#ifdef JETI
-// Jeti-DUPLEX Telemetry
-#include "jeti.h"
+#if defined(FRSKY_SPORT)
+  // FrSky SPORT Telemetry
+  #include "telemetry_sport.h"
+#elif defined (FRSKY)
+  // FrSky Telemetry
+  #include "telemetry_frsky.h"
+#elif defined(JETI)
+  // Jeti-DUPLEX Telemetry
+  #include "telemetry_jeti.h"
+#elif defined(ARDUPILOT)
+  // ArduPilot Telemetry
+  #include "telemetry_ardupilot.h"
+#elif defined(NMEA)
+  // NMEA Telemetry
+  #include "telemetry_nmea.h"
+#elif defined(MAVLINK)
+  // Mavlink Telemetry
+  #include "rotarysw.h"
+  #include "telemetry_mavlink.h"
 #endif
 
-#if defined (FRSKY)
-// FrSky Telemetry
-#include "frsky.h"
-#endif
-
-#ifdef ARDUPILOT
-// ArduPilot Telemetry
-#include "ardupilot.h"
-#endif
-
-#ifdef NMEA
-// NMEA Telemetry
-#include "nmea.h"
-#endif
-
-#ifdef MAVLINK
-// Mavlink Telemetry
-#include "rotarysw.h"
-#include "mavlink.h"
-#endif
-
-// REPEAT uses 0x01 to 0x0f
+#define PLAY_REPEAT(x)            (x)                 /* Range 0 to 15 */
 #define PLAY_NOW                  0x10
 #define PLAY_BACKGROUND           0x20
+#define PLAY_INCREMENT(x)         ((uint8_t)(((uint8_t)x) << 6))   /* -1, 0, 1, 2 */
 
 /* make sure the defines below always go in numeric order */
 enum AUDIO_SOUNDS {
@@ -1243,8 +1257,10 @@ enum AUDIO_SOUNDS {
 #else
 #include "audio_avr.h"
 #endif
-#else
-#include "beeper.h"
+#endif
+
+#if defined(BUZZER)
+#include "buzzer.h"
 #endif
 
 #if defined(PCBSTD) && defined(VOICE)
@@ -1318,7 +1334,10 @@ extern union ReusableBuffer reusableBuffer;
 void checkFlashOnBeep();
 
 #if defined(FRSKY) || defined(CPUARM)
+FORCEINLINE void convertUnit(getvalue_t & val, uint8_t & unit);
 void putsTelemetryValue(xcoord_t x, uint8_t y, lcdint_t val, uint8_t unit, uint8_t att);
+#else
+#define convertUnit(...)
 #endif
 
 #if defined(CPUARM)
@@ -1337,5 +1356,71 @@ char * strcat_zchar(char * dest, char * name, uint8_t size, const char *defaultN
   #define STICK_TOLERANCE 64
 #endif
 
+#if defined(FRSKY_HUB)
+enum BarThresholdIdx {
+  THLD_ALT,
+  THLD_RPM,
+  THLD_FUEL,
+  THLD_T1,
+  THLD_T2,
+  THLD_SPEED,
+  THLD_DIST,
+  THLD_GPSALT,
+  THLD_CELL,
+  THLD_CURRENT,
+  THLD_CONSUMPTION,
+  THLD_MAX,
+};
+extern uint8_t barsThresholds[THLD_MAX];
 #endif
 
+#if defined(FRSKY)
+uint8_t maxTelemValue(uint8_t channel);
+getvalue_t convertTelemValue(uint8_t channel, uint8_t value);
+getvalue_t convertCswTelemValue(CustomSwData * cs);
+NOINLINE uint8_t getRssiAlarmValue(uint8_t alarm);
+
+extern const pm_uint8_t bchunit_ar[];
+
+#if defined(CPUARM)
+  #define FRSKY_MULTIPLIER_MAX 5
+#else
+  #define FRSKY_MULTIPLIER_MAX 3
+#endif
+
+lcdint_t applyChannelRatio(uint8_t channel, lcdint_t val);
+void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, uint8_t att);
+
+#define IS_BARS_SCREEN(screenIndex) (g_model.frsky.screensType & (1<<(screenIndex)))
+#endif
+
+#define EARTH_RADIUSKM ((uint32_t)6371)
+#define EARTH_RADIUS ((uint32_t)111194)
+
+void getGpsPilotPosition();
+void getGpsDistance();
+void varioWakeup();
+
+#if defined(AUDIO) && defined(BUZZER)
+  #define IS_SOUND_OFF() (g_eeGeneral.buzzerMode==e_mode_quiet && g_eeGeneral.beepMode==e_mode_quiet)
+#else
+  #define IS_SOUND_OFF() (g_eeGeneral.beepMode == e_mode_quiet)
+#endif
+
+#if defined(CPUARM)
+  #define IS_IMPERIAL_ENABLE() (g_eeGeneral.imperial)
+#elif defined(IMPERIAL)
+  #define IS_IMPERIAL_ENABLE() (1)
+#else
+  #define IS_IMPERIAL_ENABLE() (0)
+#endif
+
+#if defined(PCBTARANIS)
+  #define IS_USR_PROTO_FRSKY_HUB()   (1)
+  #define IS_USR_PROTO_WS_HOW_HIGH() (0)
+#else
+  #define IS_USR_PROTO_FRSKY_HUB()   (g_model.frsky.usrProto == USR_PROTO_FRSKY)
+  #define IS_USR_PROTO_WS_HOW_HIGH() (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH)
+#endif
+
+#endif

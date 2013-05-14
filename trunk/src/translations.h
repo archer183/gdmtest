@@ -507,6 +507,7 @@ extern const pm_uchar font_4x6[];
 extern const pm_uchar font_8x10[];
 extern const pm_uchar font_5x7_extra[];
 extern const pm_uchar font_10x14_extra[];
+extern const pm_uchar font_4x6_extra[];
 #endif
 
 extern const pm_char STR_WARNING[];
@@ -553,16 +554,35 @@ extern const pm_char STR_SD_TYPE[];
 extern const pm_char STR_SD_SPEED[];
 extern const pm_char STR_SD_SECTORS[];
 extern const pm_char STR_SD_SIZE[];
-extern const pm_char STR_CURVE_TYPE[];
+extern const pm_char STR_TYPE[];
 extern const pm_char STR_GLOBAL_VARS[];
 extern const pm_char STR_OWN[];
 extern const pm_char STR_ROTARY_ENCODER[];
 extern const pm_char STR_DATE[];
 extern const pm_char STR_CHANNELS_MONITOR[];
 
-#if defined(VOICE)
+#if defined(VOICE) && defined(CPUARM)
+  struct LanguagePack {
+    const char *id;
+    const char *name;
+    void (*playNumber)(getvalue_t number, uint8_t unit, uint8_t att, uint8_t id);
+    void (*playDuration)(int16_t seconds, uint8_t id);
+  };
+  extern LanguagePack * languagePacks[];
+  extern LanguagePack * currentLanguagePack;
+  extern uint8_t currentLanguagePackIdx;
+  #define LANGUAGE_PACK_DECLARE(lng, name) LanguagePack lng ## LanguagePack = { #lng, name, lng ## _ ## playNumber, lng ## _ ## playDuration }
+  #define LANGUAGE_PACK_DECLARE_DEFAULT(lng, name) LANGUAGE_PACK_DECLARE(lng, name); LanguagePack * currentLanguagePack = & lng ## LanguagePack; uint8_t currentLanguagePackIdx
+  inline PLAY_FUNCTION(playNumber, getvalue_t number, uint8_t unit, uint8_t att) { currentLanguagePack->playNumber(number, unit, att, id); }
+  inline PLAY_FUNCTION(playDuration, int16_t seconds) { currentLanguagePack->playDuration(seconds, id); }
+#elif defined(VOICE)
   PLAY_FUNCTION(playNumber, getvalue_t number, uint8_t unit, uint8_t att);
   PLAY_FUNCTION(playDuration, int16_t seconds);
+  #define LANGUAGE_PACK_DECLARE(lng, name)
+  #define LANGUAGE_PACK_DECLARE_DEFAULT(lng, name)
+#else
+  #define LANGUAGE_PACK_DECLARE(lng, name)
+  #define LANGUAGE_PACK_DECLARE_DEFAULT(lng, name)
 #endif
 
 #if LCD_W >= 212

@@ -426,7 +426,7 @@ const pm_char STR_SD_TYPE[] PROGMEM = TR_SD_TYPE;
 const pm_char STR_SD_SPEED[] PROGMEM = TR_SD_SPEED;
 const pm_char STR_SD_SECTORS[] PROGMEM = TR_SD_SECTORS;
 const pm_char STR_SD_SIZE[] PROGMEM = TR_SD_SIZE;
-const pm_char STR_CURVE_TYPE[] PROGMEM = TR_CURVE_TYPE;
+const pm_char STR_TYPE[] PROGMEM = TR_TYPE;
 const pm_char STR_GLOBAL_VARS[] PROGMEM = TR_GLOBAL_VARS;
 const pm_char STR_OWN[] PROGMEM = TR_OWN;
 const pm_char STR_ROTARY_ENCODER[] PROGMEM = TR_ROTARY_ENCODER;
@@ -455,56 +455,61 @@ const pm_char STR_TRAINER[] PROGMEM = "Trainer";
 #endif
 
 const pm_uchar font_5x7[] PROGMEM = {
-#include "font.lbm"
+#include "bitmaps/font.lbm"
 #if defined(TRANSLATIONS_SE)
-#include "font_se.lbm"
+#include "translations/font_se.lbm"
 #elif defined(TRANSLATIONS_DE)
-#include "font_de.lbm"
+#include "translations/font_de.lbm"
 #elif defined(TRANSLATIONS_IT)
-#include "font_it.lbm"
+#include "translations/font_it.lbm"
 #elif defined(TRANSLATIONS_CZ)
-#include "font_cz.lbm"
+#include "translations/font_cz.lbm"
 #elif defined(TRANSLATIONS_FR)
-#include "font_fr.lbm"
+#include "translations/font_fr.lbm"
 #elif defined(TRANSLATIONS_ES)
-#include "font_es.lbm"
+#include "translations/font_es.lbm"
 #endif
 };
 
 const pm_uchar font_10x14[] PROGMEM = {
-#include "font_dblsize.lbm"
+#include "bitmaps/font_dblsize.lbm"
 #if defined(TRANSLATIONS_SE)
-#include "font_dblsize_se.lbm"
+#include "translations/font_dblsize_se.lbm"
 #elif defined(TRANSLATIONS_DE)
-#include "font_dblsize_de.lbm"
+#include "translations/font_dblsize_de.lbm"
 #elif defined(TRANSLATIONS_IT)
-#include "font_dblsize_it.lbm"
+#include "translations/font_dblsize_it.lbm"
 #elif defined(TRANSLATIONS_FR)
-#include "font_dblsize_fr.lbm"
+#include "translations/font_dblsize_fr.lbm"
 #elif defined(TRANSLATIONS_ES)
-#include "font_dblsize_es.lbm"
+#include "translations/font_dblsize_es.lbm"
 #endif
 };
 
 #if defined(CPUARM)
 const pm_uchar font_3x5[] PROGMEM = {
-#include "font_tiny.lbm"
+#include "bitmaps/font_tiny.lbm"
 };
 
 const pm_uchar font_4x6[] PROGMEM = {
-#include "font_small.lbm"
+#include "bitmaps/font_small.lbm"
 };
 
 const pm_uchar font_8x10[] PROGMEM = {
-#include "font_midsize.lbm"
+#include "bitmaps/font_midsize.lbm"
 };
 
 const pm_uchar font_5x7_extra[] PROGMEM = {
-#include "font_extra.lbm"
+#include "bitmaps/font_extra.lbm"
 };
 
 const pm_uchar font_10x14_extra[] PROGMEM = {
-#include "font_dblsize_extra.lbm"
+#include "bitmaps/font_dblsize_extra.lbm"
 };
+
+const pm_uchar font_4x6_extra[] PROGMEM = {
+#include "bitmaps/font_small_extra.lbm"
+};
+
 #endif
 

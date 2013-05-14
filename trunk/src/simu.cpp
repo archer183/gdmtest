@@ -40,7 +40,6 @@
 #include <unistd.h>
 #include "fxkeys.h"
 #include "opentx.h"
-#include "menus.h"
 #include <time.h>
 #include <ctype.h>
 
@@ -385,6 +384,8 @@ int main(int argc,char **argv)
   frskyStreaming = 1;
 #endif
 
+  printf("Model size = %d\n", sizeof(g_model));
+
   StartEepromThread(argc >= 2 ? argv[1] : "eeprom.bin");
   StartMainThread();
 
@@ -398,18 +399,25 @@ int main(int argc,char **argv)
 
 uint16_t anaIn(uint8_t chan)
 {
+  if (chan<NUM_STICKS)
+    return th9xSim->sliders[chan]->getValue();
+  else if (chan<NUM_STICKS+NUM_POTS)
+    return th9xSim->knobs[chan-NUM_STICKS]->getValue();
 #if defined(PCBTARANIS)
-  if (chan == 8)
+  else if (chan == 8)
     return 1000;
+#elif defined(PCBSKY9X)
+  else if (chan == 7)
+    return 1500;
+  else if (chan == 8)
+    return 100;
 #elif defined(PCBGRUVIN9X)
-  if (chan == 7)
+  else if (chan == 7)
     return 150;
 #else
-  if (chan == 7)
+  else if (chan == 7)
     return 1500;
 #endif
-  else if (chan<NUM_STICKS)
-    return th9xSim->sliders[chan]->getValue();
   else
-    return th9xSim->knobs[chan-NUM_STICKS]->getValue();
+    return 0;
 }

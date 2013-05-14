@@ -207,14 +207,21 @@
   #define CONVERT_PTR(x) ((uint32_t)(x))
 #endif
 
+// RESX range is used for internal calculation; The menu says -100.0 to 100.0; internally it is -1024 to 1024 to allow some optimizations
+#define RESX_SHIFT 10
+#define RESX       1024
+#define RESXu      1024u
+#define RESXul     1024ul
+#define RESXl      1024l
+
 #if defined(PCBTARANIS)
-  #include "taranis/board_taranis.h"
+  #include "targets/taranis/board_taranis.h"
 #elif defined(PCBSKY9X)
-  #include "sky9x/board_sky9x.h"
+  #include "targets/sky9x/board_sky9x.h"
 #elif defined(PCBGRUVIN9X)
-  #include "gruvin9x/board_gruvin9x.h"
+  #include "targets/gruvin9x/board_gruvin9x.h"
 #else
-  #include "stock/board_stock.h"
+  #include "targets/stock/board_stock.h"
 #endif
 
 #include "debug.h"
@@ -409,9 +416,9 @@ enum EnumKeys {
 #endif
 
 #if defined(CPUARM)
-  #include "pulses_arm.h"
+  #include "protocols/pulses_arm.h"
 #else
-  #include "pulses_avr.h"
+  #include "protocols/pulses_avr.h"
 #endif
 
 #if defined(PCBTARANIS)
@@ -419,9 +426,8 @@ enum EnumKeys {
   #define MODEL_BITMAP_HEIGHT 32
   #define MODEL_BITMAP_SIZE   (2+4*(MODEL_BITMAP_WIDTH*MODEL_BITMAP_HEIGHT/8))
   extern uint8_t modelBitmap[MODEL_BITMAP_SIZE];
-  extern pm_char * modelBitmapLoaded;
-  void loadModelBitmap();
-  #define LOAD_MODEL_BITMAP() loadModelBitmap()
+  void loadModelBitmap(char *name, uint8_t *bitmap);
+  #define LOAD_MODEL_BITMAP() loadModelBitmap(g_model.header.bitmap, modelBitmap)
 #else
   #define LOAD_MODEL_BITMAP()
 #endif
@@ -460,18 +466,19 @@ enum EnumKeys {
   static const int8_t maxChannelsModules[] = { 0, 8, 8, 0, 0 };
   static const int8_t maxChannelsXJT[] = { 0, 8, 0, 4 };
   #define IS_MODULE_XJT(idx)        ((idx==0 || g_model.externalModule == MODULE_TYPE_XJT) && (g_model.moduleData[idx].rfProtocol != RF_PROTO_OFF))
-  #define IS_MODULE_PPM(idx)        (idx==1 && g_model.externalModule == MODULE_TYPE_PPM)
+  #define IS_MODULE_PPM(idx)        (idx==2 || (idx==1 && g_model.externalModule == MODULE_TYPE_PPM))
   #define NUM_CHANNELS(idx)         (8+g_model.moduleData[idx].channelsCount)
   #define MAX_PORT1_CHANNELS()      (maxChannelsXJT[1+g_model.moduleData[0].rfProtocol])
   #define MAX_PORT2_CHANNELS()      ((g_model.externalModule == MODULE_TYPE_XJT) ? maxChannelsXJT[1+g_model.moduleData[1].rfProtocol] : maxChannelsModules[g_model.externalModule])
-  #define MAX_CHANNELS(idx)         (idx==0 ? MAX_PORT1_CHANNELS() : MAX_PORT2_CHANNELS())
-#else
-  #define NUM_PORT1_CHANNELS()      (IS_PXX_PROTOCOL(g_model.protocol) ? 8 : (IS_DSM2_PROTOCOL(g_model.protocol) ? 6 : (8+(g_model.ppmNCH*2))))
-  #define NUM_PORT2_CHANNELS()      (8+(g_model.ppm2NCH*2))
+  #define MAX_TRAINER_CHANNELS()    (8)
+  #define MAX_CHANNELS(idx)         (idx==0 ? MAX_PORT1_CHANNELS() : (idx==1 ? MAX_PORT2_CHANNELS() : MAX_TRAINER_CHANNELS()))
+#elif defined(PCBSKY9X)
+  #define NUM_PORT1_CHANNELS()      (IS_PXX_PROTOCOL(g_model.protocol) ? 8 : (IS_DSM2_PROTOCOL(g_model.protocol) ? 6 : (8+g_model.moduleData[0].channelsCount)))
+  #define NUM_PORT2_CHANNELS()      (8+g_model.moduleData[1].channelsCount)
 #endif
 
 #include "lcd.h"
-#include "menus.h"
+#include "gui/menus.h"
 
 #if defined(TEMPLATES)
   #include "templates.h"
@@ -534,7 +541,7 @@ enum BaseCurves {
   CURVE_F_GT0,
   CURVE_F_LT0,
   CURVE_ABS_F,
-  CURVE_COS,
+CURVE_COS,
   CURVE_SIN,
   CURVE_ACOS,
   CURVE_ASIN,
@@ -678,9 +685,8 @@ enum CswFunctions {
   #define NAVIGATION_RE_IDX()         0
 #endif
 
-
-#define HEART_TIMER_PULSES  1
-#define HEART_TIMER10ms     2
+#define HEART_TIMER_10MS     1
+#define HEART_TIMER_PULSES   2 // when multiple modules this is the first one
 extern uint8_t heartbeat;
 
 #define MAX_ALERT_TIME   60
@@ -1076,6 +1082,12 @@ extern int16_t            ex_chans[NUM_CHNOUT]; // Outputs (before LIMITS) of th
 extern int16_t            channelOutputs[NUM_CHNOUT];
 extern uint16_t           BandGap;
 
+#if defined(CPUARM)
+  #define NUM_INPUTS      (NUM_STICKS)
+#else
+  #define NUM_INPUTS      (NUM_STICKS)
+#endif
+
 extern int16_t expo(int16_t x, int16_t k);
 extern int16_t intpol(int16_t, uint8_t);
 extern int16_t applyCurve(int16_t, int8_t);
@@ -1170,23 +1182,23 @@ inline bool isFunctionActive(uint8_t func)
 
 #if defined(FRSKY_SPORT)
   // FrSky SPORT Telemetry
-  #include "telemetry_sport.h"
+  #include "telemetry/frsky_sport.h"
 #elif defined (FRSKY)
   // FrSky Telemetry
-  #include "telemetry_frsky.h"
+  #include "telemetry/frsky.h"
 #elif defined(JETI)
   // Jeti-DUPLEX Telemetry
-  #include "telemetry_jeti.h"
+  #include "telemetry/jeti.h"
 #elif defined(ARDUPILOT)
   // ArduPilot Telemetry
-  #include "telemetry_ardupilot.h"
+  #include "telemetry/ardupilot.h"
 #elif defined(NMEA)
   // NMEA Telemetry
-  #include "telemetry_nmea.h"
+  #include "telemetry/nmea.h"
 #elif defined(MAVLINK)
   // Mavlink Telemetry
   #include "rotarysw.h"
-  #include "telemetry_mavlink.h"
+  #include "telemetry/mavlink.h"
 #endif
 
 #define PLAY_REPEAT(x)            (x)                 /* Range 0 to 15 */
@@ -1264,11 +1276,11 @@ enum AUDIO_SOUNDS {
 #endif
 
 #if defined(PCBSTD) && defined(VOICE)
-#include "stock/voice.h"
+#include "targets/stock/voice.h"
 #endif
 
 #if defined(PCBGRUVIN9X) && defined(VOICE)
-#include "gruvin9x/somo14d.h"
+#include "targets/gruvin9x/somo14d.h"
 #endif
 
 #include "translations.h"
@@ -1293,30 +1305,26 @@ extern uint8_t requiredSpeakerVolume;
 #define SD_SCREEN_FILE_LENGTH (32)
 union ReusableBuffer
 {
-    /* 128 bytes on stock */
-
-#if !defined(PCBSKY9X)
-    uint8_t eefs_buffer[BLOCKS];           // 128bytes used by EeFsck
-#endif
-
     struct
     {
-        char mainname[42];
         char listnames[LCD_LINES-1][LEN_MODEL_NAME];
         uint16_t eepromfree;
-
 #if defined(SDCARD)
         char menu_bss[MENU_MAX_LINES][MENU_LINE_LENGTH];
+        char mainname[42]; // because reused for SD backup / restore
+#else
+        char mainname[LEN_MODEL_NAME];
 #endif
 
-    } models;                                     // 128bytes used by menuModelSelect (mainname reused for SD card archive / restore)
+    } modelsel;
 
     struct
     {
         int16_t midVals[NUM_STICKS+NUM_POTS];
         int16_t loVals[NUM_STICKS+NUM_POTS];
         int16_t hiVals[NUM_STICKS+NUM_POTS];
-    } calib;                                      // 42 bytes used by menuGeneralCalib
+        uint8_t state;
+    } calib;
 
 #if defined(SDCARD)
     struct
@@ -1325,7 +1333,7 @@ union ReusableBuffer
         uint32_t available;
         uint16_t offset;
         uint16_t count;
-    } sd;
+    } sdmanager;
 #endif
 };
 
@@ -1343,7 +1351,7 @@ void putsTelemetryValue(xcoord_t x, uint8_t y, lcdint_t val, uint8_t unit, uint8
 #if defined(CPUARM)
 uint8_t zlen(const char *str, uint8_t size);
 char * strcat_zchar(char * dest, char * name, uint8_t size, const char *defaultName, uint8_t defaultNameSize, uint8_t defaultIdx);
-#define strcat_modelname(dest, idx) strcat_zchar(dest, modelNames[idx], LEN_MODEL_NAME, STR_MODEL, PSIZE(TR_MODEL), idx+1)
+#define strcat_modelname(dest, idx) strcat_zchar(dest, modelHeaders[idx].name, LEN_MODEL_NAME, STR_MODEL, PSIZE(TR_MODEL), idx+1)
 #define strcat_phasename(dest, idx) strcat_zchar(dest, g_model.phaseData[idx].name, LEN_FP_NAME, NULL, 0, 0)
 #define strcat_mixername(dest, idx) strcat_zchar(dest, g_model.mixData[idx].name, LEN_EXPOMIX_NAME, NULL, 0, 0)
 #define ZLEN(s) zlen(s, sizeof(s))
@@ -1375,9 +1383,19 @@ extern uint8_t barsThresholds[THLD_MAX];
 #endif
 
 #if defined(FRSKY)
-uint8_t maxTelemValue(uint8_t channel);
+  uint8_t maxTelemValue(uint8_t channel);
+#else
+  #define maxTelemValue(channel) 255
+#endif
+
 getvalue_t convertTelemValue(uint8_t channel, uint8_t value);
 getvalue_t convertCswTelemValue(CustomSwData * cs);
+
+#if defined(FRSKY) || defined(CPUARM)
+lcdint_t applyChannelRatio(uint8_t channel, lcdint_t val);
+#endif
+
+#if defined(FRSKY)
 NOINLINE uint8_t getRssiAlarmValue(uint8_t alarm);
 
 extern const pm_uint8_t bchunit_ar[];
@@ -1387,9 +1405,6 @@ extern const pm_uint8_t bchunit_ar[];
 #else
   #define FRSKY_MULTIPLIER_MAX 3
 #endif
-
-lcdint_t applyChannelRatio(uint8_t channel, lcdint_t val);
-void putsTelemetryChannel(xcoord_t x, uint8_t y, uint8_t channel, lcdint_t val, uint8_t att);
 
 #define IS_BARS_SCREEN(screenIndex) (g_model.frsky.screensType & (1<<(screenIndex)))
 #endif
@@ -1421,6 +1436,10 @@ void varioWakeup();
 #else
   #define IS_USR_PROTO_FRSKY_HUB()   (g_model.frsky.usrProto == USR_PROTO_FRSKY)
   #define IS_USR_PROTO_WS_HOW_HIGH() (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH)
+#endif
+
+#if defined(PCBTARANIS)
+  extern const pm_uchar logo_taranis[];
 #endif
 
 #endif

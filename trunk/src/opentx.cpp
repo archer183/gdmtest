@@ -68,7 +68,7 @@ OS_TID btTaskId;
 OS_STK btStack[BT_STACK_SIZE];
 #endif
 
-#if defined(PCBSKY9X) && defined(DEBUG)
+#if defined(CPUARM) && defined(DEBUG)
 OS_TID debugTaskId;
 OS_STK debugStack[DEBUG_STACK_SIZE];
 #endif
@@ -84,9 +84,9 @@ OS_MutexID mixerMutex;
 #if defined(SPLASH)
 const pm_uchar splashdata[] PROGMEM = { 'S','P','S',0,
 #if defined(PCBTARANIS)
-#include "splash_taranis.lbm"
+#include "bitmaps/splash_taranis.lbm"
 #else
-#include "splash_9x.lbm"
+#include "bitmaps/splash_9x.lbm"
 #endif
 	'S','P','E',0};
 const pm_uchar * splash_lbm = splashdata+4;
@@ -94,25 +94,26 @@ const pm_uchar * splash_lbm = splashdata+4;
 
 #if !defined(CPUM64) || defined(EXTSTD)
 const pm_uchar asterisk_lbm[] PROGMEM = {
-#include "asterisk.lbm"
+#include "bitmaps/asterisk.lbm"
 };
 #endif
 
-#include "menus.h"
+#include "gui/menus.h"
 
 EEGeneral  g_eeGeneral;
 ModelData  g_model;
 
 #if defined(PCBTARANIS) && defined(SDCARD)
 uint8_t modelBitmap[MODEL_BITMAP_SIZE];
-pm_char * modelBitmapLoaded = NULL;
-void loadModelBitmap()
+void loadModelBitmap(char *name, uint8_t *bitmap)
 {
   char lfn[] = BITMAPS_PATH "/xxxxxxxxxx.bmp";
-  strncpy(lfn+sizeof(BITMAPS_PATH), g_model.bitmap, sizeof(g_model.bitmap));
-  lfn[sizeof(BITMAPS_PATH)+sizeof(g_model.bitmap)] = '\0';
+  strncpy(lfn+sizeof(BITMAPS_PATH), name, LEN_BITMAP_NAME);
+  lfn[sizeof(BITMAPS_PATH)+LEN_BITMAP_NAME] = '\0';
   strcat(lfn+sizeof(BITMAPS_PATH), BITMAPS_EXT);
-  modelBitmapLoaded = bmpLoad(modelBitmap, lfn, MODEL_BITMAP_WIDTH, MODEL_BITMAP_HEIGHT);
+  if (bmpLoad(bitmap, lfn, MODEL_BITMAP_WIDTH, MODEL_BITMAP_HEIGHT)) {
+    memcpy(bitmap, logo_taranis, MODEL_BITMAP_SIZE);
+  }
 }
 #endif
 
@@ -289,7 +290,7 @@ void per10ms()
   }
 #endif
 
-#if defined(FRSKY)
+#if defined(FRSKY) || defined(JETI)
   if (!IS_DSM2_SERIAL_PROTOCOL(s_current_protocol))
     telemetryInterrupt10ms();
 #endif
@@ -310,7 +311,7 @@ void per10ms()
   sdPoll10ms();
 #endif
 
-  heartbeat |= HEART_TIMER10ms;
+  heartbeat |= HEART_TIMER_10MS;
 }
 
 PhaseData *phaseaddress(uint8_t idx)
@@ -382,18 +383,26 @@ void generalDefault()
   g_eeGeneral.vBatWarn = 90;
 #endif
 
-  for (int i = 0; i < NUM_STICKS+NUM_POTS; ++i) {
-    g_eeGeneral.calibMid[i]     = 0x200;
-    g_eeGeneral.calibSpanNeg[i] = 0x180;
-    g_eeGeneral.calibSpanPos[i] = 0x180;
-  }
-  g_eeGeneral.chkSum = 0x200 * (NUM_STICKS+NUM_POTS) + 0x180 * 5;
+#if defined(DEFAULT_MODE)
+  g_eeGeneral.stickMode = DEFAULT_MODE-1;
+#endif
+
+#if defined(PCBTARANIS)
+  g_eeGeneral.templateSetup = 17; /* TAER */
+#endif
+
+#if !defined(CPUM64)
+  g_eeGeneral.backlightMode = e_backlight_mode_both;
+  g_eeGeneral.lightAutoOff = 2;
+#endif
+
+  g_eeGeneral.chkSum = 0xFFFF;
 }
 
 uint16_t evalChkSum()
 {
   uint16_t sum=0;
-  for (int i=0; i<NUM_STICKS+NUM_POTS+5;i++)
+  for (int i=0; i<NUM_STICKS+NUM_POTS+5; i++)
     sum += g_eeGeneral.calibMid[i];
   return sum;
 }
@@ -416,9 +425,8 @@ inline void applyDefaultTemplate()
 void checkModelIdUnique(uint8_t id)
 {
   for (uint8_t i=0; i<MAX_MODELS; i++) {
-    if (i != id && g_model.modelId!=0 && g_model.modelId == modelIds[i]) {
-      s_warning = PSTR("Model ID already used");
-      s_warning_type = WARNING_TYPE_ASTERISK;
+    if (i!=id && g_model.header.modelId!=0 && g_model.header.modelId==modelHeaders[i].modelId) {
+      POPUP_WARNING(PSTR("Model ID already used"));
     }
   }
 }
@@ -430,7 +438,7 @@ void modelDefault(uint8_t id)
   applyDefaultTemplate();
 
 #if defined(PXX) && defined(CPUARM)
-  modelIds[id] = g_model.modelId = id+1;
+  modelHeaders[id].modelId = g_model.header.modelId = id+1;
   checkModelIdUnique(id);
 #endif
 
@@ -439,17 +447,17 @@ void modelDefault(uint8_t id)
 #endif
 }
 
-int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0, 25 ,50, 75, 100
+int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0 ,25 ,50, 75, 100
 {
   CurveInfo crv = curveinfo(idx);
   int16_t erg = 0;
 
   x+=RESXu;
   if (x < 0) {
-    erg = (int16_t)crv.crv[0];
+    erg = (int16_t)crv.crv[0] * (RESX/4);
   }
   else if (x >= (RESX*2)) {
-    erg = (int16_t)crv.crv[crv.points-1];
+    erg = (int16_t)crv.crv[crv.points-1] * (RESX/4);
   }
   else {
     uint16_t a=0, b=0;
@@ -467,10 +475,10 @@ int16_t intpol(int16_t x, uint8_t idx) // -100, -75, -50, -25, 0, 25 ,50, 75, 10
       a = i * d;
       b = a + d;
     }
-    erg = (int16_t)crv.crv[i] + ((int32_t)(x-a) * (crv.crv[i+1]-crv.crv[i])) / (b-a);
+    erg = (int16_t)crv.crv[i]*(RESX/4) + ((int32_t)(x-a) * (crv.crv[i+1]-crv.crv[i]) * (RESX/4)) / ((b-a));
   }
 
-  return calc100toRESX(erg);
+  return erg / 25; // 100*D5/RESX;
 }
 
 #if defined(CURVES) && defined(TRIG)
@@ -708,7 +716,7 @@ ACTIVE_EXPOS_TYPE activeExpos;
 
 void applyExpos(int16_t *anas)
 {
-  int16_t anas2[NUM_STICKS]; // values before expo, to ensure same expo base when multiple expo lines are used
+  int16_t anas2[NUM_INPUTS]; // values before expo, to ensure same expo base when multiple expo lines are used
   memcpy(anas2, anas, sizeof(anas2));
 
   int8_t cur_chn = -1;
@@ -987,7 +995,7 @@ getvalue_t getValue(uint8_t i)
   else if (i<MIXSRC_FIRST_TELEM-1+TELEM_VSPD) return frskyData.hub.varioSpeed;
   else if (i<MIXSRC_FIRST_TELEM-1+TELEM_MIN_A1) return frskyData.analog[0].min;
   else if (i<MIXSRC_FIRST_TELEM-1+TELEM_MIN_A2) return frskyData.analog[1].min;
-  else if (i<MIXSRC_FIRST_TELEM-1+TELEM_MAX_CURRENT) return *(((int16_t*)(&frskyData.hub.minAltitude))+i+1-(MIXSRC_FIRST_TELEM-1+TELEM_MAX_CURRENT));
+  else if (i<MIXSRC_FIRST_TELEM-1+TELEM_MAX_CURRENT) return *(((int16_t*)(&frskyData.hub.minAltitude))+i+1-(MIXSRC_FIRST_TELEM-1+TELEM_MIN_ALT));
 #endif
 #endif
   else return 0;
@@ -1084,8 +1092,13 @@ bool __getSwitch(int8_t swtch)
 #if defined(FRSKY)
           // Telemetry
           if (cs->v1 >= MIXSRC_FIRST_TELEM) {
-            if (frskyStreaming <= 0 && cs->v1 > MIXSRC_FIRST_TELEM-1+MAX_TIMERS)
+#if defined(PCBTARANIS)
+            if (frskyData.rssi[0].value == 0 && cs->v1 >= MIXSRC_FIRST_TELEM+TELEM_TM2)
               return swtch > 0 ? false : true;
+#else
+            if (frskyStreaming <= 0 && cs->v1 >= MIXSRC_FIRST_TELEM+TELEM_TM2)
+              return swtch > 0 ? false : true;
+#endif
 
             y = convertCswTelemValue(cs);
 
@@ -1106,8 +1119,11 @@ bool __getSwitch(int8_t swtch)
             y = calc100toRESX(cs->v2);
           }
 #else
-          if (cs->v1 >= MIXSRC_GVAR1) {
-            y = cs->v2; // it's a GVAR or a Timer
+          if (cs->v1 >= MIXSRC_FIRST_TELEM) {
+            y = (int16_t)3 * cs->v2; // it's a Timer
+          }
+          else if (cs->v1 >= MIXSRC_GVAR1) {
+            y = cs->v2; // it's a GVAR
           }
           else {
             y = calc100toRESX(cs->v2);
@@ -1457,8 +1473,99 @@ void setGVarValue(uint8_t idx, int16_t value, int8_t phase)
 
 #endif
 
+#if defined(FRSKY)
+uint8_t maxTelemValue(uint8_t channel)
+{
+  switch (channel) {
+    case TELEM_FUEL:
+    case TELEM_RSSI_TX:
+    case TELEM_RSSI_RX:
+      return 100;
+    case TELEM_HDG:
+      return 180;
+    default:
+      return 255;
+  }
+}
+
+getvalue_t convertTelemValue(uint8_t channel, uint8_t value)
+{
+  getvalue_t result;
+  switch (channel) {
+    case TELEM_TM1:
+    case TELEM_TM2:
+      result = value * 3;
+      break;
+    case TELEM_ALT:
+#if defined(PCBTARANIS)
+      result = value * 80 - 5000;
+      break;
+#endif
+    case TELEM_GPSALT:
+    case TELEM_MAX_ALT:
+    case TELEM_MIN_ALT:
+      result = value * 8 - 500;
+      break;
+    case TELEM_RPM:
+    case TELEM_MAX_RPM:
+      result = value * 50;
+      break;
+    case TELEM_T1:
+    case TELEM_T2:
+    case TELEM_MAX_T1:
+    case TELEM_MAX_T2:
+      result = (getvalue_t)value - 30;
+      break;
+    case TELEM_CELL:
+    case TELEM_HDG:
+      result = value * 2;
+      break;
+    case TELEM_DIST:
+    case TELEM_MAX_DIST:
+      result = value * 8;
+      break;
+    case TELEM_CURRENT:
+    case TELEM_POWER:
+      result = value * 5;
+      break;
+    case TELEM_CONSUMPTION:
+      result = value * 20;
+      break;
+    default:
+      result = value;
+      break;
+  }
+  return result;
+}
+#else
+getvalue_t convertTelemValue(uint8_t channel, uint8_t value)
+{
+  getvalue_t result;
+  switch (channel) {
+    case TELEM_TM1:
+    case TELEM_TM2:
+      result = value * 3;
+      break;
+    default:
+      result = value;
+      break;
+  }
+  return result;
+}
+#endif
+
+getvalue_t convertCswTelemValue(CustomSwData * cs)
+{
+  getvalue_t val;
+  if (CS_STATE(cs->func)==CS_VOFS)
+    val = convertTelemValue(cs->v1 - MIXSRC_FIRST_TELEM + 1, 128+cs->v2);
+  else
+    val = convertTelemValue(cs->v1 - MIXSRC_FIRST_TELEM + 1, 128+cs->v2) - convertTelemValue(cs->v1 - MIXSRC_FIRST_TELEM + 1, 128);
+  return val;
+}
+
 #if defined(FRSKY) || defined(CPUARM)
-inline void convertUnit(getvalue_t & val, uint8_t & unit)
+FORCEINLINE void convertUnit(getvalue_t & val, uint8_t & unit)
 {
   if (IS_IMPERIAL_ENABLE()) {
     if (unit == UNIT_DEGREES) {
@@ -1484,14 +1591,6 @@ inline void convertUnit(getvalue_t & val, uint8_t & unit)
       val = (val * 46) / 25;
     }
   }
-}
-
-void putsTelemetryValue(xcoord_t x, uint8_t y, lcdint_t val, uint8_t unit, uint8_t att)
-{
-  convertUnit(val, unit);
-  lcd_outdezAtt(x, y, val, att & (~NO_UNIT));
-  if (!(att & NO_UNIT) && unit != UNIT_RAW)
-    lcd_putsiAtt(lcdLastPos/*+1*/, y, STR_VTELEMUNIT, unit, 0);
 }
 #endif
 
@@ -2114,8 +2213,8 @@ uint16_t isqrt32(uint32_t n)
 
 // static variables used in perOut - moved here so they don't interfere with the stack
 // It's also easier to initialize them here.
-int16_t  rawAnas [NUM_STICKS] = {0};
-int16_t  anas [NUM_STICKS] = {0};
+int16_t  rawAnas [NUM_INPUTS] = {0};
+int16_t  anas [NUM_INPUTS] = {0};
 int16_t  trims[NUM_STICKS] = {0};
 int32_t  chans[NUM_CHNOUT] = {0};
 uint8_t inacPrescale;
@@ -2403,11 +2502,12 @@ uint8_t fnSwitchDuration[NUM_CFN] = { 0 };
 
 inline void playCustomFunctionFile(CustomFnData *sd, uint8_t id)
 {
-  char lfn[] = SOUNDS_PATH "/xxxxxx.wav";
-  strncpy(lfn+sizeof(SOUNDS_PATH), sd->param.name, sizeof(sd->param.name));
-  lfn[sizeof(SOUNDS_PATH)+sizeof(sd->param.name)] = '\0';
-  strcat(lfn+sizeof(SOUNDS_PATH), SOUNDS_EXT);
-  PLAY_FILE(lfn, sd->func==FUNC_BACKGND_MUSIC ? PLAY_BACKGROUND : 0, id);
+  char filename[] = SOUNDS_PATH "/xxxxxx.wav";
+  strncpy(filename+SOUNDS_PATH_LNG_OFS, currentLanguagePack->id, 2);
+  strncpy(filename+sizeof(SOUNDS_PATH), sd->param.name, sizeof(sd->param.name));
+  filename[sizeof(SOUNDS_PATH)+sizeof(sd->param.name)] = '\0';
+  strcat(filename+sizeof(SOUNDS_PATH), SOUNDS_EXT);
+  PLAY_FILE(filename, sd->func==FUNC_BACKGND_MUSIC ? PLAY_BACKGROUND : 0, id);
 }
 #endif
 
@@ -2429,6 +2529,10 @@ void evalFunctions()
     trimGvar[i] = -1;
 #endif
 
+#if !defined(PCBSTD)
+  uint8_t mSwitchDurationIncremented = 0;
+#endif
+
   for (uint8_t i=0; i<NUM_CFN; i++) {
     CustomFnData *sd = &g_model.funcSw[i];
     int8_t swtch = sd->swtch;
@@ -2441,7 +2545,7 @@ void evalFunctions()
 
   #define MOMENTARY_START_TEST() ( (momentary && !(activeSwitches & switch_mask) && active) || \
                                    (short_long==1 && !active && mSwitchDuration[mswitch]>0 && mSwitchDuration[mswitch]<CFN_PRESSLONG_DURATION) || \
-                                   (short_long==2 && active && mSwitchDuration[mswitch]>=CFN_PRESSLONG_DURATION) )
+                                   (short_long==2 && active && mSwitchDuration[mswitch]==CFN_PRESSLONG_DURATION) )
 
       uint8_t short_long = 0;
       uint8_t mswitch = 0;
@@ -2510,7 +2614,8 @@ void evalFunctions()
           momentary = false;
         }
 #if !defined(PCBSTD)
-        if (short_long) {
+        if (short_long && !(mSwitchDurationIncremented & (1<<mswitch))) {
+          mSwitchDurationIncremented |= (1<<mswitch);
           if (swState) {
             if (mSwitchDuration[mswitch] < 255)
               mSwitchDuration[mswitch]++;
@@ -3572,8 +3677,25 @@ void perMain()
 
   checkBacklight();
 
-#if defined(FRSKY)
+#if defined(FRSKY) || defined(MAVLINK)
   telemetryWakeup();
+#endif
+
+#if defined(PCBTARANIS)
+  uint8_t requiredTrainerMode = g_model.trainerMode;
+  if (requiredTrainerMode != currentTrainerMode) {
+    currentTrainerMode = requiredTrainerMode;
+    if (requiredTrainerMode) {
+      // slave
+      stop_trainer_capture();
+      init_trainer_ppm();
+    }
+    else {
+      // master
+      stop_trainer_ppm();
+      init_trainer_capture();
+    }
+  }
 #endif
 
   lcd_clear();
@@ -3585,7 +3707,7 @@ void perMain()
   }
   else {
     g_menuStack[g_menuStackPtr]((warn || menu) ? 0 : evt);
-    if (warn) displayWarning(evt);
+    if (warn) DISPLAY_WARNING(evt);
 #if defined(NAVIGATION_MENUS)
     if (menu) {
       const char * result = displayMenu(evt);
@@ -3618,6 +3740,7 @@ void perMain()
     int32_t instant_vbat = anaIn(TX_VOLTAGE);
     instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * BATT_SCALE;
     instant_vbat >>= 11;
+    instant_vbat += 2; // because of the diode
 #elif defined(PCBSKY9X)
     int32_t instant_vbat = anaIn(TX_VOLTAGE);
     instant_vbat = ( instant_vbat + instant_vbat*(g_eeGeneral.vBatCalib)/128 ) * 4191;
@@ -3941,10 +4064,32 @@ void saveTimers()
 #endif
 
 #if defined(ROTARY_ENCODERS)
-volatile rotenc_t g_rotenc[ROTARY_ENCODERS] = {0};
+  volatile rotenc_t g_rotenc[ROTARY_ENCODERS] = {0};
 #elif defined(ROTARY_ENCODER_NAVIGATION)
-volatile rotenc_t g_rotenc[1] = {0};
+  volatile rotenc_t g_rotenc[1] = {0};
 #endif
+
+void opentxStart()
+{
+  doSplash();
+
+#if defined(PCBSKY9X) && defined(SDCARD) && !defined(SIMU)
+  for (int i=0; i<500 && !Card_initialized; i++) {
+    CoTickDelay(1);  // 2ms
+  }
+#endif
+
+#if defined(CPUARM)
+  eeLoadModel(g_eeGeneral.currModel);
+#endif
+
+  checkAlarm();
+  checkAll();
+
+  if (g_eeGeneral.chkSum != evalChkSum()) {
+    chainMenu(menuFirstCalib);
+  }
+}
 
 #ifndef SIMU
 
@@ -4024,14 +4169,14 @@ uint16_t stack_free()
 #endif
 
 #if defined(PCBGRUVIN9X)
-#define OPEN9X_INIT_ARGS const uint8_t mcusr
+  #define OPENTX_INIT_ARGS const uint8_t mcusr
 #elif defined(PCBSTD)
-#define OPEN9X_INIT_ARGS const uint8_t mcusr
+  #define OPENTX_INIT_ARGS const uint8_t mcusr
 #else
-#define OPEN9X_INIT_ARGS
+  #define OPENTX_INIT_ARGS
 #endif
 
-inline void opentxInit(OPEN9X_INIT_ARGS)
+inline void opentxInit(OPENTX_INIT_ARGS)
 {
 #if defined(PCBTARANIS)
   BACKLIGHT_ON();
@@ -4080,20 +4225,7 @@ inline void opentxInit(OPEN9X_INIT_ARGS)
 #endif
   }
   else {
-    doSplash();
-
-#if defined(PCBSKY9X) && defined(SDCARD)
-    for (int i=0; i<500 && !Card_initialized; i++) {
-      CoTickDelay(1);  // 2ms
-    }
-#endif
-
-#if defined(CPUARM)
-    eeLoadModel(g_eeGeneral.currModel);
-#endif
-
-    checkAlarm();
-    checkAll();
+    opentxStart();
   }
 
 #if defined(CPUARM) || defined(PCBGRUVIN9X)
@@ -4137,7 +4269,17 @@ void mixerTask(void * pdata)
       CoLeaveMutexSection(mixerMutex);
       if (tick10ms) checkTrims();
 
-      if (heartbeat == HEART_TIMER_PULSES+HEART_TIMER10ms) {
+#if defined(PCBTARANIS)
+      uint8_t heartbeatCheck = HEART_TIMER_10MS;
+      if (g_model.moduleData[0].rfProtocol != RF_PROTO_OFF)
+        heartbeatCheck |= HEART_TIMER_PULSES << 0;
+      if (g_model.externalModule != MODULE_TYPE_NONE)
+        heartbeatCheck |= HEART_TIMER_PULSES << 1;
+#else
+      uint8_t heartbeatCheck = HEART_TIMER_10MS + HEART_TIMER_PULSES;
+#endif
+
+      if ((heartbeat & heartbeatCheck) == heartbeatCheck) {
         wdt_reset();
         heartbeat = 0;
       }
@@ -4166,19 +4308,16 @@ void menusTask(void * pdata)
 #endif
   }
 
+  lcd_clear();
+  displayPopup(STR_SHUTDOWN);
+
 #if defined(SDCARD)
   closeLogs();
 #endif
 
-  SysTick->CTRL = 0; // turn off systick
-
 #if defined(HAPTIC)
   hapticOff();
 #endif
-
-  lcd_clear();
-
-  displayPopup(STR_SHUTDOWN);
 
   saveTimers();
 
@@ -4200,6 +4339,8 @@ void menusTask(void * pdata)
   lcdRefresh();
   lcdSetRefVolt(0);
 
+  SysTick->CTRL = 0; // turn off systick
+
   pwrOff(); // Only turn power off if necessary
 }
 
@@ -4214,7 +4355,7 @@ int main(void)
   // important to disable it before commencing with system initialisation (or
   // we could put a bunch more wdt_reset()s in. But I don't like that approach
   // during boot up.)
-#if defined(PCBGRUVIN9X)
+#if defined(PCBGRUVIN9X) || defined(CPUM2561)
   uint8_t mcusr = MCUSR; // save the WDT (etc) flags
   MCUSR = 0; // must be zeroed before disabling the WDT
 #elif defined(PCBSTD)
@@ -4300,7 +4441,7 @@ int main(void)
 
   CoInitOS();
 
-#if defined(PCBSKY9X) && defined(DEBUG)
+#if defined(CPUARM) && defined(DEBUG)
   debugTaskId = CoCreateTaskEx(debugTask, NULL, 10, &debugStack[DEBUG_STACK_SIZE-1], DEBUG_STACK_SIZE, 1, false);
 #endif
 
@@ -4332,7 +4473,7 @@ int main(void)
 
     perMain();
 
-    if (heartbeat == HEART_TIMER_PULSES+HEART_TIMER10ms) {
+    if (heartbeat == HEART_TIMER_PULSES+HEART_TIMER_10MS) {
       wdt_reset();
       heartbeat = 0;
     }
