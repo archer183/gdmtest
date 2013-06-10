@@ -4,12 +4,15 @@
 
 typedef struct __mavlink_statustext_t
 {
- uint8_t severity; ///< Severity of status, 0 = info message, 255 = critical fault
+ uint8_t severity; ///< Severity of status. Relies on the definitions within RFC-5424. See enum MAV_SEVERITY.
  char text[50]; ///< Status text message, without null termination character
 } mavlink_statustext_t;
 
 #define MAVLINK_MSG_ID_STATUSTEXT_LEN 51
 #define MAVLINK_MSG_ID_253_LEN 51
+
+#define MAVLINK_MSG_ID_STATUSTEXT_CRC 83
+#define MAVLINK_MSG_ID_253_CRC 83
 
 #define MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN 50
 
@@ -28,7 +31,7 @@ typedef struct __mavlink_statustext_t
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param msg The MAVLink message to compress the data into
  *
- * @param severity Severity of status, 0 = info message, 255 = critical fault
+ * @param severity Severity of status. Relies on the definitions within RFC-5424. See enum MAV_SEVERITY.
  * @param text Status text message, without null termination character
  * @return length of the message in bytes (excluding serial stream start sign)
  */
@@ -36,19 +39,23 @@ static inline uint16_t mavlink_msg_statustext_pack(uint8_t system_id, uint8_t co
 						       uint8_t severity, const char *text)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
-	char buf[51];
+	char buf[MAVLINK_MSG_ID_STATUSTEXT_LEN];
 	_mav_put_uint8_t(buf, 0, severity);
 	_mav_put_char_array(buf, 1, text, 50);
-        memcpy(_MAV_PAYLOAD(msg), buf, 51);
+        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_STATUSTEXT_LEN);
 #else
 	mavlink_statustext_t packet;
 	packet.severity = severity;
 	mav_array_memcpy(packet.text, text, sizeof(char)*50);
-        memcpy(_MAV_PAYLOAD(msg), &packet, 51);
+        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_STATUSTEXT_LEN);
 #endif
 
 	msg->msgid = MAVLINK_MSG_ID_STATUSTEXT;
-	return mavlink_finalize_message(msg, system_id, component_id, 51, 83);
+#if MAVLINK_CRC_EXTRA
+    return mavlink_finalize_message(msg, system_id, component_id, MAVLINK_MSG_ID_STATUSTEXT_LEN, MAVLINK_MSG_ID_STATUSTEXT_CRC);
+#else
+    return mavlink_finalize_message(msg, system_id, component_id, MAVLINK_MSG_ID_STATUSTEXT_LEN);
+#endif
 }
 
 /**
@@ -57,7 +64,7 @@ static inline uint16_t mavlink_msg_statustext_pack(uint8_t system_id, uint8_t co
  * @param component_id ID of this component (e.g. 200 for IMU)
  * @param chan The MAVLink channel this message was sent over
  * @param msg The MAVLink message to compress the data into
- * @param severity Severity of status, 0 = info message, 255 = critical fault
+ * @param severity Severity of status. Relies on the definitions within RFC-5424. See enum MAV_SEVERITY.
  * @param text Status text message, without null termination character
  * @return length of the message in bytes (excluding serial stream start sign)
  */
@@ -66,19 +73,23 @@ static inline uint16_t mavlink_msg_statustext_pack_chan(uint8_t system_id, uint8
 						           uint8_t severity,const char *text)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
-	char buf[51];
+	char buf[MAVLINK_MSG_ID_STATUSTEXT_LEN];
 	_mav_put_uint8_t(buf, 0, severity);
 	_mav_put_char_array(buf, 1, text, 50);
-        memcpy(_MAV_PAYLOAD(msg), buf, 51);
+        memcpy(_MAV_PAYLOAD_NON_CONST(msg), buf, MAVLINK_MSG_ID_STATUSTEXT_LEN);
 #else
 	mavlink_statustext_t packet;
 	packet.severity = severity;
 	mav_array_memcpy(packet.text, text, sizeof(char)*50);
-        memcpy(_MAV_PAYLOAD(msg), &packet, 51);
+        memcpy(_MAV_PAYLOAD_NON_CONST(msg), &packet, MAVLINK_MSG_ID_STATUSTEXT_LEN);
 #endif
 
 	msg->msgid = MAVLINK_MSG_ID_STATUSTEXT;
-	return mavlink_finalize_message_chan(msg, system_id, component_id, chan, 51, 83);
+#if MAVLINK_CRC_EXTRA
+    return mavlink_finalize_message_chan(msg, system_id, component_id, chan, MAVLINK_MSG_ID_STATUSTEXT_LEN, MAVLINK_MSG_ID_STATUSTEXT_CRC);
+#else
+    return mavlink_finalize_message_chan(msg, system_id, component_id, chan, MAVLINK_MSG_ID_STATUSTEXT_LEN);
+#endif
 }
 
 /**
@@ -98,7 +109,7 @@ static inline uint16_t mavlink_msg_statustext_encode(uint8_t system_id, uint8_t 
  * @brief Send a statustext message
  * @param chan MAVLink channel to send the message
  *
- * @param severity Severity of status, 0 = info message, 255 = critical fault
+ * @param severity Severity of status. Relies on the definitions within RFC-5424. See enum MAV_SEVERITY.
  * @param text Status text message, without null termination character
  */
 #ifdef MAVLINK_USE_CONVENIENCE_FUNCTIONS
@@ -106,15 +117,23 @@ static inline uint16_t mavlink_msg_statustext_encode(uint8_t system_id, uint8_t 
 static inline void mavlink_msg_statustext_send(mavlink_channel_t chan, uint8_t severity, const char *text)
 {
 #if MAVLINK_NEED_BYTE_SWAP || !MAVLINK_ALIGNED_FIELDS
-	char buf[51];
+	char buf[MAVLINK_MSG_ID_STATUSTEXT_LEN];
 	_mav_put_uint8_t(buf, 0, severity);
 	_mav_put_char_array(buf, 1, text, 50);
-	_mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_STATUSTEXT, buf, 51, 83);
+#if MAVLINK_CRC_EXTRA
+    _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_STATUSTEXT, buf, MAVLINK_MSG_ID_STATUSTEXT_LEN, MAVLINK_MSG_ID_STATUSTEXT_CRC);
+#else
+    _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_STATUSTEXT, buf, MAVLINK_MSG_ID_STATUSTEXT_LEN);
+#endif
 #else
 	mavlink_statustext_t packet;
 	packet.severity = severity;
 	mav_array_memcpy(packet.text, text, sizeof(char)*50);
-	_mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_STATUSTEXT, (const char *)&packet, 51, 83);
+#if MAVLINK_CRC_EXTRA
+    _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_STATUSTEXT, (const char *)&packet, MAVLINK_MSG_ID_STATUSTEXT_LEN, MAVLINK_MSG_ID_STATUSTEXT_CRC);
+#else
+    _mav_finalize_message_chan_send(chan, MAVLINK_MSG_ID_STATUSTEXT, (const char *)&packet, MAVLINK_MSG_ID_STATUSTEXT_LEN);
+#endif
 #endif
 }
 
@@ -126,7 +145,7 @@ static inline void mavlink_msg_statustext_send(mavlink_channel_t chan, uint8_t s
 /**
  * @brief Get field severity from statustext message
  *
- * @return Severity of status, 0 = info message, 255 = critical fault
+ * @return Severity of status. Relies on the definitions within RFC-5424. See enum MAV_SEVERITY.
  */
 static inline uint8_t mavlink_msg_statustext_get_severity(const mavlink_message_t* msg)
 {
@@ -155,6 +174,6 @@ static inline void mavlink_msg_statustext_decode(const mavlink_message_t* msg, m
 	statustext->severity = mavlink_msg_statustext_get_severity(msg);
 	mavlink_msg_statustext_get_text(msg, statustext->text);
 #else
-	memcpy(statustext, _MAV_PAYLOAD(msg), 51);
+	memcpy(statustext, _MAV_PAYLOAD(msg), MAVLINK_MSG_ID_STATUSTEXT_LEN);
 #endif
 }

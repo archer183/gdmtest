@@ -110,6 +110,12 @@
 #define CASE_PWM_BACKLIGHT(x)
 #endif
 
+#if defined(FRSKY) && defined(FRSKY_HUB) && defined(GPS)
+#define IF_GPS(x) x,
+#else
+#define IF_GPS(x)
+#endif
+
 #if defined(VARIO)
 #define IF_VARIO(x) x,
 #else
@@ -191,6 +197,19 @@
 #else
   typedef __int24 int24_t;
 #endif
+
+#if defined(FAI)
+  #define IS_FAI_ENABLED() true
+  #define IF_FAI_CHOICE(x)
+#elif defined(FAI_CHOICE)
+  #define IS_FAI_ENABLED() g_eeGeneral.fai
+  #define IF_FAI_CHOICE(x) x,
+#else
+  #define IS_FAI_ENABLED() false
+  #define IF_FAI_CHOICE(x)
+#endif
+
+#define IS_FAI_FORBIDDEN(idx) (IS_FAI_ENABLED() && idx > MIXSRC_FIRST_TELEM-1+TELEM_A2-1)
 
 #if defined(SIMU)
   #ifndef FORCEINLINE
@@ -380,7 +399,7 @@ enum EnumKeys {
 #define PPM_CENTER 1500
 
 #if defined(PPM_CENTER_ADJUSTABLE)
-  #define PPM_CH_CENTER(ch) (PPM_CENTER+limitaddress(ch)->ppmCenter)
+  #define PPM_CH_CENTER(ch) (PPM_CENTER+limitAddress(ch)->ppmCenter)
 #else
   #define PPM_CH_CENTER(ch) (PPM_CENTER)
 #endif
@@ -405,6 +424,16 @@ enum EnumKeys {
   }
   typedef int8_t rotenc_t;
   typedef int16_t getvalue_t;
+  void watchdogSetTimeout(uint32_t timeout);
+#endif
+
+#if defined(NAVIGATION_STICKS)
+  extern uint8_t StickScrollAllowed;
+  extern uint8_t StickScrollTimer;
+  #define STICK_SCROLL_TIMEOUT          9
+  #define STICK_SCROLL_DISABLE()        StickScrollAllowed = 0
+#else
+  #define STICK_SCROLL_DISABLE()
 #endif
 
 #include "eeprom_common.h"
@@ -475,6 +504,7 @@ enum EnumKeys {
 #elif defined(PCBSKY9X)
   #define NUM_PORT1_CHANNELS()      (IS_PXX_PROTOCOL(g_model.protocol) ? 8 : (IS_DSM2_PROTOCOL(g_model.protocol) ? 6 : (8+g_model.moduleData[0].channelsCount)))
   #define NUM_PORT2_CHANNELS()      (8+g_model.moduleData[1].channelsCount)
+  #define NUM_CHANNELS(idx)         (idx==0 ? NUM_PORT1_CHANNELS() : (8+g_model.moduleData[idx].channelsCount))
 #endif
 
 #include "lcd.h"
@@ -562,7 +592,6 @@ enum BaseCurves {
   CURVE_BASE
 };
 #endif
-
 #define SWASH_TYPE_120   1
 #define SWASH_TYPE_120X  2
 #define SWASH_TYPE_140   3
@@ -584,15 +613,17 @@ enum CswFunctions {
   CS_LESS,
   CS_DIFFEGREATER,
   CS_ADIFFEGREATER,
-  // TODO add CS_TIMER,
-  CS_MAXF = CS_ADIFFEGREATER
+  CS_TIMER,
+  CS_MAXF = CS_TIMER
 };
 
-#define CS_VOFS       0
-#define CS_VBOOL      1
-#define CS_VCOMP      2
-#define CS_VDIFF      3
-#define CS_STATE(x)   ((x)<CS_AND ? CS_VOFS : ((x)<CS_EQUAL ? CS_VBOOL : ((x)<CS_DIFFEGREATER ? CS_VCOMP : CS_VDIFF)))
+#define CS_VOFS         0
+#define CS_VBOOL        1
+#define CS_VCOMP        2
+#define CS_VDIFF        3
+#define CS_VTIMER       4
+uint8_t cswFamily(uint8_t func);
+int16_t cswTimerValue(int8_t val);
 
 #define NUM_CYC         3
 #define NUM_CAL_PPM     4
@@ -687,13 +718,25 @@ enum CswFunctions {
 
 #define HEART_TIMER_10MS     1
 #define HEART_TIMER_PULSES   2 // when multiple modules this is the first one
+#if defined(PCBTARANIS)
+  #define HEART_WDT_CHECK      (HEART_TIMER_10MS + (HEART_TIMER_PULSES << 0) + (HEART_TIMER_PULSES << 1))
+#else
+  #define HEART_WDT_CHECK      (HEART_TIMER_10MS + HEART_TIMER_PULSES)
+#endif
 extern uint8_t heartbeat;
+
+#if defined(CPUARM)
+void watchdogSetTimeout(uint32_t timeout);
+#endif
 
 #define MAX_ALERT_TIME   60
 
-extern uint8_t inacPrescale;
-extern uint16_t inacCounter;
-extern uint16_t inacSum;
+struct t_inactivity
+{
+  uint16_t counter;
+  uint16_t sum;
+};
+extern struct t_inactivity inactivity;
 
 #if defined(PXX)
 extern uint8_t pxxFlag[NUM_MODULES];
@@ -703,7 +746,8 @@ extern uint8_t pxxFlag[NUM_MODULES];
 #define PXX_SEND_FAILSAFE    (1 << 4)
 #define PXX_SEND_RANGECHECK  (1 << 5)
 
-#define ZCHAR_MAX (40 + LEN_SPECIAL_CHARS)
+#define LEN_STD_CHARS 40
+#define ZCHAR_MAX (LEN_STD_CHARS + LEN_SPECIAL_CHARS)
 
 extern char idx2char(int8_t idx);
 
@@ -747,14 +791,19 @@ extern void alert(const pm_char * t, const pm_char * s MESSAGE_SOUND_ARG);
 
 enum PerOutMode {
   e_perout_mode_normal = 0,
-  e_perout_mode_notrainer = 1,
-  e_perout_mode_notrims = 2,
-  e_perout_mode_nosticks = 4,
+  e_perout_mode_inactive_phase = 1,
+  e_perout_mode_notrainer = 2,
+  e_perout_mode_notrims = 4,
+  e_perout_mode_nosticks = 8,
   e_perout_mode_noinput = e_perout_mode_notrainer+e_perout_mode_notrims+e_perout_mode_nosticks
 };
 
 // Fiddle to force compiler to use a pointer
-#define FORCE_INDIRECT(ptr) __asm__ __volatile__ ("" : "=e" (ptr) : "0" (ptr))
+#if defined(CPUARM) || defined(SIMU)
+  #define FORCE_INDIRECT(ptr)
+#else
+  #define FORCE_INDIRECT(ptr) __asm__ __volatile__ ("" : "=e" (ptr) : "0" (ptr))
+#endif
 
 extern uint8_t s_perout_flight_phase;
 
@@ -769,7 +818,7 @@ void perMain();
 NOINLINE void per10ms();
 
 getvalue_t getValue(uint8_t i);
-bool       getSwitch(int8_t swtch, bool nc);
+bool       getSwitch(int8_t swtch);
 
 extern swstate_t switches_states;
 int8_t  getMovedSwitch();
@@ -848,12 +897,25 @@ extern void setTrimValue(uint8_t phase, uint8_t idx, int16_t trim);
 extern uint16_t s_timeCumTot;
 extern uint16_t s_timeCumThr;  //gewichtete laufzeit in 1/16 sec
 extern uint16_t s_timeCum16ThrP; //gewichtete laufzeit in 1/16 sec
-extern uint8_t  s_timerState[2];
-extern int16_t  s_timerVal[2];
-extern uint8_t  s_timerVal_10ms[2];
+
+struct TimerState {
+  uint8_t  lastPos;
+  uint16_t cnt;
+  uint16_t sum;
+  uint8_t  toggled;
+  uint8_t  state;
+  int16_t  val;
+  uint8_t  val_10ms;
+};
+
+extern TimerState timersStates[MAX_TIMERS];
+
 extern int8_t safetyCh[NUM_CHNOUT];
 
 extern uint8_t trimsCheckTimer;
+
+extern int16_t csLastValue[NUM_CSW];
+#define CS_LAST_VALUE_INIT -32768
 
 #define TMR_OFF     0
 #define TMR_RUNNING 1
@@ -870,9 +932,15 @@ extern uint16_t lastMixerDuration;
 
 #if defined(THRTRACE)
   #define MAXTRACE (LCD_W - 8)
-  extern uint8_t s_traceBuf[MAXTRACE];
-  extern uint8_t s_traceWr;
-  extern int8_t s_traceCnt;
+  extern uint8_t  s_traceBuf[MAXTRACE];
+  extern uint8_t  s_traceWr;
+  extern int      s_traceCnt;
+  extern uint8_t  s_cnt_10s;
+  extern uint16_t s_cnt_samples_thr_10s;
+  extern uint16_t s_sum_samples_thr_10s;
+  #define RESET_THR_TRACE() s_traceCnt = s_traceWr = s_cnt_10s = s_cnt_samples_thr_10s = s_sum_samples_thr_10s = s_timeCum16ThrP = s_timeCumThr = 0
+#else
+  #define RESET_THR_TRACE() s_timeCum16ThrP = s_timeCumThr = 0
 #endif
 
 #if defined(PCBTARANIS)
@@ -910,9 +978,6 @@ void checkAll();
 #if !defined(SIMU)
   void getADC();
 #endif
-
-#define STORE_MODELVARS eeDirty(EE_MODEL)
-#define STORE_GENERALVARS eeDirty(EE_GENERAL)
 
 extern void backlightOn();
 
@@ -1091,7 +1156,7 @@ extern uint16_t           BandGap;
 extern int16_t expo(int16_t x, int16_t k);
 extern int16_t intpol(int16_t, uint8_t);
 extern int16_t applyCurve(int16_t, int8_t);
-extern void applyExpos(int16_t *anas);
+extern void applyExpos(int16_t *anas, uint8_t mode);
 extern int16_t applyLimits(uint8_t channel, int32_t value);
 
 extern uint16_t anaIn(uint8_t chan);
@@ -1105,19 +1170,19 @@ extern uint16_t lightOffCounter;
 extern uint8_t flashCounter;
 extern uint8_t mixWarning;
 
-extern PhaseData *phaseaddress(uint8_t idx);
-extern ExpoData *expoaddress(uint8_t idx);
-extern MixData *mixaddress(uint8_t idx);
-extern LimitData *limitaddress(uint8_t idx);
-extern int8_t *curveaddress(uint8_t idx);
-extern CustomSwData *cswaddress(uint8_t idx);
+extern PhaseData *phaseAddress(uint8_t idx);
+extern ExpoData *expoAddress(uint8_t idx);
+extern MixData *mixAddress(uint8_t idx);
+extern LimitData *limitAddress(uint8_t idx);
+extern int8_t *curveAddress(uint8_t idx);
+extern CustomSwData *cswAddress(uint8_t idx);
 
 struct CurveInfo {
   int8_t *crv;
   uint8_t points;
   bool custom;
 };
-extern CurveInfo curveinfo(uint8_t idx);
+extern CurveInfo curveInfo(uint8_t idx);
 
 extern void deleteExpoMix(uint8_t expo, uint8_t idx);
 
@@ -1126,26 +1191,30 @@ extern void instantTrim();
 extern void moveTrimsToOffsets();
 
 #if defined(CPUARM)
-  #define ACTIVE_EXPOS_TYPE  uint32_t
-  #define ACTIVE_MIXES_TYPE  uint64_t
   #define ACTIVE_PHASES_TYPE uint16_t
 #else
-  #define ACTIVE_EXPOS_TYPE  uint16_t
-  #define ACTIVE_MIXES_TYPE  uint32_t
   #define ACTIVE_PHASES_TYPE uint8_t
 #endif
 
+PACK(typedef struct t_SwOn {
+  uint16_t delay:10;
+  int16_t  now:2;            // timer trigger source -> off, abs, stk, stk%, sw/!sw, !m_sw/!m_sw
+  int16_t  prev:2;
+  int16_t  activeMix:1;
+  int16_t  activeExpo:1;
+}) SwOn;
+extern SwOn   swOn  [MAX_MIXERS];
+extern int24_t act   [MAX_MIXERS];
+
 #ifdef BOLD_FONT
-  extern ACTIVE_EXPOS_TYPE   activeExpos;
-  extern ACTIVE_MIXES_TYPE   activeMixes;
   inline bool isExpoActive(uint8_t expo)
   {
-    return activeExpos & ((ACTIVE_EXPOS_TYPE)1 << expo);
+    return swOn[expo].activeExpo;
   }
 
   inline bool isMixActive(uint8_t mix)
   {
-    return activeMixes & ((ACTIVE_MIXES_TYPE)1 << mix);
+    return swOn[mix].activeMix;
   }
 #else
   #define isExpoActive(x) false
@@ -1197,7 +1266,6 @@ inline bool isFunctionActive(uint8_t func)
   #include "telemetry/nmea.h"
 #elif defined(MAVLINK)
   // Mavlink Telemetry
-  #include "rotarysw.h"
   #include "telemetry/mavlink.h"
 #endif
 
@@ -1210,7 +1278,7 @@ inline bool isFunctionActive(uint8_t func)
 enum AUDIO_SOUNDS {
     AU_INACTIVITY,
     AU_TX_BATTERY_LOW,
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
     AU_TX_MAH_HIGH,
     AU_TX_TEMP_HIGH,
 #endif
@@ -1237,10 +1305,18 @@ enum AUDIO_SOUNDS {
     AU_MIX_WARNING_1,
     AU_MIX_WARNING_2,
     AU_MIX_WARNING_3,
-    AU_TIMER_LT3,
-    AU_TIMER_10,
+    AU_TIMER_LT10,
     AU_TIMER_20,
     AU_TIMER_30,
+#if defined(PCBTARANIS)
+    AU_A1_ORANGE,
+    AU_A1_RED,
+    AU_A2_ORANGE,
+    AU_A2_RED,
+    AU_RSSI_ORANGE,
+    AU_RSSI_RED,
+    AU_SWR_RED,
+#endif
     AU_FRSKY_FIRST,
     AU_FRSKY_BEEP1 = AU_FRSKY_FIRST,
     AU_FRSKY_BEEP2,
@@ -1364,7 +1440,7 @@ char * strcat_zchar(char * dest, char * name, uint8_t size, const char *defaultN
   #define STICK_TOLERANCE 64
 #endif
 
-#if defined(FRSKY_HUB)
+#if defined(FRSKY_HUB) && defined(GAUGES)
 enum BarThresholdIdx {
   THLD_ALT,
   THLD_RPM,
@@ -1436,6 +1512,12 @@ void varioWakeup();
 #else
   #define IS_USR_PROTO_FRSKY_HUB()   (g_model.frsky.usrProto == USR_PROTO_FRSKY)
   #define IS_USR_PROTO_WS_HOW_HIGH() (g_model.frsky.usrProto == USR_PROTO_WS_HOW_HIGH)
+#endif
+
+#if defined(FRSKY) && defined(FRSKY_HUB) && defined(GPS)
+  #define IS_GPS_AVAILABLE()         IS_USR_PROTO_FRSKY_HUB()
+#else
+  #define IS_GPS_AVAILABLE()         (0)
 #endif
 
 #if defined(PCBTARANIS)

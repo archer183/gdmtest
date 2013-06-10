@@ -99,9 +99,14 @@ const pm_char STR_OPEN9X[] PROGMEM =
 #endif
 #if defined(CPUARM)
     ISTR(VLCD)
+    ISTR(VUNITSSYSTEM)
 #endif
 #if defined(PXX)
     ISTR(COUNTRYCODES)
+    ISTR(VFAILSAFE)
+#endif
+#if defined(PCBTARANIS)
+    ISTR(VTRAINERMODES)
 #endif
     ;
 #ifdef TRIG
@@ -150,8 +155,8 @@ const pm_char STR_COLDIRECTION[] PROGMEM = TR_COLDIRECTION;
 #endif
 const pm_char STR_MODE[] PROGMEM = TR_MODE;
 #if defined(AUDIO) && defined(BUZZER)
-const pm_char STR_SPEAKER[] PROGMEM = INDENT"Speaker";
-const pm_char STR_BUZZER[] PROGMEM = INDENT"Buzzer";
+const pm_char STR_SPEAKER[] PROGMEM = TR_SPEAKER;
+const pm_char STR_BUZZER[] PROGMEM = TR_BUZZER;
 #endif
 const pm_char STR_NOFREEEXPO[] PROGMEM = TR_NOFREEEXPO;
 const pm_char STR_NOFREEMIXER[] PROGMEM = TR_NOFREEMIXER;
@@ -306,7 +311,7 @@ const pm_char STR_MENUTEMPLATES[] PROGMEM = TR_MENUTEMPLATES;
 
 const pm_char STR_MENUSTAT[] PROGMEM = TR_MENUSTAT;
 const pm_char STR_MENUDEBUG[] PROGMEM = TR_MENUDEBUG;
-const pm_char STR_MENUGLOBALVARS[] PROGMEM = "GLOBAL VARIABLES";
+const pm_char STR_MENUGLOBALVARS[] PROGMEM = TR_MENUGLOBALVARS;
 
 #if defined(DSM2) || defined(PXX)
 const pm_char STR_RXNUM[] PROGMEM = TR_RXNUM;
@@ -318,13 +323,12 @@ const pm_char STR_INTERNALRF[] PROGMEM = TR_INTERNALRF;
 const pm_char STR_EXTERNALRF[] PROGMEM = TR_EXTERNALRF;
 const pm_char STR_COUNTRYCODE[] PROGMEM = TR_COUNTRYCODE;
 const pm_char STR_FAILSAFE[] PROGMEM = TR_FAILSAFE;
-const pm_char STR_VFAILSAFE[] PROGMEM = "\011""Hold\0    ""Custom\0  ""No pulses"; // TODO non-zero terminated
 const pm_char STR_FAILSAFESET[] PROGMEM = TR_FAILSAFESET;
 #endif
 
 const pm_char STR_INVERT_THR[] PROGMEM = TR_INVERT_THR;
-const pm_char STR_AND_SWITCH[] PROGMEM = "AND Switch";
-extern const pm_char STR_CF[] PROGMEM = "CF";
+const pm_char STR_AND_SWITCH[] PROGMEM = TR_AND_SWITCH;
+extern const pm_char STR_CF[] PROGMEM = TR_CF;
 
 #if defined(FRSKY_HUB)
 const pm_char STR_MINRSSI[] PROGMEM = TR_MINRSSI;
@@ -345,8 +349,9 @@ const pm_char STR_CURRENT[] PROGMEM = TR_CURRENT;
 
 #if defined(CPUARM)
 const pm_char STR_CURRENT_CALIB[] PROGMEM = TR_CURRENT_CALIB;
-const pm_char STR_UNITSSYSTEM[]   PROGMEM = "Units";
-const pm_char STR_VUNITSSYSTEM[]  PROGMEM = TR("\006MetricImper.", "\010Metric\0 Imperial"); // TODO move it to non-zero terminated strings
+const pm_char STR_UNITSSYSTEM[]   PROGMEM = TR_UNITSSYSTEM;
+const pm_char STR_VOICELANG[] PROGMEM = TR_VOICELANG;
+const pm_char STR_MODELIDUSED[] PROGMEM = TR_MODELIDUSED;
 #endif
 
 #if defined(NAVIGATION_MENUS)
@@ -355,20 +360,21 @@ const pm_char STR_CREATE_MODEL[] PROGMEM = TR_CREATE_MODEL;
 const pm_char STR_COPY_MODEL[] PROGMEM = TR_COPY_MODEL;
 const pm_char STR_MOVE_MODEL[] PROGMEM = TR_MOVE_MODEL;
 const pm_char STR_DELETE_MODEL[] PROGMEM = TR_DELETE_MODEL;
-const pm_char STR_EDIT[] PROGMEM = "Edit";
-const pm_char STR_INSERT_BEFORE[] PROGMEM = "Insert Before";
-const pm_char STR_INSERT_AFTER[] PROGMEM = "Insert After";
-const pm_char STR_COPY[] PROGMEM = "Copy";
-const pm_char STR_MOVE[] PROGMEM = "Move";
-const pm_char STR_DELETE[] PROGMEM = "Delete";
-const pm_char STR_RESET_FLIGHT[] PROGMEM = "Reset Flight";
-const pm_char STR_RESET_TIMER1[] PROGMEM = "Reset Timer1";
-const pm_char STR_RESET_TIMER2[] PROGMEM = "Reset Timer2";
-const pm_char STR_RESET_TELEMETRY[] PROGMEM = "Reset Telemetry";
-const pm_char STR_STATISTICS[] PROGMEM = "Statistics";
+const pm_char STR_EDIT[] PROGMEM = TR_EDIT;
+const pm_char STR_INSERT_BEFORE[] PROGMEM = TR_INSERT_BEFORE;
+const pm_char STR_INSERT_AFTER[] PROGMEM = TR_INSERT_AFTER;
+const pm_char STR_COPY[] PROGMEM = TR_COPY;
+const pm_char STR_MOVE[] PROGMEM = TR_MOVE;
+const pm_char STR_DELETE[] PROGMEM = TR_DELETE;
+const pm_char STR_RESET_FLIGHT[] PROGMEM = TR_RESET_FLIGHT;
+const pm_char STR_RESET_TIMER1[] PROGMEM = TR_RESET_TIMER1;
+const pm_char STR_RESET_TIMER2[] PROGMEM = TR_RESET_TIMER2;
+const pm_char STR_RESET_TELEMETRY[] PROGMEM = TR_RESET_TELEMETRY;
+const pm_char STR_STATISTICS[] PROGMEM = TR_STATISTICS;
+const pm_char STR_ABOUT_US[] PROGMEM = TR_ABOUT_US;
 #endif
 
-const pm_char STR_RESET[] PROGMEM = "[Reset]";
+const pm_char STR_RESET[] PROGMEM = TR_RESET;
 
 #if defined(SDCARD)
 const pm_char STR_BACKUP_MODEL[] PROGMEM = TR_BACKUP_MODEL;
@@ -428,6 +434,7 @@ const pm_char STR_SD_SECTORS[] PROGMEM = TR_SD_SECTORS;
 const pm_char STR_SD_SIZE[] PROGMEM = TR_SD_SIZE;
 const pm_char STR_TYPE[] PROGMEM = TR_TYPE;
 const pm_char STR_GLOBAL_VARS[] PROGMEM = TR_GLOBAL_VARS;
+const pm_char STR_GLOBAL_VAR[] PROGMEM = TR_GLOBAL_VAR;
 const pm_char STR_OWN[] PROGMEM = TR_OWN;
 const pm_char STR_ROTARY_ENCODER[] PROGMEM = TR_ROTARY_ENCODER;
 const pm_char STR_DATE[] PROGMEM = TR_DATE;
@@ -441,74 +448,156 @@ const pm_char STR_CHANNELS_MONITOR[] PROGMEM = TR_CHANNELS_MONITOR;
 #endif
 
 #if LCD_W >= 212
-  const char * STR_PHASES_HEADERS[] = { " Name ", " Switch ", " Trims ", " Fade In ", " Fade Out " };
-  const char * STR_LIMITS_HEADERS[] = { " Name ", " Offset ", " Min ", " Max ", " Direction ", " PPM Center ", " Symetrical " };
-  const char * STR_CSW_HEADERS[] =    { " Function ", " V1 ", " V2 ", " AND Switch ", " Duration ", " Delay " };
+  const char * STR_PHASES_HEADERS[] = TR_PHASES_HEADERS;
+  const char * STR_LIMITS_HEADERS[] = TR_LIMITS_HEADERS;
+  const char * STR_CSW_HEADERS[] =    TR_CSW_HEADERS;
 #endif
 
 #if defined(PCBTARANIS)
-const pm_char STR_BYTES[] PROGMEM = "bytes";
-const pm_char STR_MODULE_BIND[] PROGMEM  = "[Bind]";
-const pm_char STR_MODULE_RANGE[] PROGMEM = "[Range]";
-const pm_char STR_SET[] PROGMEM = "[Set]";
-const pm_char STR_TRAINER[] PROGMEM = "Trainer";
+  const pm_char STR_BYTES[] PROGMEM = TR_BYTES;
+  const pm_char STR_MODULE_BIND[] PROGMEM  = TR_MODULE_BIND;
+  const pm_char STR_MODULE_RANGE[] PROGMEM = TR_MODULE_RANGE;
+  const pm_char STR_SET[] PROGMEM = TR_SET;
+  const pm_char STR_TRAINER[] PROGMEM = TR_TRAINER;
+  const pm_char STR_ANTENNAPROBLEM[] PROGMEM = TR_ANTENNAPROBLEM;
+  const pm_char STR_MODULE[] PROGMEM = TR_MODULE;
+  const pm_char STR_CHANNELRANGE[] PROGMEM = TR_CHANNELRANGE;
+  const pm_char STR_LOWALARM[] PROGMEM = TR_LOWALARM;
+  const pm_char STR_CRITICALALARM[] PROGMEM = TR_CRITICALALARM;
+#endif
+
+#if !defined(CPUM64)
+  const pm_char STR_ABOUTUS[] PROGMEM = TR_ABOUTUS;
+  const pm_char STR_ABOUT_OPENTX_1[] PROGMEM = TR_ABOUT_OPENTX_1;
+  const pm_char STR_ABOUT_OPENTX_2[] PROGMEM = TR_ABOUT_OPENTX_2;
+  const pm_char STR_ABOUT_OPENTX_3[] PROGMEM = TR_ABOUT_OPENTX_3;
+  const pm_char STR_ABOUT_OPENTX_4[] PROGMEM = TR_ABOUT_OPENTX_4;
+  const pm_char STR_ABOUT_OPENTX_5[] PROGMEM = TR_ABOUT_OPENTX_5;
+  
+  const pm_char STR_ABOUT_BERTRAND_1[] PROGMEM = TR_ABOUT_BERTRAND_1;
+  const pm_char STR_ABOUT_BERTRAND_2[] PROGMEM = TR_ABOUT_BERTRAND_2;
+  const pm_char STR_ABOUT_BERTRAND_3[] PROGMEM = TR_ABOUT_BERTRAND_3;
+  
+  const pm_char STR_ABOUT_MIKE_1[] PROGMEM = TR_ABOUT_MIKE_1;
+  const pm_char STR_ABOUT_MIKE_2[] PROGMEM = TR_ABOUT_MIKE_2;
+  const pm_char STR_ABOUT_MIKE_3[] PROGMEM = TR_ABOUT_MIKE_3;
+  const pm_char STR_ABOUT_MIKE_4[] PROGMEM = TR_ABOUT_MIKE_4;
+  
+  const pm_char STR_ABOUT_ROMOLO_1[] PROGMEM = TR_ABOUT_ROMOLO_1;
+  const pm_char STR_ABOUT_ROMOLO_2[] PROGMEM = TR_ABOUT_ROMOLO_2;
+  const pm_char STR_ABOUT_ROMOLO_3[] PROGMEM = TR_ABOUT_ROMOLO_3;
+  
+  const pm_char STR_ABOUT_ANDRE_1[] PROGMEM = TR_ABOUT_ANDRE_1;
+  const pm_char STR_ABOUT_ANDRE_2[] PROGMEM = TR_ABOUT_ANDRE_2;
+  const pm_char STR_ABOUT_ANDRE_3[] PROGMEM = TR_ABOUT_ANDRE_3;
+  
+  const pm_char STR_ABOUT_ROB_1[] PROGMEM = TR_ABOUT_ROB_1;
+  const pm_char STR_ABOUT_ROB_2[] PROGMEM = TR_ABOUT_ROB_2;
+  
+  const pm_char STR_ABOUT_MARTIN_1[] PROGMEM = TR_ABOUT_MARTIN_1;
+  const pm_char STR_ABOUT_MARTIN_2[] PROGMEM = TR_ABOUT_MARTIN_2;
+  
+  const pm_char STR_ABOUT_HARDWARE_1[] PROGMEM = TR_ABOUT_HARDWARE_1;
+  const pm_char STR_ABOUT_HARDWARE_2[] PROGMEM = TR_ABOUT_HARDWARE_2;
+  const pm_char STR_ABOUT_HARDWARE_3[] PROGMEM = TR_ABOUT_HARDWARE_3;
+  
+  const pm_char STR_ABOUT_PARENTS_1[] PROGMEM = TR_ABOUT_PARENTS_1;
+  const pm_char STR_ABOUT_PARENTS_2[] PROGMEM = TR_ABOUT_PARENTS_2;
+  const pm_char STR_ABOUT_PARENTS_3[] PROGMEM = TR_ABOUT_PARENTS_3;
+  const pm_char STR_ABOUT_PARENTS_4[] PROGMEM = TR_ABOUT_PARENTS_4;
 #endif
 
 const pm_uchar font_5x7[] PROGMEM = {
-#include "bitmaps/font.lbm"
-#if defined(TRANSLATIONS_SE)
-#include "translations/font_se.lbm"
-#elif defined(TRANSLATIONS_DE)
-#include "translations/font_de.lbm"
-#elif defined(TRANSLATIONS_IT)
-#include "translations/font_it.lbm"
+#include "fonts/std/font_05x07.lbm"
+#if defined(TRANSLATIONS_DE)
+#include "fonts/std/font_de_05x07.lbm"
 #elif defined(TRANSLATIONS_CZ)
-#include "translations/font_cz.lbm"
-#elif defined(TRANSLATIONS_FR)
-#include "translations/font_fr.lbm"
+#include "fonts/std/font_cz_05x07.lbm"
 #elif defined(TRANSLATIONS_ES)
-#include "translations/font_es.lbm"
+#include "fonts/std/font_es_05x07.lbm"
+#elif defined(TRANSLATIONS_FR)
+#include "fonts/std/font_fr_05x07.lbm"
+#elif defined(TRANSLATIONS_IT)
+#include "fonts/std/font_it_05x07.lbm"
+#elif defined(TRANSLATIONS_PT)
+#include "fonts/std/font_pt_05x07.lbm"
+#elif defined(TRANSLATIONS_SE)
+#include "fonts/std/font_se_05x07.lbm"
 #endif
 };
 
 const pm_uchar font_10x14[] PROGMEM = {
-#include "bitmaps/font_dblsize.lbm"
-#if defined(TRANSLATIONS_SE)
-#include "translations/font_dblsize_se.lbm"
-#elif defined(TRANSLATIONS_DE)
-#include "translations/font_dblsize_de.lbm"
-#elif defined(TRANSLATIONS_IT)
-#include "translations/font_dblsize_it.lbm"
-#elif defined(TRANSLATIONS_FR)
-#include "translations/font_dblsize_fr.lbm"
+#include "fonts/std/font_10x14.lbm"
+#if defined(TRANSLATIONS_DE)
+#include "fonts/std/font_de_10x14.lbm"
+#elif defined(TRANSLATIONS_CZ)
+#include "fonts/std/font_cz_10x14.lbm"
 #elif defined(TRANSLATIONS_ES)
-#include "translations/font_dblsize_es.lbm"
+#include "fonts/std/font_es_10x14.lbm"
+#elif defined(TRANSLATIONS_FR)
+#include "fonts/std/font_fr_10x14.lbm"
+#elif defined(TRANSLATIONS_IT)
+#include "fonts/std/font_it_10x14.lbm"
+#elif defined(TRANSLATIONS_PT)
+#include "fonts/std/font_pt_10x14.lbm"
+#elif defined(TRANSLATIONS_SE)
+#include "fonts/std/font_se_10x14.lbm"
 #endif
 };
 
 #if defined(CPUARM)
 const pm_uchar font_3x5[] PROGMEM = {
-#include "bitmaps/font_tiny.lbm"
+#include "fonts/std/font_03x05.lbm"
 };
 
 const pm_uchar font_4x6[] PROGMEM = {
-#include "bitmaps/font_small.lbm"
+#include "fonts/std/font_04x06.lbm"
+#if defined(TRANSLATIONS_DE)
+#include "fonts/std/font_de_04x06.lbm"
+#elif defined(TRANSLATIONS_CZ)
+#include "fonts/std/font_cz_04x06.lbm"
+#elif defined(TRANSLATIONS_ES)
+#include "fonts/std/font_es_04x06.lbm"
+#elif defined(TRANSLATIONS_FR)
+#include "fonts/std/font_fr_04x06.lbm"
+#elif defined(TRANSLATIONS_IT)
+#include "fonts/std/font_it_04x06.lbm"
+#elif defined(TRANSLATIONS_PT)
+#include "fonts/std/font_pt_04x06.lbm"
+#elif defined(TRANSLATIONS_SE)
+#include "fonts/std/font_se_04x06.lbm"
+#endif
 };
 
 const pm_uchar font_8x10[] PROGMEM = {
-#include "bitmaps/font_midsize.lbm"
-};
-
-const pm_uchar font_5x7_extra[] PROGMEM = {
-#include "bitmaps/font_extra.lbm"
-};
-
-const pm_uchar font_10x14_extra[] PROGMEM = {
-#include "bitmaps/font_dblsize_extra.lbm"
+#include "fonts/std/font_08x10.lbm"
+#if defined(TRANSLATIONS_DE)
+#include "fonts/std/font_de_08x10.lbm"
+#elif defined(TRANSLATIONS_CZ)
+#include "fonts/std/font_cz_08x10.lbm"
+#elif defined(TRANSLATIONS_ES)
+#include "fonts/std/font_es_08x10.lbm"
+#elif defined(TRANSLATIONS_FR)
+#include "fonts/std/font_fr_08x10.lbm"
+#elif defined(TRANSLATIONS_IT)
+#include "fonts/std/font_it_08x10.lbm"
+#elif defined(TRANSLATIONS_PT)
+#include "fonts/std/font_pt_08x10.lbm"
+#elif defined(TRANSLATIONS_SE)
+#include "fonts/std/font_se_08x10.lbm"
+#endif
 };
 
 const pm_uchar font_4x6_extra[] PROGMEM = {
-#include "bitmaps/font_small_extra.lbm"
+#include "fonts/std/font_04x06_extra.lbm"
+};
+
+const pm_uchar font_5x7_extra[] PROGMEM = {
+#include "fonts/std/font_05x07_extra.lbm"
+};
+
+const pm_uchar font_10x14_extra[] PROGMEM = {
+#include "fonts/std/font_10x14_extra.lbm"
 };
 
 #endif

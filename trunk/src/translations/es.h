@@ -71,8 +71,8 @@
 #define LEN_COUNTRYCODES       TR("\002", "\007")
 #define TR_COUNTRYCODES        TR("US""JP""EU", "America""Japon\0 ""Europa\0")
 
-#define LEN_VTRIMINC           TR("\006","\013")
-#define TR_VTRIMINC            TR("Expo  ""ExFino""Fino  ""Medio ""Grueso","Exponencial""Extra Fino ""Fino       ""Medio      ""Grueso     ")
+#define LEN_VTRIMINC           TR("\006", "\013")
+#define TR_VTRIMINC            TR("Expo  ""ExFino""Fino  ""Medio ""Grueso", "Exponencial""Extra Fino ""Fino       ""Medio      ""Grueso     ")
 
 #define LEN_RETA123            "\001"
 
@@ -136,7 +136,7 @@
 #define TR_VMIXTRIMS           "OFF""ON\0""Dir""Ele""Ace""Ale"
 
 #define LEN_VCSWFUNC           "\005"
-#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x"
+#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x""TIM\0"
 
 #define LEN_VFSWFUNC           "\012"
 
@@ -196,7 +196,7 @@
 #endif
 
 #if defined(CPUARM)
-  #define TR_VFSWFUNC          "Seguro\0   ""Aprendiz\0 ""Inst. Trim" TR_SOUND TR_HAPTIC "Reset\0    " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "Backlight\0" TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
+  #define TR_VFSWFUNC          "Seguro\0   ""Aprendiz\0 ""Inst. Trim" TR_SOUND TR_HAPTIC "Reset\0    " TR_VVARIO TR_PLAY_TRACK TR_PLAY_VALUE TR_SDCLOGS TR_CFN_VOLUME "Luz fondo\0" TR_CFN_BG_MUSIC TR_CFN_ADJUST_GVAR TR_CFN_TEST
 #elif defined(PCBGRUVIN9X)
   #define TR_VFSWFUNC          "Seguro\0   ""Aprendiz\0 ""Inst. Trim" TR_SOUND TR_HAPTIC "Reset\0    " TR_VVARIO TR_PLAY_TRACK TR_PLAY_BOTH TR_PLAY_VALUE TR_SDCLOGS "Luz fondo\0" TR_CFN_ADJUST_GVAR TR_CFN_TEST
 #else
@@ -225,9 +225,18 @@
 #define TR_FUNCSOUNDS          "Beep1 ""Beep2 ""Beep3 ""Aviso1""Aviso2""Cheep ""Ring  ""SciFi ""Robot ""Gorjeo""Tada  ""Crickt""Sirena""Alarma""Ratata""Tictac"
 
 #define LEN_VTELEMCHNS         "\004"
-#define TR_VTELEMCHNS          "---\0""Batt""Tmr1""Tmr2""Tx\0 ""Rx\0 ""A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VSpd""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Spd+""Dst+""Cur+""Acc\0""Hora"
+#if defined(PCBTARANIS)
+  #define TR_RSSI_0            "SWR\0"
+  #define TR_RSSI_1            "RSSI"
+#else
+  #define TR_RSSI_0            "Tx\0 "
+  #define TR_RSSI_1            "Rx\0 "
+#endif
+#define TR_VTELEMCHNS          "---\0""Batt""Tmr1""Tmr2" TR_RSSI_0 TR_RSSI_1 "A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VSpd""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Spd+""Dst+""Cur+""Pwr+""Acc\0""Hora"
 
 #if defined(CPUARM)
+  #define LEN_VUNITSSYSTEM     TR("\006", "\010")
+  #define TR_VUNITSSYSTEM      TR("Metric""Imper.", "Metric\0 ""Imperial")
   #define LEN_VTELEMUNIT_NORM  "\003"
   #define TR_VTELEMUNIT_NORM   "v\0 ""A\0 ""m/s""-\0 ""kmh""m\0 ""@\0 ""%\0 ""mA\0""mAh""W\0 "
   #define LEN_VTELEMUNIT_IMP   "\003"
@@ -327,10 +336,16 @@
   #define TR_CYC_VSRCRAW       "[C1]""[C2]""[C3]"
 #endif
 
-#define TR_VSRCRAW             "---\0""Dir\0""Ele\0""Thr\0""Ail\0" TR_POTS_VSRCRAW TR_ROTARY_ENCODERS_VSRCRAW "MAX\0" TR_CYC_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" TR_SW_VSRCRAW
+#define TR_VSRCRAW             "---\0""Dir\0""Ele\0""Thr\0""Ale\0" TR_POTS_VSRCRAW TR_ROTARY_ENCODERS_VSRCRAW "MAX\0" TR_CYC_VSRCRAW "TrmR" "TrmE" "TrmT" "TrmA" TR_SW_VSRCRAW
 
 #define LEN_VTMRMODES          "\003"
 #define TR_VTMRMODES           "OFF""ABS""THs""TH%""THt"
+
+#define LEN_VTRAINERMODES      "\006"
+#define TR_VTRAINERMODES       "Master""Esclav"
+
+#define LEN_VFAILSAFE          "\011"
+#define TR_VFAILSAFE           "Guardar\0 ""Adaptar\0 ""Sin pulsos"
 
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
@@ -359,11 +374,11 @@
 #define TR_EXPONAME            "Nom. Expo"
 #define TR_BITMAP              "Imagen Modelo"
 #define TR_TIMER               TR("Reloj","Reloj ")
-#define TR_ELIMITS             TR("E.Limite,"Ampliar Limites")
+#define TR_ELIMITS             TR("E.Limite","Ampliar Limites")
 #define TR_ETRIMS              TR("E.Trims","Ampliar Trims")
 #define TR_TRIMINC             "Paso Trim"
-#define TR_TTRACE              TR("T-Fuente","Fuente Acelerad")
-#define TR_TTRIM               TR("T-Trim","Trim Acelerad")
+#define TR_TTRACE              TR("Fuente-A","Fuente Acelerad")
+#define TR_TTRIM               TR("Trim-A","Trim Acelerad")
 #define TR_BEEPCTR             TR("Ctr Beep","Center Beep")
 #define TR_PROTO               TR(INDENT"Proto",INDENT"Protocol")
 #define TR_PPMFRAME            "Trama PPM"
@@ -420,13 +435,13 @@
 #define TR_HAPTICSTRENGTH      INDENT"Intensidad"
 #define TR_CONTRAST            "Contraste"
 #define TR_ALARMS_LABEL        "Alarmas"
-#define TR_BATTERY_RANGE       TR("Alcance bateria","Rango medidor Bater")
+#define TR_BATTERY_RANGE       TR("Rango bateria","Rango medidor Bater")
 #define TR_BATTERYWARNING      INDENT"Bateria Baja"
 #define TR_INACTIVITYALARM     INDENT"Inactividad"
 #define TR_MEMORYWARNING       INDENT"Memoria Baja"
 #define TR_ALARMWARNING        INDENT"Sin Sonido"
 #define TR_RENAVIG             "RotEnc Navig"
-#define TR_THROTTLEREVERSE     TR("Acel-invert", "Invertir Acel.")
+#define TR_THROTTLEREVERSE     TR("Invert_Acel", "Invertir Acel.")
 #define TR_MINUTEBEEP          TR(INDENT"Minuto",INDENT"Cada Minuto")
 #define TR_BEEPCOUNTDOWN       INDENT"Cuentaatras"
 #define TR_PERSISTENT          TR(INDENT"Persist.",INDENT"Persistente")
@@ -435,10 +450,10 @@
 #define TR_BLONBRIGHTNESS      INDENT"MAS Brillo"
 #define TR_BLOFFBRIGHTNESS     INDENT"MENOS Brillo"
 #define TR_SPLASHSCREEN        "Ptalla.inicio"
-#define TR_THROTTLEWARNING     TR("A-Aviso","Aviso Acelerador")
-#define TR_SWITCHWARNING       TR("I-Aviso","Aviso Intrptor"
-#define TR_TIMEZONE            TR("Zona Hora","GPS Zona Hora")
-#define TR_RXCHANNELORD        TR("Rx Orden canal","Orden habitual canales")
+#define TR_THROTTLEWARNING     TR("Aviso_A", "Aviso Acelerador")
+#define TR_SWITCHWARNING       TR("Aviso-I", "Aviso Intrptor")
+#define TR_TIMEZONE            TR("Zona Hora", "GPS Zona Hora")
+#define TR_RXCHANNELORD        TR("Rx Orden canal", "Orden habitual canales")
 #define TR_SLAVE               "Esclavo"
 #define TR_MODESRC             "Modo\006% Fuente"
 #define TR_MULTIPLIER          "Multiplicar"
@@ -477,23 +492,23 @@
 #define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM mem.baja"
 #define TR_ALERT               "\016ALERTA"
-#define TR_PRESSANYKEYTOSKIP   CENTER "Pulsar tecla omitir"
-#define TR_THROTTLENOTIDLE     CENTER "Aceler.Activado" 
-#define TR_ALARMSDISABLED      CENTER "Alarmas Desact."
-#define TR_PRESSANYKEY         TR("\010Pulsa una Tecla", CENTER "Pulsa una Tecla")
-#define TR_BADEEPROMDATA       CENTER "Datos EEprom mal"
-#define TR_EEPROMFORMATTING    CENTER "Formateando EEPROM"
-#define TR_EEPROMOVERFLOW      CENTER "Desborde EEPROM"
+#define TR_PRESSANYKEYTOSKIP   "Pulsar tecla omitir"
+#define TR_THROTTLENOTIDLE     "Aceler.Activado"
+#define TR_ALARMSDISABLED      "Alarmas Desact."
+#define TR_PRESSANYKEY         TR("\010Pulsa una Tecla", "Pulsa una Tecla")
+#define TR_BADEEPROMDATA       "Datos EEprom mal"
+#define TR_EEPROMFORMATTING    "Formateo EEPROM"
+#define TR_EEPROMOVERFLOW      "Desborde EEPROM"
 #define TR_MENURADIOSETUP      "CONFIGURACION"
 #define TR_MENUDATEANDTIME     "FECHA Y HORA"
 #define TR_MENUTRAINER         "APRENDIZ"
 #define TR_MENUVERSION         "VERSION"
-#define TR_MENUDIAG            TR("INTERUPTS","TEST INTERUP.")
-#define TR_MENUANA             TR("ANAS","ENTRADAS ANALOG")
+#define TR_MENUDIAG            TR("INTERUPTS", "TEST INTERUP.")
+#define TR_MENUANA             TR("ANAS", "ENTRADAS ANALOG")
 #define TR_MENUCALIBRATION     "CALIBRACION"
 #define TR_TRIMS2OFFSETS       "\006Trims => Offsets"
-#define TR_MENUMODELSEL        TR("MODELSEL","SELECCION MODELO")
-#define TR_MENUSETUP           TR("CONF.","CONF.MODELO")
+#define TR_MENUMODELSEL        TR("MODELSEL", "SELECCION MODELO")
+#define TR_MENUSETUP           TR("CONF.", "CONF.MODELO")
 #define TR_MENUFLIGHTPHASE     "MODO VUELO"
 #define TR_MENUFLIGHTPHASES    "MODOS VUELO"
 #define TR_MENUHELISETUP       "CONF. HELI"
@@ -543,7 +558,7 @@
 #define TR_THROTTLEWARN        "ACELERADOR"
 #define TR_ALARMSWARN          "ALARMAS"
 #define TR_SWITCHWARN          "INTERPTOR"
-#define TR_INVERT_THR          TR("Invertir Acel?","Invertir Acel.?")
+#define TR_INVERT_THR          TR("Invertir Acel?", "Invertir Acel.?")
 #define TR_SPEAKER_VOLUME      INDENT"Volumen"
 #define TR_LCD                 "LCD"
 #define TR_BRIGHTNESS          "Brillo"
@@ -558,12 +573,12 @@
 #define TR_V1                  "V1"
 #define TR_V2                  "V2"
 #define TR_DURATION            "Duracion"
-#define TR_DELAY               "Atraso
+#define TR_DELAY               "Atraso"
 #define TR_SD_CARD             "SD CARD"
 #define TR_SDHC_CARD           "SD-HC CARD"
 #define TR_NO_SOUNDS_ON_SD     "Sin sonidos en SD"
 #define TR_NO_MODELS_ON_SD     "Sin Modelos en SD"
-#define TR_NO_BITMAPS_ON_SD    "Sin imagenes SD"
+#define TR_NO_BITMAPS_ON_SD    "Sin imagenes en SD"
 #define TR_PLAY_FILE           "Play"
 #define TR_DELETE_FILE         "Borrar"
 #define TR_COPY_FILE           "Copiar"
@@ -581,9 +596,11 @@
 #define TR_SD_TYPE             "Tipo:"
 #define TR_SD_SPEED            "Velocidad:"
 #define TR_SD_SECTORS          "Sectores:"
-#define TR_SD_SIZE             "Talla:"
-#define TR_TYPE          "Tipo"
+#define TR_SD_SIZE             "Tama\201o:"
+#define TR_TYPE                "Tipo"
 #define TR_GLOBAL_VARS         "Global Variables"
+#define TR_GLOBAL_VAR          "Global Variable"
+#define TR_MENUGLOBALVARS      "GLOBAL VARIABLES"
 #define TR_OWN                 "Propio"
 #define TR_DATE                "Fecha"
 #define TR_ROTARY_ENCODER      "R.Encs"
@@ -593,3 +610,84 @@
 #define TR_FAILSAFE            INDENT"Modo sgdad."
 #define TR_FAILSAFESET         "AJUSTES SGDAD."
 #define TR_COUNTRYCODE         "Codigo Pais"
+#define TR_VOICELANG           "Idioma voces"
+#define TR_UNITSSYSTEM         "Unidades"
+#define TR_EDIT                "Editar"
+#define TR_INSERT_BEFORE       "Insertar antes"
+#define TR_INSERT_AFTER        "Insertar despues"
+#define TR_COPY                "Copiar"
+#define TR_MOVE                "Mover"
+#define TR_DELETE              "Borrar"
+#define TR_RESET_FLIGHT        "Reset Vuelo"
+#define TR_RESET_TIMER1        "Reset Reloj1"
+#define TR_RESET_TIMER2        "Reset Reloj2"
+#define TR_RESET_TELEMETRY     "Reset Telemetria"
+#define TR_STATISTICS          "Estadisticas"
+#define TR_ABOUT_US            "Nosotros"
+#define TR_AND_SWITCH          "AND Inter."
+#define TR_CF                  "CF"
+#define TR_SPEAKER             INDENT"Altavoz"
+#define TR_BUZZER              INDENT"Zumbador"
+#define TR_BYTES               "bytes"
+#define TR_MODULE_BIND         "[Enlace]"
+#define TR_MODULE_RANGE        "[Limites]"
+#define TR_RESET               "[Reseteo]"
+#define TR_SET                 "[Ajuste]"
+#define TR_TRAINER             "Aprendiz"
+#define TR_ANTENNAPROBLEM      CENTER "¡Problema antena TX!"
+#define TR_MODELIDUSED         TR("ID en uso", "ID modelo en uso")
+#define TR_MODULE              INDENT "Modulo"
+#define TR_CHANNELRANGE        INDENT "Gama de canales"
+#define TR_LOWALARM            INDENT "Alarma baja"
+#define TR_CRITICALALARM       INDENT "Alarma Critica"
+
+// Taranis column headers
+#define TR_PHASES_HEADERS      { " Nombre ", " Interrup.", " Trims ", " Aparecer ", " Desparecer " }
+#define TR_LIMITS_HEADERS      { " Nombre ", " Compensacion", " Min ", " Max ", " Direccion ", " Centrado PPM ", " Simetrica " }
+#define TR_CSW_HEADERS         { " Funcion ", " V1 ", " V2 ", " AND Interrup. ", " Duracion ", " Retardo " }
+
+//Taranis About screen
+#define TR_ABOUTUS             "Nosotros"
+
+#define TR_ABOUT_OPENTX_1      "OpenTX es open source, no-"
+#define TR_ABOUT_OPENTX_2      "comercial y viene sin "
+#define TR_ABOUT_OPENTX_3      "garantias. Fue desarrollado"
+#define TR_ABOUT_OPENTX_4      "libremente. Ayudas a traves"
+#define TR_ABOUT_OPENTX_5      "de donaciones son bienvenidas!"
+
+#define TR_ABOUT_BERTRAND_1    "Bertrand Songis"
+#define TR_ABOUT_BERTRAND_2    "Autor principal OpenTX"
+#define TR_ABOUT_BERTRAND_3    "Companion9x codesarrollador"
+
+#define TR_ABOUT_MIKE_1        "Mike Blandford"
+#define TR_ABOUT_MIKE_2        "Guru de codigo y drivers"
+#define TR_ABOUT_MIKE_3        "Seguramente uno de los"
+#define TR_ABOUT_MIKE_4        "mejores inspiradores"
+       
+#define TR_ABOUT_ROMOLO_1      "Romolo Manfredini"
+#define TR_ABOUT_ROMOLO_2      "Desarrollador principal" 
+#define TR_ABOUT_ROMOLO_3      "Companion9x"
+
+#define TR_ABOUT_ANDRE_1       "Andre Bernet"
+#define TR_ABOUT_ANDRE_2       "Funcionalidad, usabilidad,"
+#define TR_ABOUT_ANDRE_3       "depurado, documentacion"
+
+#define TR_ABOUT_ROB_1         "Rob Thomson"
+#define TR_ABOUT_ROB_2         "openrcforums webmaster"
+
+#define TR_ABOUT_MARTIN_1      "Martin Hotar"
+#define TR_ABOUT_MARTIN_2      "Dise\201o grafico"
+
+#define TR_ABOUT_HARDWARE_1    "FrSky"
+#define TR_ABOUT_HARDWARE_2    "Productor dise\201o de hardware"
+
+#define TR_ABOUT_PARENTS_1     "Padres del proyecto"
+#define TR_ABOUT_PARENTS_2     "ersky9x (Mike Blandford)"
+#define TR_ABOUT_PARENTS_3     "ER9X (Erez Raviv)"
+#define TR_ABOUT_PARENTS_4     "TH9X (Thomas Husterer)"
+#define TR_ABOUT_HARDWARE_3    ""
+
+#define TR_CHR_SHORT  's'
+#define TR_CHR_LONG   'l'
+#define TR_CHR_TOGGLE 't'
+#define TR_CHR_HOUR   'h'

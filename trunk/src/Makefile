@@ -63,20 +63,25 @@ PCBREV =
 # Values = STD, FRSKY, JETI, NMEA, ARDUPILOT, MAVLINK, TELEMETREZ
 EXT = STD
 
+# FAI mode
+# Values = YES, NO, CHOICE
+FAI = NO
+
 # Enable heli menu
 # Values = YES, NO
 HELI = NO
 
 # Enable templates menu
 # Values = YES, NO
-TEMPLATES = YES
+TEMPLATES = NO
 
-# Enable navigation with Pots / Rotary encoders
+# Enable navigation with Pots / Sticks / Rotary encoders
 # Values = NO
 #          POT1 (only POT1 available for fields modification),
 #          POT2 (menus scroll),
 #          POT3 (cursor down/up),
 #          POTS (POT1, POT2, POT3),
+#          STICKS
 #          ROTENC (Rotary encoder)
 NAVIGATION = NO
 
@@ -149,7 +154,15 @@ FRSKY_HUB = YES
 # Values = YES, NO
 WS_HOW_HIGH = YES
 
-# WS HowHigh 
+# Gauges in Telemetry screen
+# Values = YES, NO
+GAUGES = YES
+
+# GPS 
+# Values = YES, NO
+GPS = YES
+
+# Vario 
 # Values = YES, NO
 VARIO = YES
 
@@ -323,7 +336,7 @@ ifeq ($(PCB), $(filter $(PCB), STD128 9X128 9XR128))
   EXTRABOARDSRC = targets/stock/lcd_driver.cpp
   EEPROMSRC = eeprom_common.cpp eeprom_rlc.cpp
   PULSESSRC = protocols/pulses_avr.cpp
-
+  
   ifeq ($(PCB), 9XR128)
     CPPDEFS += -DPCB9XR128
   else
@@ -527,7 +540,7 @@ ifeq ($(PCB), SKY9X)
   SRC += targets/sky9x/MEDSdcard.c
   EEPROMSRC = eeprom_common.cpp eeprom_raw.cpp eeprom_conversions.cpp
   PULSESSRC = protocols/pulses_arm.cpp protocols/ppm_arm.cpp protocols/pxx_arm.cpp protocols/dsm2_arm.cpp
-  CPPSRC += audio_arm.cpp haptic.cpp
+  CPPSRC += audio_arm.cpp haptic.cpp gui/view_about.cpp
   CPPSRC += targets/sky9x/pwr_driver.cpp targets/sky9x/adc_driver.cpp targets/sky9x/coproc_driver.cpp targets/sky9x/rotenc_driver.cpp targets/sky9x/eeprom_driver.cpp targets/sky9x/pulses_driver.cpp targets/sky9x/keys_driver.cpp targets/sky9x/audio_driver.cpp targets/sky9x/buzzer_driver.cpp targets/sky9x/haptic_driver.cpp targets/sky9x/sdcard_driver.cpp targets/sky9x/massstorage.cpp
   
   ifeq ($(SDCARD), YES)
@@ -588,7 +601,7 @@ ifeq ($(PCB), TARANIS)
   PULSESSRC = protocols/pulses_arm.cpp protocols/ppm_arm.cpp protocols/pxx_arm.cpp
   CPPSRC += audio_arm.cpp
   CPPSRC += targets/taranis/pwr_driver.cpp targets/taranis/pulses_driver.cpp targets/taranis/keys_driver.cpp targets/taranis/adc_driver.cpp targets/taranis/trainer_driver.cpp targets/taranis/audio_driver.cpp targets/taranis/delays.cpp targets/taranis/uart_driver.cpp targets/taranis/sport_driver.cpp
-  CPPSRC += bmp.cpp gui/view_channels.cpp 
+  CPPSRC += bmp.cpp gui/view_channels.cpp gui/view_about.cpp
   SRC += targets/taranis/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/CMSIS/Device/ST/STM32F2xx/Source/Templates/system_stm32f2xx.c
   SRC += targets/taranis/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/misc.c
   SRC += targets/taranis/STM32F2xx_StdPeriph_Lib_V1.1.0/Libraries/STM32F2xx_StdPeriph_Driver/src/stm32f2xx_gpio.c
@@ -610,7 +623,6 @@ ifeq ($(PCB), TARANIS)
   SRC += targets/taranis/STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_scsi.c
   SRC += targets/taranis/STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_bot.c
   SRC += targets/taranis/STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_Device_Library/Class/msc/src/usbd_msc_core.c
-  # SRC += targets/taranis/STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_Device_Library/Class/hid/src/usbd_hid_core.c
   EXTRABOARDSRC += targets/taranis/usbd_usr.cpp targets/taranis/usbd_storage_msd.cpp
   
   ifeq ($(SDCARD), YES)
@@ -704,6 +716,9 @@ ifeq ($(NAVIGATION), POT3)
 endif
 ifeq ($(NAVIGATION), POTS)
   CPPDEFS += -DNAVIGATION_POT1 -DNAVIGATION_POT2 -DNAVIGATION_POT3
+endif
+ifeq ($(NAVIGATION), STICKS)
+  CPPDEFS += -DNAVIGATION_STICKS
 endif
 ifeq ($(NAVIGATION), ROTENC)
   CPPDEFS += -DROTARY_ENCODER_NAVIGATION
@@ -807,7 +822,7 @@ endif
 
 ifeq ($(EXT), MAVLINK)
  CPPDEFS += -DMAVLINK
- CPPSRC += telemetry/mavlink.cpp rotarysw.cpp serial.cpp
+ CPPSRC += telemetry/mavlink.cpp gui/view_mavlink.cpp serial.cpp
 endif
 
 ifeq ($(EXT), TELEMETREZ)
@@ -828,15 +843,23 @@ ifeq ($(EXT), $(filter $(EXT), FRSKY TELEMETREZ))
     CPPSRC += telemetry/frsky.cpp
   endif
   CPPSRC += gui/view_telemetry.cpp
-  # If FRSKY-Hub is enabled
+  
   ifeq ($(FRSKY_HUB), YES)
     CPPDEFS += -DFRSKY_HUB
   endif
-  # If WS HowHigh is enabled
+  
   ifeq ($(WS_HOW_HIGH), YES)
     CPPDEFS += -DWS_HOW_HIGH
   endif
-  # If Vario is enabled
+  
+  ifeq ($(GAUGES), YES)
+    CPPDEFS += -DGAUGES
+  endif
+
+  ifeq ($(GPS), YES)
+    CPPDEFS += -DGPS
+  endif
+
   ifeq ($(VARIO), YES)
     CPPDEFS += -DVARIO
   endif
@@ -878,6 +901,13 @@ endif
 
 ifeq ($(PPM_UNIT), PERCENT_PREC0)
   CPPDEFS += -DPPM_UNIT_PERCENT_PREC0
+endif
+
+ifeq ($(FAI), YES)
+  CPPDEFS += -DFAI
+endif
+ifeq ($(FAI), CHOICE)
+  CPPDEFS += -DFAI_CHOICE
 endif
 
 ifeq ($(HELI), YES)
@@ -1007,7 +1037,7 @@ else
   build: stamp_header lbm allsrc.cpp elf remallsrc bin lss
 endif
 
-lbm: bitmaps/font.lbm bitmaps/sticks.lbm
+lbm: fonts/std/font_05x07.lbm bitmaps/sticks.lbm
   
 elf: $(TARGET).elf
 bin: $(TARGET).bin
@@ -1023,63 +1053,86 @@ stamp_header:
 	@echo "//Automatically generated file (Makefile) - do not edit" > stamp-opentx.h
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" >> stamp-opentx.h
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx.h
-	@echo "#define SVN_STR  \"opentx-r$(SVNREV)\"" >> stamp-opentx.h
+	@echo "#define SVN_STR  \"otx-r$(SVNREV)\"" >> stamp-opentx.h
 	@cat stamp-opentx.h
 
 stock-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-stock.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-stock.txt
-	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-stock.txt
+	@echo "#define SVN_VERS \"otx-r$(SVNREV)\"" >> stamp-opentx-stock.txt
 	@cat stamp-opentx-stock.txt
 
 stock128-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-stock128.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-stock128.txt
-	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-stock128.txt
+	@echo "#define SVN_VERS \"otx-r$(SVNREV)\"" >> stamp-opentx-stock128.txt
 	@cat stamp-opentx-stock128.txt
 
 stock2561-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-stock2561.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-stock2561.txt
-	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-stock2561.txt
+	@echo "#define SVN_VERS \"otx-r$(SVNREV)\"" >> stamp-opentx-stock2561.txt
 	@cat stamp-opentx-stock2561.txt
 	
 v4-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-v4.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-v4.txt
-	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-v4.txt
+	@echo "#define SVN_VERS \"otx-r$(SVNREV)\"" >> stamp-opentx-v4.txt
 	@cat stamp-opentx-v4.txt
 
 arm-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-arm.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-arm.txt
-	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-arm.txt
+	@echo "#define SVN_VERS \"otx-r$(SVNREV)\"" >> stamp-opentx-arm.txt
 	@cat stamp-opentx-arm.txt
 
-bitmaps/font.lbm: bitmaps/font.xbm bitmaps/font_extra.xbm bitmaps/font_tiny.xbm bitmaps/font_small.xbm bitmaps/font_midsize.xbm bitmaps/font_dblsize.xbm bitmaps/font_dblsize_extra.xbm bitmaps/font_small_extra.xbm translations/font_se.xbm translations/font_de.xbm translations/font_it.xbm translations/font_cz.xbm translations/font_fr.xbm translations/font_es.xbm translations/font_dblsize_se.xbm translations/font_dblsize_de.xbm translations/font_dblsize_it.xbm translations/font_dblsize_fr.xbm translations/font_dblsize_es.xbm
+taranis-stamp:
+	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-taranis.txt
+	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-taranis.txt
+	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-taranis.txt
+	@cat stamp-opentx-taranis.txt
+
+fonts/std/font_05x07.lbm: fonts/std/font_03x05.xbm fonts/std/font_04x06.xbm fonts/std/font_05x07.xbm fonts/std/font_08x10.xbm fonts/std/font_10x14.xbm fonts/std/font_04x06_extra.xbm fonts/std/font_05x07_extra.xbm fonts/std/font_10x14_extra.xbm fonts/std/font_se_05x07.xbm fonts/std/font_de_05x07.xbm fonts/std/font_it_05x07.xbm fonts/std/font_cz_05x07.xbm fonts/std/font_fr_05x07.xbm fonts/std/font_es_05x07.xbm fonts/std/font_se_10x14.xbm fonts/std/font_de_10x14.xbm fonts/std/font_it_10x14.xbm fonts/std/font_fr_10x14.xbm fonts/std/font_es_10x14.xbm 
 	@echo
 	@echo "Convert fonts from xbm to lbm:"
-	$(IMG2LBM) bitmaps/font.xbm bitmaps/font.lbm 5x7
-	$(IMG2LBM) bitmaps/font_extra.xbm bitmaps/font_extra.lbm 5x7
-	$(IMG2LBM) bitmaps/font_tiny.xbm bitmaps/font_tiny.lbm 3x5
-	$(IMG2LBM) bitmaps/font_small.xbm bitmaps/font_small.lbm 4x6
-	$(IMG2LBM) bitmaps/font_midsize.xbm bitmaps/font_midsize.lbm 8x10
-	$(IMG2LBM) bitmaps/font_dblsize.xbm bitmaps/font_dblsize.lbm 10x14
-	$(IMG2LBM) bitmaps/font_dblsize_extra.xbm bitmaps/font_dblsize_extra.lbm 10x14
-	$(IMG2LBM) bitmaps/font_small_extra.xbm bitmaps/font_small_extra.lbm 4x6
-	$(IMG2LBM) translations/font_se.xbm translations/font_se.lbm 5x7
-	$(IMG2LBM) translations/font_de.xbm translations/font_de.lbm 5x7
-	$(IMG2LBM) translations/font_it.xbm translations/font_it.lbm 5x7
-	$(IMG2LBM) translations/font_cz.xbm translations/font_cz.lbm 5x7
-	$(IMG2LBM) translations/font_fr.xbm translations/font_fr.lbm 5x7
-	$(IMG2LBM) translations/font_es.xbm translations/font_es.lbm 5x7
-	$(IMG2LBM) translations/font_dblsize_se.xbm translations/font_dblsize_se.lbm 10x14
-	$(IMG2LBM) translations/font_dblsize_de.xbm translations/font_dblsize_de.lbm 10x14
-	$(IMG2LBM) translations/font_dblsize_it.xbm translations/font_dblsize_it.lbm 10x14
-	$(IMG2LBM) translations/font_dblsize_fr.xbm translations/font_dblsize_fr.lbm 10x14
-	$(IMG2LBM) translations/font_dblsize_es.xbm translations/font_dblsize_es.lbm 10x14
+	$(IMG2LBM) fonts/std/font_03x05.xbm fonts/std/font_03x05.lbm 3x5
+	$(IMG2LBM) fonts/std/font_04x06.xbm fonts/std/font_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_05x07.xbm fonts/std/font_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_08x10.xbm fonts/std/font_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_10x14.xbm fonts/std/font_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_04x06_extra.xbm fonts/std/font_04x06_extra.lbm 4x6
+	$(IMG2LBM) fonts/std/font_05x07_extra.xbm fonts/std/font_05x07_extra.lbm 5x7
+	$(IMG2LBM) fonts/std/font_10x14_extra.xbm fonts/std/font_10x14_extra.lbm 10x14
+	$(IMG2LBM) fonts/std/font_cz_04x06.xbm fonts/std/font_cz_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_cz_05x07.xbm fonts/std/font_cz_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_cz_08x10.xbm fonts/std/font_cz_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_cz_10x14.xbm fonts/std/font_cz_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_de_04x06.xbm fonts/std/font_de_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_de_05x07.xbm fonts/std/font_de_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_de_08x10.xbm fonts/std/font_de_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_de_10x14.xbm fonts/std/font_de_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_es_04x06.xbm fonts/std/font_es_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_es_05x07.xbm fonts/std/font_es_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_es_08x10.xbm fonts/std/font_es_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_es_10x14.xbm fonts/std/font_es_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_fr_04x06.xbm fonts/std/font_fr_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_fr_05x07.xbm fonts/std/font_fr_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_fr_08x10.xbm fonts/std/font_fr_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_fr_10x14.xbm fonts/std/font_fr_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_it_04x06.xbm fonts/std/font_it_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_it_05x07.xbm fonts/std/font_it_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_it_08x10.xbm fonts/std/font_it_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_it_10x14.xbm fonts/std/font_it_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_pt_04x06.xbm fonts/std/font_pt_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_pt_05x07.xbm fonts/std/font_pt_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_pt_08x10.xbm fonts/std/font_pt_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_pt_10x14.xbm fonts/std/font_pt_10x14.lbm 10x14
+	$(IMG2LBM) fonts/std/font_se_04x06.xbm fonts/std/font_se_04x06.lbm 4x6
+	$(IMG2LBM) fonts/std/font_se_05x07.xbm fonts/std/font_se_05x07.lbm 5x7
+	$(IMG2LBM) fonts/std/font_se_08x10.xbm fonts/std/font_se_08x10.lbm 8x10
+	$(IMG2LBM) fonts/std/font_se_10x14.xbm fonts/std/font_se_10x14.lbm 10x14
 
-bitmaps/sticks.lbm: bitmaps/sticks_4x1.xbm bitmaps/splash_9x.xbm bitmaps/splash_taranis.png bitmaps/logo_taranis.bmp bitmaps/icons.png bitmaps/asterisk.xbm
+bitmaps/sticks.lbm: bitmaps/sticks_4x1.xbm bitmaps/splash_9x.xbm bitmaps/splash_taranis.png bitmaps/logo_taranis.bmp bitmaps/icons.png bitmaps/asterisk.xbm bitmaps/about_9x.png bitmaps/about_taranis.png bitmaps/asterisk_4bits.png
 	@echo
 	@echo "Convert bitmaps from xbm to lbm:"
 	$(IMG2LBM) bitmaps/sticks_4x1.xbm bitmaps/sticks.lbm img 4
@@ -1088,6 +1141,9 @@ bitmaps/sticks.lbm: bitmaps/sticks_4x1.xbm bitmaps/splash_9x.xbm bitmaps/splash_
 	$(IMG2LBM) bitmaps/logo_taranis.bmp bitmaps/logo_taranis.lbm bmp
 	$(IMG2LBM) bitmaps/icons.png bitmaps/icons.lbm bmp
 	$(IMG2LBM) bitmaps/asterisk.xbm bitmaps/asterisk.lbm img
+	$(IMG2LBM) bitmaps/about_taranis.png bitmaps/about_taranis.lbm bmp
+	$(IMG2LBM) bitmaps/about_9x.png bitmaps/about_9x.lbm img
+	$(IMG2LBM) bitmaps/asterisk_4bits.png bitmaps/asterisk_4bits.lbm bmp
 	 
 # Eye candy.
 # AVR Studio 3.x does not check make's exit code but relies on

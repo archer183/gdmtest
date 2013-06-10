@@ -306,6 +306,11 @@ void putPcmHead()
   putPcmPart( 0xC0 ) ;
 }
 
+uint16_t scaleForPXX(uint8_t i)
+{
+  return channelOutputs[i] * 3 / 4 + 2250 ;
+}
+
 void setupPulsesPXX()
 {
     uint8_t i ;
@@ -325,8 +330,8 @@ void setupPulsesPXX()
     pxxFlag[0] = 0;          // reset flag after send
     for ( i = 0 ; i < 8 ; i += 2 )              // First 8 channels only
     {
-        chan = channelOutputs[i] * 3 / 4 + 2250 ;
-        chan_1 = channelOutputs[i+1] * 3 / 4 + 2250 ;
+        chan = scaleForPXX(i);
+        chan_1 = scaleForPXX(i+1);
         putPcmByte( chan ) ; // Low byte of channel
         putPcmByte( ( ( chan >> 8 ) & 0x0F ) | ( chan_1 << 4) ) ;  // 4 bits each from 2 channels
         putPcmByte( chan_1 >> 4 ) ;  // High byte of channel
@@ -985,7 +990,7 @@ ISR(TIMER1_COMPB_vect) // PXX main interrupt
 ISR(TIMER1_COMPC_vect) // DSM2_PPM or PXX end of frame
 {
 #if defined(DSM2_PPM) && defined(PXX)
-  if (IS_DSM2_PROTOCOL(g_model.protocol)) { // TODO not s_current_protocol?
+  if (IS_DSM2_PROTOCOL(s_current_protocol[0])) {
 #endif
 
 #if defined(DSM2_PPM)

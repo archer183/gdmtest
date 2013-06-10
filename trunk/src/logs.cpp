@@ -42,10 +42,12 @@ const pm_char * g_logError = NULL;
 uint8_t logDelay;
 
 #if defined(PCBTARANIS)
-int mswitchState(bool sw1, bool sw2) {
-  return (sw1 ? -1 : (sw2 ? 1 : 0));
-}
+  #define get2PosState(sw) (switchState(SW_ ## sw ## 0) ? -1 : 1)
+#else
+  #define get2PosState(sw) (switchState(SW_ ## sw) ? -1 : 1)
 #endif
+
+#define get3PosState(sw) (switchState(SW_ ## sw ## 0) ? -1 : (switchState(SW_ ## sw ## 2) ? 1 : 0))
 
 const pm_char * openLogs()
 {
@@ -103,9 +105,13 @@ const pm_char * openLogs()
   if (f_size(&g_oLogFile) == 0) {
 #if defined(RTCLOCK)
     f_puts("Date,Time,", &g_oLogFile);
+#else
+    f_puts("Time,", &g_oLogFile);
 #endif
 
-#if defined(FRSKY)
+#if defined(FRSKY_SPORT)
+    f_puts("SWR,RSSI,A1,A2,", &g_oLogFile);
+#elif defined(FRSKY)
     f_puts("Buffer,RX,TX,A1,A2,", &g_oLogFile);
 #endif
 
@@ -167,11 +173,18 @@ void writeLogs()
 #if defined(RTCLOCK)
       struct gtm utm;
       gettime(&utm);
-      f_printf(&g_oLogFile, "%4d-%02d-%02d,%02d:%02d:%02d,", utm.tm_year+1900, utm.tm_mon+1, utm.tm_mday, utm.tm_hour, utm.tm_min, utm.tm_sec);
+      f_printf(&g_oLogFile, "%4d-%02d-%02d,%02d:%02d:%02d.02d,", utm.tm_year+1900, utm.tm_mon+1, utm.tm_mday, utm.tm_hour, utm.tm_min, utm.tm_sec, g_ms100);
+#else
+      f_printf(&g_oLogFile, "%d,", tmr10ms);
+#endif
+
+#if defined(FRSKY_SPORT)
+      f_printf(&g_oLogFile, "%d,%d,", frskyData.rssi[1].value, frskyData.rssi[0].value);
+#elif defined(FRSKY)
+      f_printf(&g_oLogFile, "%d,%d,%d,", frskyStreaming, frskyData.rssi[0].value, frskyData.rssi[1].value);
 #endif
 
 #if defined(FRSKY)
-      f_printf(&g_oLogFile, "%d,%d,%d,", frskyStreaming, frskyData.rssi[0].value, frskyData.rssi[1].value);
       for (uint8_t i=0; i<2; i++) {
         int16_t converted_value = applyChannelRatio(i, frskyData.analog[i].value);
         f_printf(&g_oLogFile, "%d.%02d,", converted_value/100, converted_value%100);
@@ -180,57 +193,73 @@ void writeLogs()
 
 #if defined(FRSKY_HUB)
       if (IS_USR_PROTO_FRSKY_HUB()) {
-        f_printf(&g_oLogFile, "%4d-%02d-%02d,", frskyData.hub.year+2000, frskyData.hub.month, frskyData.hub.day);
-        f_printf(&g_oLogFile, "%02d:%02d:%02d,", frskyData.hub.hour, frskyData.hub.min, frskyData.hub.sec);
-        f_printf(&g_oLogFile, "%03d.%04d%c,", frskyData.hub.gpsLongitude_bp, frskyData.hub.gpsLongitude_ap,
-            frskyData.hub.gpsLongitudeEW ? frskyData.hub.gpsLongitudeEW : '-');
-        f_printf(&g_oLogFile, "%03d.%04d%c,", frskyData.hub.gpsLatitude_bp, frskyData.hub.gpsLatitude_ap,
-            frskyData.hub.gpsLatitudeNS ? frskyData.hub.gpsLatitudeNS : '-');
-        f_printf(&g_oLogFile, "%03d.%d,", frskyData.hub.gpsCourse_bp, frskyData.hub.gpsCourse_ap);
-        f_printf(&g_oLogFile, "%d.%d,", TELEMETRY_GPS_SPEED_BP, TELEMETRY_GPS_SPEED_AP);
-        f_printf(&g_oLogFile, "%03d.%d,", TELEMETRY_GPS_ALT_BP, TELEMETRY_GPS_ALT_AP);
-        f_printf(&g_oLogFile, "%d.%d,", TELEMETRY_ALT_BP, TELEMETRY_ALT_AP);
-        f_printf(&g_oLogFile, "%d,%d,", frskyData.hub.temperature1, frskyData.hub.temperature2);
-        f_printf(&g_oLogFile, "%d,", frskyData.hub.rpm);
-        f_printf(&g_oLogFile, "%d,", frskyData.hub.fuelLevel);
-        f_printf(&g_oLogFile, "%d,", frskyData.hub.volts);
-        f_printf(&g_oLogFile, "%d,%d,%d,", frskyData.hub.accelX, frskyData.hub.accelY, frskyData.hub.accelZ);
+        f_printf(&g_oLogFile, "%4d-%02d-%02d,%02d:%02d:%02d,%03d.%04d%c,%03d.%04d%c,%03d.%d,%d.%d,%03d.%d,%d.%d,%d,%d,%d,%d,%d,%d,%d,%d,",
+            frskyData.hub.year+2000,
+            frskyData.hub.month,
+            frskyData.hub.day,
+            frskyData.hub.hour,
+            frskyData.hub.min,
+            frskyData.hub.sec,
+            frskyData.hub.gpsLongitude_bp,
+            frskyData.hub.gpsLongitude_ap,
+            frskyData.hub.gpsLongitudeEW ? frskyData.hub.gpsLongitudeEW : '-',
+            frskyData.hub.gpsLatitude_bp,
+            frskyData.hub.gpsLatitude_ap,
+            frskyData.hub.gpsLatitudeNS ? frskyData.hub.gpsLatitudeNS : '-',
+            frskyData.hub.gpsCourse_bp,
+            frskyData.hub.gpsCourse_ap,
+            TELEMETRY_GPS_SPEED_BP,
+            TELEMETRY_GPS_SPEED_AP,
+            TELEMETRY_GPS_ALT_BP,
+            TELEMETRY_GPS_ALT_AP,
+            TELEMETRY_ALT_BP,
+            TELEMETRY_ALT_AP,
+            frskyData.hub.temperature1,
+            frskyData.hub.temperature2,
+            frskyData.hub.rpm,
+            frskyData.hub.fuelLevel,
+            frskyData.hub.volts,
+            frskyData.hub.accelX,
+            frskyData.hub.accelY,
+            frskyData.hub.accelZ);
       }
 #endif
 
 #if defined(WS_HOW_HIGH)
       if (IS_USR_PROTO_WS_HOW_HIGH()) {
-        f_printf(&g_oLogFile, "%d,", TELEMETRY_GPS_ALT_BP);
+        f_printf(&g_oLogFile, "%d,", TELEMETRY_ALT_BP);
       }
 #endif
+
+      for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
+        f_printf(&g_oLogFile, "%d,", calibratedStick[i]);
+      }
 
 #if defined(PCBTARANIS)
-      for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
-        f_printf(&g_oLogFile, "%d,", calibratedStick[i]);
-      }
-
-      if (f_printf(&g_oLogFile, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n", 
-          mswitchState(switchState(SW_SA0),switchState(SW_SA2)),
-          mswitchState(switchState(SW_SB0),switchState(SW_SB2)),
-          mswitchState(switchState(SW_SC0),switchState(SW_SC2)),
-          mswitchState(switchState(SW_SD0),switchState(SW_SD2)),
-          mswitchState(switchState(SW_SE0),switchState(SW_SE2)),
-          mswitchState(switchState(SW_SF0),switchState(SW_SF2)),
-          mswitchState(switchState(SW_SG0),switchState(SW_SG2)),
-          mswitchState(switchState(SW_SH0),switchState(SW_SH2))) < 0  && !error_displayed) {
-        error_displayed = STR_SDCARD_ERROR;
-        s_global_warning = STR_SDCARD_ERROR;
-      }
+      int result = f_printf(&g_oLogFile, "%d,%d,%d,%d,%d,%d,%d,%d\n",
+          get3PosState(SA),
+          get3PosState(SB),
+          get3PosState(SC),
+          get3PosState(SD),
+          get3PosState(SE),
+          get2PosState(SF),
+          get3PosState(SG),
+          get2PosState(SH));
 #else
-      for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
-        f_printf(&g_oLogFile, "%d,", calibratedStick[i]);
-      }
+      int result = f_printf(&g_oLogFile, "%d,%d,%d,%d,%d,%d,%d\n",
+          get2PosState(THR),
+          get2PosState(RUD),
+          get2PosState(ELE),
+          get3PosState(ID),
+          get2PosState(AIL),
+          get2PosState(GEA),
+          get2PosState(TRN));
+#endif
 
-      if (f_printf(&g_oLogFile, "%d,%d,%d,%d,%d,%d,%d,%d,%d\n", switchState(SW_THR), switchState(SW_RUD), switchState(SW_ELE), switchState(SW_ID0), switchState(SW_ID1), switchState(SW_ID2), switchState(SW_AIL), switchState(SW_GEA), switchState(SW_TRN)) < 0  && !error_displayed) {
+      if (result<0 && !error_displayed) {
         error_displayed = STR_SDCARD_ERROR;
         s_global_warning = STR_SDCARD_ERROR;
       }
-#endif
     }
   }
   else {

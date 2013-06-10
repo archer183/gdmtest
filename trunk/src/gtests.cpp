@@ -38,13 +38,18 @@
 #include <gtest/gtest.h>
 #include "opentx.h"
 
+#define CHANNEL_MAX (1024*256)
+
 void doMixerCalculations();
 
 #define MODEL_RESET() memset(&g_model, 0, sizeof(g_model))
 
 #define MIXER_RESET() \
   memset(channelOutputs, 0, sizeof(channelOutputs)); \
-  memset(ex_chans, 0, sizeof(ex_chans))
+  memset(ex_chans, 0, sizeof(ex_chans)); \
+  memset(act, 0, sizeof(act)); \
+  memset(swOn, 0, sizeof(swOn)); \
+  int32_t lastAct = 0; lastAct = lastAct; /* to avoid a warning */
 
 uint16_t anaInValues[NUM_STICKS+NUM_POTS] = { 0 };
 uint16_t anaIn(uint8_t chan)
@@ -280,8 +285,8 @@ TEST(FrSky, dateNtime)
 TEST(getSwitch, undefCSW)
 {
   MODEL_RESET();
-  EXPECT_EQ(getSwitch(MAX_PSWITCH, 0), false);
-  EXPECT_EQ(getSwitch(-MAX_PSWITCH, 0), true); // no good answer there!
+  EXPECT_EQ(getSwitch(MAX_PSWITCH), false);
+  EXPECT_EQ(getSwitch(-MAX_PSWITCH), true); // no good answer there!
 }
 
 TEST(getSwitch, circularCSW)
@@ -289,18 +294,16 @@ TEST(getSwitch, circularCSW)
   MODEL_RESET();
   g_model.customSw[0] = { MAX_SWITCH-NUM_CSW, MAX_SWITCH-NUM_CSW, CS_OR };
   g_model.customSw[1] = { MAX_SWITCH-NUM_CSW, MAX_SWITCH-NUM_CSW, CS_AND };
-  EXPECT_EQ(getSwitch(MAX_SWITCH-NUM_CSW, 0), false);
-  EXPECT_EQ(getSwitch(-(MAX_SWITCH-NUM_CSW), 0), true);
-  EXPECT_EQ(getSwitch(1+MAX_SWITCH-NUM_CSW, 0), false);
-  EXPECT_EQ(getSwitch(-(1+MAX_SWITCH-NUM_CSW), 0), true);
+  EXPECT_EQ(getSwitch(MAX_SWITCH-NUM_CSW), false);
+  EXPECT_EQ(getSwitch(-(MAX_SWITCH-NUM_CSW)), true);
+  EXPECT_EQ(getSwitch(1+MAX_SWITCH-NUM_CSW), false);
+  EXPECT_EQ(getSwitch(-(1+MAX_SWITCH-NUM_CSW)), true);
 }
 
 TEST(getSwitch, nullSW)
 {
   MODEL_RESET();
-  EXPECT_EQ(getSwitch(0, 0), false);
-  EXPECT_EQ(getSwitch(0, true), true);
-  EXPECT_EQ(getSwitch(0, 0), false);
+  EXPECT_EQ(getSwitch(0), true);
 }
 
 TEST(FlightModes, nullFadeOut_posFadeIn)
@@ -329,7 +332,7 @@ TEST(Mixer, R2029Comment)
   simuSetSwitch(0, 1);
   perOut(e_perout_mode_normal, 0);
   EXPECT_EQ(chans[0], 0);
-  EXPECT_EQ(chans[1], 1024*256);
+  EXPECT_EQ(chans[1], CHANNEL_MAX);
   simuSetSwitch(0, 0);
   perOut(e_perout_mode_normal, 0);
   EXPECT_EQ(chans[0], 0);
@@ -337,7 +340,7 @@ TEST(Mixer, R2029Comment)
   simuSetSwitch(0, 1);
   perOut(e_perout_mode_normal, 0);
   EXPECT_EQ(chans[0], 0);
-  EXPECT_EQ(chans[1], 1024*256);
+  EXPECT_EQ(chans[1], CHANNEL_MAX);
 }
 
 TEST(Mixer, Cascaded3Channels)
@@ -355,9 +358,9 @@ TEST(Mixer, Cascaded3Channels)
   g_model.mixData[2].weight = 100;
   simuSetSwitch(0, 1);
   perOut(e_perout_mode_normal, 0);
-  EXPECT_EQ(chans[0], 1024*256);
-  EXPECT_EQ(chans[1], 1024*256);
-  EXPECT_EQ(chans[2], 1024*256);
+  EXPECT_EQ(chans[0], CHANNEL_MAX);
+  EXPECT_EQ(chans[1], CHANNEL_MAX);
+  EXPECT_EQ(chans[2], CHANNEL_MAX);
 }
 
 TEST(Mixer, CascadedOrderedChannels)
@@ -372,8 +375,8 @@ TEST(Mixer, CascadedOrderedChannels)
   g_model.mixData[1].weight = 100;
   simuSetSwitch(0, 1);
   perOut(e_perout_mode_normal, 0);
-  EXPECT_EQ(chans[0], 1024*256);
-  EXPECT_EQ(chans[1], 1024*256);
+  EXPECT_EQ(chans[0], CHANNEL_MAX);
+  EXPECT_EQ(chans[1], CHANNEL_MAX);
 }
 
 TEST(Mixer, Cascaded5Channels)
@@ -398,18 +401,18 @@ TEST(Mixer, Cascaded5Channels)
   for (uint8_t i=0; i<10; i++) {
     simuSetSwitch(0, 1);
     doMixerCalculations();
-    EXPECT_EQ(chans[0], 1024*256);
-    EXPECT_EQ(chans[1], 1024*256);
-    EXPECT_EQ(chans[2], 1024*256);
-    EXPECT_EQ(chans[3], 1024*256);
-    EXPECT_EQ(chans[4], 1024*256);
+    EXPECT_EQ(chans[0], CHANNEL_MAX);
+    EXPECT_EQ(chans[1], CHANNEL_MAX);
+    EXPECT_EQ(chans[2], CHANNEL_MAX);
+    EXPECT_EQ(chans[3], CHANNEL_MAX);
+    EXPECT_EQ(chans[4], CHANNEL_MAX);
     simuSetSwitch(0, 0);
     doMixerCalculations();
-    EXPECT_EQ(chans[0], -1024*256);
-    EXPECT_EQ(chans[1], -1024*256);
-    EXPECT_EQ(chans[2], -1024*256);
-    EXPECT_EQ(chans[3], -1024*256);
-    EXPECT_EQ(chans[4], -1024*256);
+    EXPECT_EQ(chans[0], -CHANNEL_MAX);
+    EXPECT_EQ(chans[1], -CHANNEL_MAX);
+    EXPECT_EQ(chans[2], -CHANNEL_MAX);
+    EXPECT_EQ(chans[3], -CHANNEL_MAX);
+    EXPECT_EQ(chans[4], -CHANNEL_MAX);
   }
 }
 
@@ -459,8 +462,162 @@ TEST(Mixer, RecursiveAddChannel)
   g_model.mixData[2].srcRaw = MIXSRC_Rud;
   g_model.mixData[2].weight = 100;
   perOut(e_perout_mode_normal, 0);
-  EXPECT_EQ(chans[0], 1024*256/2);
+  EXPECT_EQ(chans[0], CHANNEL_MAX/2);
   EXPECT_EQ(chans[1], 0);
+}
+
+#define CHECK_SLOW_MOVEMENT(channel, sign, duration) \
+    do { \
+    for (int i=1; i<=(duration); i++) { \
+      perOut(e_perout_mode_normal, 1); \
+      lastAct = lastAct + (sign) * (1<<19)/500; /* 100 on ARM */ \
+      EXPECT_EQ(chans[(channel)], 256 * (lastAct >> 8)); \
+    } \
+    } while (0)
+
+#define CHECK_DELAY(channel, duration) \
+    do { \
+      int32_t value = chans[(channel)]; \
+      for (int i=1; i<=(duration); i++) { \
+        perOut(e_perout_mode_normal, 1); \
+        EXPECT_EQ(chans[(channel)], value); \
+      } \
+    } while (0)
+
+TEST(Mixer, SlowOnSwitch)
+{
+  MODEL_RESET();
+  MIXER_RESET();
+  g_model.mixData[0].destCh = 0;
+  g_model.mixData[0].mltpx = MLTPX_ADD;
+  g_model.mixData[0].srcRaw = MIXSRC_MAX;
+  g_model.mixData[0].weight = 100;
+  g_model.mixData[0].swtch = SWSRC_THR;
+  g_model.mixData[0].speedUp = 10;
+  g_model.mixData[0].speedDown = 10;
+
+  perOut(e_perout_mode_normal, 0);
+  EXPECT_EQ(chans[0], 0);
+
+  simuSetSwitch(0, 1);
+  CHECK_SLOW_MOVEMENT(0, +1, 250);
+
+  simuSetSwitch(0, 0);
+  CHECK_SLOW_MOVEMENT(0, -1, 250);
+}
+
+TEST(Mixer, SlowOnPhase)
+{
+  MODEL_RESET();
+  MIXER_RESET();
+  g_model.phaseData[1].swtch = SWSRC_THR;
+  g_model.mixData[0].destCh = 0;
+  g_model.mixData[0].mltpx = MLTPX_ADD;
+  g_model.mixData[0].srcRaw = MIXSRC_MAX;
+  g_model.mixData[0].weight = 100;
+  g_model.mixData[0].phases = 0x2 + 0x4 + 0x8 + 0x10 /*only enabled in phase 0*/;
+  g_model.mixData[0].speedUp = 10;
+  g_model.mixData[0].speedDown = 10;
+
+  s_perout_flight_phase = 0;
+  perOut(e_perout_mode_normal, 0);
+  EXPECT_EQ(chans[0], 0);
+
+  CHECK_SLOW_MOVEMENT(0, +1, 250);
+
+  s_perout_flight_phase = 1;
+  CHECK_SLOW_MOVEMENT(0, -1, 250);
+}
+
+TEST(Mixer, SlowOnSwitchAndPhase)
+{
+  MODEL_RESET();
+  MIXER_RESET();
+  g_model.phaseData[1].swtch = SWSRC_THR;
+  g_model.mixData[0].destCh = 0;
+  g_model.mixData[0].mltpx = MLTPX_ADD;
+  g_model.mixData[0].srcRaw = MIXSRC_MAX;
+  g_model.mixData[0].weight = 100;
+  g_model.mixData[0].swtch = SWSRC_THR;
+  g_model.mixData[0].phases = 0x2 + 0x4 + 0x8 + 0x10 /*only enabled in phase 0*/;
+  g_model.mixData[0].speedUp = 10;
+  g_model.mixData[0].speedDown = 10;
+
+  perOut(e_perout_mode_normal, 0);
+  EXPECT_EQ(chans[0], 0);
+
+  simuSetSwitch(0, 1);
+  s_perout_flight_phase = 0;
+  CHECK_SLOW_MOVEMENT(0, +1, 250);
+
+  simuSetSwitch(0, 0);
+  s_perout_flight_phase = 1;
+  CHECK_SLOW_MOVEMENT(0, -1, 250);
+}
+
+TEST(Mixer, SlowOnSwitchSource)
+{
+  MODEL_RESET();
+  MIXER_RESET();
+  g_model.mixData[0].destCh = 0;
+  g_model.mixData[0].mltpx = MLTPX_ADD;
+  g_model.mixData[0].srcRaw = MIXSRC_THR;
+  g_model.mixData[0].weight = 100;
+  g_model.mixData[0].speedUp = 10;
+  g_model.mixData[0].speedDown = 10;
+
+  simuSetSwitch(0, 0);
+  CHECK_SLOW_MOVEMENT(0, -1, 250);
+  EXPECT_EQ(chans[0], -CHANNEL_MAX);
+
+  simuSetSwitch(0, 1);
+  CHECK_SLOW_MOVEMENT(0, +1, 500);
+}
+
+TEST(Mixer, SlowAndDelayOnReplace3POSSource)
+{
+  MODEL_RESET();
+  MIXER_RESET();
+  g_model.mixData[0].destCh = 0;
+  g_model.mixData[0].mltpx = MLTPX_REP;
+  g_model.mixData[0].srcRaw = MIXSRC_3POS;
+  g_model.mixData[0].weight = 100;
+  g_model.mixData[0].delayUp = 10;
+  g_model.mixData[0].speedUp = 10;
+  g_model.mixData[0].speedDown = 10;
+
+  simuSetSwitch(3, -1);
+  CHECK_SLOW_MOVEMENT(0, -1, 250);
+  EXPECT_EQ(chans[0], -CHANNEL_MAX);
+
+  simuSetSwitch(3, 0);
+  CHECK_DELAY(0, 500);
+  CHECK_SLOW_MOVEMENT(0, +1, 250/*half course*/);
+  EXPECT_EQ(chans[0], 0);
+
+  simuSetSwitch(3, 1);
+  CHECK_DELAY(0, 500);
+  CHECK_SLOW_MOVEMENT(0, +1, 250);
+}
+
+TEST(Mixer, NoTrimOnInactiveMix)
+{
+  MODEL_RESET();
+  MIXER_RESET();
+  g_model.mixData[0].destCh = 0;
+  g_model.mixData[0].mltpx = MLTPX_ADD;
+  g_model.mixData[0].srcRaw = MIXSRC_Thr;
+  g_model.mixData[0].weight = 100;
+  g_model.mixData[0].swtch = SWSRC_THR;
+  g_model.mixData[0].speedUp = 10;
+  g_model.mixData[0].speedDown = 10;
+  setTrimValue(0, 2, 256);
+
+  simuSetSwitch(0, 1);
+  CHECK_SLOW_MOVEMENT(0, 1, 100);
+
+  simuSetSwitch(0, 0);
+  CHECK_SLOW_MOVEMENT(0, -1, 100);
 }
 
 TEST(Curves, LinearIntpol)

@@ -1,5 +1,23 @@
 /*
- * Authors - Gerard Valade <gerard.valade@gmail.com>
+ * Authors (alphabetical order)
+ * - Andre Bernet <bernet.andre@gmail.com>
+ * - Andreas Weitl
+ * - Bertrand Songis <bsongis@gmail.com>
+ * - Bryan J. Rentoul (Gruvin) <gruvin@gmail.com>
+ * - Cameron Weeks <th9xer@gmail.com>
+ * - Erez Raviv
+ * - Gabriel Birkus
+ * - Gerard Valade <gerard.valade@gmail.com>
+ * - Jean-Pierre Parisy
+ * - Karl Szmutny
+ * - Michael Blandford
+ * - Michal Hlavinka
+ * - Pat Mackenzie
+ * - Philip Moss
+ * - Rienk de Jong
+ * - Rob Thomson
+ * - Romolo Manfredini <romolo.manfredini@gmail.com>
+ * - Thomas Husterer
  *
  * Adapted from mavlink for ardupilot
  *
@@ -20,38 +38,51 @@
 #define MAVLINK_USE_CONVENIENCE_FUNCTIONS
 #define MAVLINK_COMM_NUM_BUFFERS 1
 
-//#define MAVLINK10
-
-#ifdef MAVLINK10
 #include "GCS_MAVLink/include_v1.0/mavlink_types.h"
-#else
-#include "GCS_MAVLink/include/mavlink_types.h"
-#endif
-
 #include "serial.h"
-
+#include "opentx.h"
+#include "serial.h"
 //#include "include/mavlink_helpers.h"
 
 extern mavlink_system_t mavlink_system;
 
 extern void SERIAL_start_uart_send();
 extern void SERIAL_end_uart_send();
-extern void SERIAL_send_uart_bytes(uint8_t * buf, uint16_t len);
+extern void SERIAL_send_uart_bytes(const uint8_t * buf, uint16_t len);
 
 #define MAVLINK_START_UART_SEND(chan,len) SERIAL_start_uart_send()
 #define MAVLINK_END_UART_SEND(chan,len) SERIAL_end_uart_send()
 #define MAVLINK_SEND_UART_BYTES(chan,buf,len) SERIAL_send_uart_bytes(buf,len)
 
-#ifdef MAVLINK10
-#include "GCS_MAVLink/include_v1.0/ardupilotmega/mavlink.h"
-#else
-#include "GCS_MAVLink/include/ardupilotmega/mavlink.h"
-#endif
+#include "../GCS_MAVLink/include_v1.0/ardupilotmega/mavlink.h"
 
-#define MAVLINK_PARAMS
-
+//#define MAVLINK_PARAMS
+//#define DUMP_RX_TX
 #define ERROR_NUM_MODES 99
 #define ERROR_MAV_ACTION_NB 99
+
+
+// Auto Pilot modes
+// ----------------
+#define AP_STABILIZE 0		// hold level position
+#define AP_ACRO 1			// rate control
+#define AP_ALT_HOLD 2		// AUTO control
+#define AP_AUTO 3			// AUTO control
+#define AP_GUIDED 4			// AUTO control
+#define AP_LOITER 5			// Hold a single location
+#define AP_RTL 6			// AUTO control
+#define AP_CIRCLE 7			// AUTO control
+#define AP_POSITION 8		// AUTO control
+#define AP_LAND 9			// AUTO control
+#define AP_OF_LOITER 10		// Hold a single location using optical flow
+							// sensor
+#define AP_TOY_A 11			// THOR Enum for Toy mode
+#define AP_TOY_M 12			// THOR Enum for Toy mode
+#define AP_NUM_MODES 13
+
+/*
+ * Type definitions
+ */
 
 #ifdef MAVLINK_PARAMS
 
@@ -76,7 +107,7 @@ enum ACM_PARAMS {
 	HLD_LAT_I, // Loiter
 	NAV_LON_P, // Nav WP
 	NAV_LON_I, // Nav WP
-	NAV_LAT_P, // Nav WP
+	NAV_LAT_P, // Nav WPs
 	NAV_LAT_I, // Nav WP
 	NB_PID_PARAMS, // Number of PI Parameters
 	LOW_VOLT = NB_PID_PARAMS,
@@ -107,12 +138,21 @@ typedef struct Telemetry_Data_ {
 	// INFOS
 	uint8_t status; ///< System status flag, see MAV_STATUS ENUM
 	uint16_t packet_drop;
-	//uint8_t mode;
-	//uint8_t nav_mode;
+	uint8_t mode;
+	uint32_t custom_mode;
+	bool active;
+	uint8_t nav_mode;
 	uint8_t rcv_control_mode; ///< System mode, see MAV_MODE ENUM in mavlink/include/mavlink_types.h
-	//uint16_t load; ///< Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
+	uint16_t load; ///< Maximum usage in percent of the mainloop time, (0%: 0, 100%: 1000) should be always below 1000
 	uint8_t vbat; ///< Battery voltage, in millivolts (1 = 1 millivolt)
-	uint8_t vbat_low;
+	uint8_t ibat; ///< Battery voltage, in millivolts (1 = 1 millivolt)
+	uint8_t rem_bat; ///< Battery voltage, in millivolts (1 = 1 millivolt)
+	bool vbat_low;
+	
+	uint8_t rc_rssi;
+	uint8_t pc_rssi;
+	
+	uint8_t debug;
 
 	// MSG ACTION / ACK
 	uint8_t req_mode;
@@ -123,8 +163,11 @@ typedef struct Telemetry_Data_ {
 	uint8_t satellites_visible; ///< Number of satellites visible
 	Location_t loc_current;
 	float eph;
-	float hdg;
+	float course;
 	float v; // Ground speed
+	// Navigation
+	float heading;
+	float bearing;
 
 #ifdef MAVLINK_PARAMS
 	// Params
@@ -136,126 +179,24 @@ typedef struct Telemetry_Data_ {
 // Telemetry data hold
 extern Telemetry_Data_t telemetry_data;
 
-#ifndef MAVLINK10
-extern inline uint8_t MAVLINK_NavMode2CtrlMode(uint8_t mode, uint8_t nav_mode) {
+/*
+ * Funtion definitions
+ */
 
-	uint8_t control_mode = ERROR_NUM_MODES;
-	switch (mode) {
-	case MAV_MODE_UNINIT:
-		control_mode = INITIALISING;
-		break;
 
-	case MAV_MODE_AUTO:
-		switch (nav_mode) {
-		case MAV_NAV_HOLD: // ACM
-		case MAV_NAV_LOITER: // APM
-			control_mode = LOITER;
-			break;
-		case MAV_NAV_WAYPOINT:
-			control_mode = AUTO;
-			break;
-		case MAV_NAV_RETURNING:
-			control_mode = RTL;
-			break;
-		}
-		break;
-	case MAV_MODE_GUIDED:
-		control_mode = GUIDED;
-		break;
 
-		/* from ardupilot */
-	case MAV_MODE_MANUAL:
-		control_mode = MANUAL;
-		break;
-	case MAV_MODE_TEST1:
-		control_mode = STABILIZE;
-		break;
-	case MAV_MODE_TEST2:
-		switch (nav_mode) {
-		case 1:
-			control_mode = FLY_BY_WIRE_A;
-			break;
-		case 2:
-			control_mode = FLY_BY_WIRE_B;
-			break;
-		}
-		break;
-	case MAV_MODE_TEST3:
-		control_mode = CIRCLE;
-		break;
 
-	default:
-		if (mode >= 100) {
-			control_mode = mode - 100;
-		}
-		break;
-	}
-	return control_mode;
-}
-#endif
 
 extern inline uint8_t MAVLINK_CtrlMode2Action(uint8_t mode) {
 	uint8_t action;
-	switch (mode) {
-	case STABILIZE:
-		action = MAV_ACTION_SET_MANUAL;
-		break;
-	case RTL:
-		action = MAV_ACTION_RETURN;
-		break;
-	case LAND:
-		action = MAV_ACTION_LAND;
-		break;
-	case LOITER:
-		action = MAV_ACTION_LOITER;
-		break;
-	case AUTO:
-		action = MAV_ACTION_SET_AUTO;
-		break;
-	case MANUAL:
-		action = MAV_ACTION_SET_MANUAL;
-		break;
-	default:
-		action = ERROR_MAV_ACTION_NB;
-		break;
-	}
+	
 	return action;
 }
 #if 0
 extern inline uint8_t MAVLINK_Action2CtrlMode(uint8_t action) {
 	uint8_t mode = ERROR_NUM_MODES;
 	switch (action) {
-	case MAV_ACTION_SET_MANUAL:
-		mode = STABILIZE;
-		break;
-		/*
-		 case ACRO:
-		 action = 0;
-		 break;
-		 case SIMPLE:
-		 action = 0;
-		 break;
-		 case ALT_HOLD:
-		 action = 0;
-		 break;*/
-	case MAV_ACTION_SET_AUTO:
-		mode = AUTO;
-		break;
-		/*case GUIDED:
-		 action = 0;
-		 break;*/
-	case MAV_ACTION_LOITER:
-		mode = LOITER;
-		break;
-	case MAV_ACTION_RETURN:
-		mode = RTL;
-		break;
-		/*case CIRCLE:
-		 action = 0;
-		 break;*/
-	default:
-		break;
-	}
+	
 	return action;
 }
 #endif

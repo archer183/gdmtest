@@ -39,8 +39,6 @@
 
 #define NO_HI_LEN  25
 
-typedef void (*MenuFuncP)(uint8_t event);
-
 void displayScreenIndex(uint8_t index, uint8_t count, uint8_t attr);
 inline void displayColumnHeader(const char **headers, uint8_t index)
 {
@@ -48,20 +46,20 @@ inline void displayColumnHeader(const char **headers, uint8_t index)
 }
 
 #if LCD_W >= 212
-#if defined(TRANSLATIONS_FR)
-  #define MENU_COLUMNS         1
-  #define COLUMN_X             0
+  #if defined(TRANSLATIONS_FR)
+    #define MENU_COLUMNS         1
+    #define COLUMN_X             0
+  #else
+    #define MENU_COLUMNS         2
+  #endif
+  #define MENUS_SCROLLBAR_WIDTH  2
+  #define MENU_COLUMN2_X         (14 + LCD_W / 2)
+  #define lcd_putsColumnLeft(x, y, str) lcd_puts((x > (LCD_W-10*FW-MENUS_SCROLLBAR_WIDTH)) ? MENU_COLUMN2_X : 0, y, str)
 #else
-  #define MENU_COLUMNS         2
-#endif
-#define MENUS_SCROLLBAR_WIDTH  2
-#define MENU_COLUMN2_X         (14 + LCD_W / 2)
-#define lcd_putsColumnLeft(x, y, str) lcd_puts((x > (LCD_W-10*FW-MENUS_SCROLLBAR_WIDTH)) ? MENU_COLUMN2_X : 0, y, str)
-#else
-#define MENUS_SCROLLBAR_WIDTH  0
-#define MENU_COLUMNS           1
-#define COLUMN_X               0
-#define lcd_putsColumnLeft(x, y, str) lcd_putsLeft(y, str)
+  #define MENUS_SCROLLBAR_WIDTH  0
+  #define MENU_COLUMNS           1
+  #define COLUMN_X               0
+  #define lcd_putsColumnLeft(x, y, str) lcd_putsLeft(y, str)
 #endif
 
 // Menus related stuff ...
@@ -86,6 +84,10 @@ extern uint8_t s_noHi;
 extern uint8_t s_noScroll;
 
 void menu_lcd_onoff(uint8_t x, uint8_t y, uint8_t value, LcdFlags attr);
+
+typedef void (*MenuFuncP)(uint8_t event);
+typedef void (*MenuFuncP_PROGMEM)(uint8_t event);
+extern const MenuFuncP_PROGMEM menuTabModel[];
 
 extern MenuFuncP g_menuStack[5];
 extern uint8_t g_menuStackPtr;
@@ -119,6 +121,7 @@ void menuModelSelect(uint8_t event);
 void menuModelCustomFunctions(uint8_t event);
 void menuStatisticsView(uint8_t event);
 void menuStatisticsDebug(uint8_t event);
+void menuAboutView(uint8_t event);
 
 #if defined(NAVIGATION_POT1)
   extern int16_t p1valdiff;
@@ -197,45 +200,45 @@ bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
 bool check_simple(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t menuTabSize, vertpos_t maxrow);
 bool check_submenu_simple(check_event_t event, uint8_t maxrow);
 
-typedef void (*MenuFuncP_PROGMEM)(uint8_t event);
-
 void title(const pm_char * s);
 #define TITLE(str) title(str)
 
 #if defined(CPUARM)
-#define MENU(title, tab, menu, lines_count, ...) \
-const uint8_t mstate_tab[] = __VA_ARGS__; \
-if (!check(event,menu,tab,DIM(tab),mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; \
-TITLE(title)
+  #define MENU_TAB(...) const uint8_t mstate_tab[] = __VA_ARGS__
 #else
-#define MENU(title, tab, menu, lines_count, ...) \
-static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
-if (!check(event,menu,tab,DIM(tab),mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; \
-TITLE(title)
+  #define MENU_TAB(...) static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__
 #endif
 
+#define MENU_CHECK(tab, menu, lines_count) \
+  check(event, menu, tab, DIM(tab), mstate_tab, DIM(mstate_tab)-1, (lines_count)-1)
+
+#define MENU(title, tab, menu, lines_count, ...) \
+  MENU_TAB(__VA_ARGS__); \
+  if (!MENU_CHECK(tab, menu, lines_count)) return; \
+  TITLE(title)
+
 #define SIMPLE_MENU_NOTITLE(tab, menu, lines_count) \
-if (!check_simple(event,menu,tab,DIM(tab),(lines_count)-1)) return;
+  if (!check_simple(event,menu,tab,DIM(tab),(lines_count)-1)) return;
 
 #define SIMPLE_MENU(title, tab, menu, lines_count) \
-SIMPLE_MENU_NOTITLE(tab, menu, lines_count); \
-TITLE(title)
+  SIMPLE_MENU_NOTITLE(tab, menu, lines_count); \
+  TITLE(title)
 
 #define SUBMENU_NOTITLE(lines_count, ...) { \
-static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
-if (!check(event,0,NULL,0,mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; }
+  static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
+  if (!check(event,0,NULL,0,mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; }
 
 #define SUBMENU(title, lines_count, ...) \
-static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
-if (!check(event,0,NULL,0,mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; \
-TITLE(title)
+  static const pm_uint8_t mstate_tab[] PROGMEM = __VA_ARGS__; \
+  if (!check(event,0,NULL,0,mstate_tab,DIM(mstate_tab)-1,(lines_count)-1)) return; \
+  TITLE(title)
 
 #define SIMPLE_SUBMENU_NOTITLE(lines_count) \
-if (!check_submenu_simple(event,(lines_count)-1)) return;
+  if (!check_submenu_simple(event,(lines_count)-1)) return;
 
 #define SIMPLE_SUBMENU(title, lines_count) \
-SIMPLE_SUBMENU_NOTITLE(lines_count); \
-TITLE(title)
+  SIMPLE_SUBMENU_NOTITLE(lines_count); \
+  TITLE(title)
 
 int8_t selectMenuItem(uint8_t x, uint8_t y, const pm_char *label, const pm_char *values, int8_t value, int8_t min, int8_t max, LcdFlags attr, uint8_t event);
 uint8_t onoffMenuItem(uint8_t value, uint8_t x, uint8_t y, const pm_char *label, LcdFlags attr, uint8_t event );
@@ -341,10 +344,13 @@ void menuChannelsView(uint8_t event);
 
 #if defined(PCBTARANIS)
   #define REPEAT_LAST_CURSOR_MOVE() { if (CURSOR_MOVED_LEFT(event) || CURSOR_MOVED_RIGHT(event)) putEvent(event); else m_posHorz = 0; }
+  #define MOVE_CURSOR_FROM_HERE()   if (m_posHorz > 0) REPEAT_LAST_CURSOR_MOVE()
 #elif defined(ROTARY_ENCODER_NAVIGATION)
   #define REPEAT_LAST_CURSOR_MOVE() { if (EVT_KEY_MASK(event) >= 0x0e) putEvent(event); else m_posHorz = 0; }
+  #define MOVE_CURSOR_FROM_HERE()   if (m_posHorz > 0) REPEAT_LAST_CURSOR_MOVE()
 #else
   #define REPEAT_LAST_CURSOR_MOVE() m_posHorz = 0;
+  #define MOVE_CURSOR_FROM_HERE()   REPEAT_LAST_CURSOR_MOVE()
 #endif
 
 #if defined(PCBTARANIS)

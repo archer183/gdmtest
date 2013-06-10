@@ -72,7 +72,7 @@ class FrskyValueWithMinMax: public FrskyValueWithMin {
 #define VARIO_QUEUE_LENGTH          5
 
 #if defined(FRSKY_HUB)
-PACK(struct FrskyHubData {
+PACK(struct FrskySerialData {
   int16_t  baroAltitudeOffset;//       spare reused
   int16_t  gpsAltitude_bp;   // 0x01   before punct
   int16_t  temperature1;     // 0x02   -20 .. 250 deg. celcius
@@ -116,6 +116,21 @@ PACK(struct FrskyHubData {
   int32_t  varioAltitude_cm;
   int16_t  varioSpeed;       // 0x30  Vertical speed in cm/s
 
+  uint16_t gpsDistance;
+  int16_t  gpsAltitudeOffset;
+  uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
+  uint8_t  minCellIdx;
+  int16_t  cellsSum;
+  uint16_t currentConsumption;
+  uint16_t currentPrescale;
+  uint16_t power;
+  int16_t  spare2;
+
+  uint16_t vfas;             // 0x39  Added to FrSky protocol for home made sensors with a better precision
+  uint16_t volts_bp;         // 0x3A
+  uint16_t volts_ap;         // 0x3B
+  // end of FrSky Hub data
+
   /* next fields must keep this order! */
   int16_t  minAltitude;
   int16_t  maxAltitude;
@@ -125,28 +140,19 @@ PACK(struct FrskyHubData {
   uint16_t maxGpsSpeed;
   uint16_t maxGpsDistance;
   uint16_t maxCurrent;
+  uint16_t maxPower;
   /* end */
-
-  uint16_t vfas;             // 0x39  Added to FrSky protocol for home made sensors with a better precision
-  uint16_t volts_bp;         // 0x3A
-  uint16_t volts_ap;         // 0x3B
-  // end of FrSky Hub data
-
-  uint16_t gpsDistance;
-  int16_t  gpsAltitudeOffset;
-  uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
-  uint8_t  minCellIdx;
-  int16_t  cellsSum;
-
-  // TODO later uint16_t minVfas;
 });
-#define FRSKY_HUB_DATA FrskyHubData hub;
 #elif defined(WS_HOW_HIGH)
-PACK(struct WSHowHighData {
+PACK(struct FrskySerialData {
   int16_t  baroAltitude_bp;     // 0..9,999 meters
   int16_t  baroAltitudeOffset;
   int16_t  minAltitude;
   int16_t  maxAltitude;
+  uint16_t currentConsumption;
+  uint16_t currentPrescale;
+  uint16_t power;
+  uint16_t maxPower;
 #if defined(VARIO)
   int16_t  varioAltitudeQueue[VARIO_QUEUE_LENGTH]; //circular buffer
   uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
@@ -154,32 +160,35 @@ PACK(struct WSHowHighData {
   int16_t  varioSpeed;       // Vertical speed in cm/s
 #endif
 });
-#define FRSKY_HUB_DATA WSHowHighData hub;
 #elif defined(VARIO)
-PACK(struct VarioData {
+PACK(struct FrskySerialData {
   int16_t  varioAltitudeQueue[VARIO_QUEUE_LENGTH]; //circular buffer
   uint8_t  varioAltitudeQueuePointer;     // circular-buffer pointer
   int32_t  varioAltitude_cm;
   int16_t  varioSpeed;       // Vertical speed in cm/s
+  uint16_t currentConsumption;
+  uint16_t currentPrescale;
+  uint16_t power;
+  uint16_t maxPower;
 });
-#define FRSKY_HUB_DATA VarioData hub;
 #else
-#define FRSKY_HUB_DATA
+PACK(struct FrskySerialData {
+  uint16_t currentConsumption;
+  uint16_t currentPrescale;
+  uint16_t power;
+  uint16_t maxPower;
+});
 #endif
 
 struct FrskyData {
   FrskyValueWithMinMax analog[2];
   FrskyValueWithMin    rssi[2];
-
-  FRSKY_HUB_DATA
-
-  uint16_t             currentConsumption;
-  uint16_t             currentPrescale;
-  uint16_t             power;
+  FrskySerialData hub;
 };
 
 // Global Fr-Sky telemetry data variables
-extern int8_t frskyStreaming; // >0 (true) == data is streaming in. 0 = nodata detected for some time
+extern uint8_t frskyStreaming; // >0 (true) == data is streaming in. 0 = nodata detected for some time
+
 #if defined(WS_HOW_HIGH)
 extern uint8_t frskyUsrStreaming;
 #endif
@@ -194,6 +203,8 @@ extern uint8_t frskyTxBuffer[FRSKY_TX_PACKET_SIZE];
 extern uint8_t frskyTxBufferCount;
 
 void FRSKY_Init(void);
+#define FRSKY_End()
+
 void telemetryWakeup(void);
 void telemetryInterrupt10ms(void);
 
@@ -212,6 +223,8 @@ void resetTelemetry();
 #define TELEMETRY_GPS_ALT_BP   frskyData.hub.gpsAltitude_bp
 #define TELEMETRY_GPS_SPEED_BP frskyData.hub.gpsSpeed_bp
 #define TELEMETRY_GPS_SPEED_AP frskyData.hub.gpsSpeed_ap
+
+#define TELEMETRY_STREAMING()  (frskyStreaming > 0)
 
 #endif
 

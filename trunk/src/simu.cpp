@@ -80,7 +80,7 @@ FXDEFMAP(Open9xSim) Open9xSimMap[]={
 FXIMPLEMENT(Open9xSim,FXMainWindow,Open9xSimMap,ARRAYNUMBER(Open9xSimMap))
 
 Open9xSim::Open9xSim(FXApp* a)
-:FXMainWindow(a,"Open9xSim",NULL,NULL,DECOR_ALL,20,90,0,0)
+:FXMainWindow(a,"OpenTXSimu",NULL,NULL,DECOR_ALL,20,90,0,0)
 {
   firstTime=true;
   for(int i=0; i<(LCD_W*LCD_H/8); i++) displayBuf[i]=0;//rand();
@@ -207,7 +207,7 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
     Coproc_maxtemp = 28;
 #endif
 
-#if defined(CPUARM)
+#if defined(PCBSKY9X)
     temperature = 31;
     maxTemperature = 42;
 #endif
@@ -247,10 +247,12 @@ long Open9xSim::onTimeout(FXObject*,FXSelector,void*)
 #define SWITCH_KEY(key, swtch, states) \
     static bool state##key = 0; \
     static int8_t state_##swtch = 2; \
+    static int8_t inc_##swtch = 1; \
     if (getApp()->getKeyState(KEY_##key)) { \
       if (!state##key) { \
-        state_##swtch = (state_##swtch+1); \
-        if (state_##swtch == 2+states) state_##swtch = 2; \
+        state_##swtch = (state_##swtch+inc_##swtch); \
+        if (state_##swtch == 1+states) inc_##swtch = -1; \
+        else if (state_##swtch == 2) inc_##swtch = 1; \
         state##key = true; \
       } \
     } \
@@ -380,11 +382,11 @@ int main(int argc,char **argv)
   th9xSim->show(); // Otherwise the main window gets centred across my two monitors, split down the middle.
 #endif
 
-#ifdef FRSKY
+#if defined(FRSKY) && !defined(FRSKY_SPORT)
   frskyStreaming = 1;
 #endif
 
-  printf("Model size = %d\n", sizeof(g_model));
+  printf("Model size = %d\n", (int)sizeof(g_model));
 
   StartEepromThread(argc >= 2 ? argv[1] : "eeprom.bin");
   StartMainThread();
