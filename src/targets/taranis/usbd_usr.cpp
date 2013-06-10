@@ -107,14 +107,9 @@ void USBD_USR_DeviceResumed(void)
 */
 void USBD_USR_DeviceConnected (void)
 {
-  if (sdMounted()) {
-    audioQueue.stopSD();
-    closeLogs();
-    f_mount(0, 0); // unmount SD
-  }
-
+  sdDone();
   eeCheck(true);
-  usb_connected = 1;
+  usbState = USB_CONNECTED;
 }
 
 
@@ -126,12 +121,7 @@ void USBD_USR_DeviceConnected (void)
 */
 void USBD_USR_DeviceDisconnected (void)
 {
-  usb_connected = 0;
-
-  eeReadAll();
-  eeLoadModel(g_eeGeneral.currModel);
-
-  sdInit();
+  usbState = USB_DISCONNECTING;
 }
 
 

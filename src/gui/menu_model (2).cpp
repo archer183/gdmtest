@@ -3551,23 +3551,7 @@ void menuModelLimits(uint8_t event)
 
 void menuModelCurvesAll(uint8_t event)
 {
-#if defined(TRIG)
-
-	//MUST USE PROGMEM TO GET TEXT RIGHT FOR SOME REASON!
-//const pm_char STR_COMBAT[] = "COMBCV";
-//const pm_char STR_COMB1[] = "AZn";
-//const pm_char STR_COMB2[] = "RNn";
-//const pm_char STR_COMB3[] = "RMn";
-//const pm_char STR_COMB4[] = "TSn";
-
-const pm_char* CombatMenuPointer[] = {STR_TURRETSPACE,STR_RANGEMAX,STR_RANGEINPUT,STR_AZINPUT};
-uint8_t CombatGvarUsed = 5;  //must correspond properly to combatmath.h !!! 
-//IS NUMBER OF GVARS FROM MAX THAT CONTAINS COMBAT VARIABLE STRING!!
-
-SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //changed out combatmenu
-
-
-#elif defined(GVARS) && defined(PCBSTD)
+#if defined(GVARS) && defined(PCBSTD)
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS);
 #else
   SIMPLE_MENU(STR_MENUCURVES, menuTabModel, e_CurvesAll, 1+MAX_CURVES);
@@ -3598,27 +3582,7 @@ SIMPLE_MENU(STR_COMBAT, menuTabModel, e_CurvesAll, 1+MAX_CURVES+MAX_GVARS); //ch
     uint8_t attr = (sub == k ? INVERS : 0);
 #if defined(GVARS) && defined(PCBSTD)
     if (k >= MAX_CURVES) {
-	
-	#if defined(TRIG)  //trigmods
-		if (k<MAX_CURVES + MAX_GVARS - CombatGvarUsed) {
-			putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1); //Currently GVAR 1-5, index 0 - 4
-		}
-		else 
-		{
-			//must make sure these positions follow with those in combatmath.h!
-			if (k<MAX_CURVES + MAX_GVARS - CombatGvarUsed +2 ) {
-				putsStrIdx(0, y, CombatMenuPointer[0], k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed)+2);//CombatMenuPointer[0]
-			}
-			else
-			{
-				putsStrIdx(0, y,CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1],1);//CombatMenuPointer[k-(MAX_CURVES + MAX_GVARS - CombatGvarUsed +2)+1]
-			}
-			//putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
-		}
-//#endif		
-#else	
       putsStrIdx(0, y, STR_GV, k-MAX_CURVES+1);
-#endif
       if (GVAR_SELECTED()) {
         if (attr && s_editMode>0) attr |= BLINK;
         lcd_outdezAtt(10*FW, y, GVAR_VALUE(k-MAX_CURVES, -1), attr);

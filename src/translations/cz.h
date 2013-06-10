@@ -20,6 +20,20 @@
  *
  */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // NON ZERO TERMINATED STRINGS
 #define LEN_OFFON              "\003"
 #define TR_OFFON               "VYP""ZAP"
@@ -122,7 +136,7 @@
 #define TR_VMIXTRIMS           "VYP\0""ZAP\0""Sm\203r""V\212\207k""Plyn""K\206id"
 
 #define LEN_VCSWFUNC           "\005"
-#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x"
+#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x""TIM\0"
 
 #define LEN_VFSWFUNC           "\013"
 
@@ -211,9 +225,18 @@
 #define TR_FUNCSOUNDS          "Beep1 ""Beep2 ""Beep3 ""Warn1 ""Warn2 ""Cheep ""Ring  ""SciFi ""Robot ""Chirp ""Tada  ""Crickt""Siren ""AlmClk""Ratata""Tick  "
 
 #define LEN_VTELEMCHNS         "\004"
-#define TR_VTELEMCHNS          "---\0""Bat\0""Tmr1""Tmr2""Tx\0 ""Rx\0 ""A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VSpd""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Spd+""Dst+""Cur+""Acc\0""Time"
+#if defined(PCBTARANIS)
+  #define TR_RSSI_0            "SWR\0"
+  #define TR_RSSI_1            "RSSI"
+#else
+  #define TR_RSSI_0            "Tx\0 "
+  #define TR_RSSI_1            "Rx\0 "
+#endif
+#define TR_VTELEMCHNS          "---\0""Bat\0""Tmr1""Tmr2" TR_RSSI_0 TR_RSSI_1 "A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VSpd""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Spd+""Dst+""Cur+""Pwr+""Acc\0""Time"
 
 #if defined(CPUARM)
+  #define LEN_VUNITSSYSTEM     TR("\006", "\010")
+  #define TR_VUNITSSYSTEM      TR("Metr.\0""Imper.", "Metrick\202""Imperial")
   #define LEN_VTELEMUNIT_NORM  "\003"
   #define TR_VTELEMUNIT_NORM   "v\0 ""A\0 ""m/s""-\0 ""kmh""m\0 ""@\0 ""%\0 ""mA\0""mAh""W\0 "
   #define LEN_VTELEMUNIT_IMP   "\003"
@@ -318,6 +341,12 @@
 #define LEN_VTMRMODES          "\003"
 #define TR_VTMRMODES           "VYP""ABS""THs""TH%""THt"
 
+#define LEN_VTRAINERMODES      "\006"
+#define TR_VTRAINERMODES       "U\201itel""\217\200k\0  "
+
+#define LEN_VFAILSAFE          "\011"
+#define TR_VFAILSAFE           "Dr\217et\0   ""Vlastn\204\0 ""Bez pulz\211"
+
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
 #define LEN_INDENT             1
@@ -333,7 +362,7 @@
 #define OFS_EXIT               sizeof(TR_ENTER)
 
 #define TR_MENUWHENDONE        CENTER "\007"TR_ENTER" > DAL\207\214"
-#define TR_FREE                TR("voln\202:", "free")
+#define TR_FREE                TR("voln\202:", "voln\212ch")
 #define TR_DELETEMODEL         "SMAZAT MODEL"
 #define TR_COPYINGMODEL        "Kop\204ruji model.."
 #define TR_MOVINGMODEL         "P\206esouv\200m model."
@@ -349,7 +378,7 @@
 #define TR_ETRIMS              TR("\207ir\207\204Trim", "\207irok\212 trim")
 #define TR_TRIMINC             TR("KrokTrimu", "Krok trimu")
 #define TR_TTRACE              TR("StopaPlyn", "Stopa\206 plynu")
-#define TR_TTRIM               TR("TrimPlynu", "TrimPlynu-volnob\203h")
+#define TR_TTRIM               TR("TrimPlynu", "TrimPlyn-volnob\203h")
 #define TR_BEEPCTR             "(\043)St\206edy"
 #define TR_PROTO               INDENT"Protokol"
 #define TR_PPMFRAME            "PPM frame"
@@ -396,8 +425,8 @@
 #define TR_RANGE               INDENT"Rozsah"
 #define TR_BAR                 "Ukazatel"
 #define TR_ALARM               INDENT"Alarm"
-#define TR_USRDATA             "U\217ivData"
-#define TR_BLADES              INDENT"ListyVrt"
+#define TR_USRDATA             TR("U\217ivData", "U\217iv. data")
+#define TR_BLADES              TR(INDENT"ListyVrt", INDENT"Listy vrtule")
 #define TR_SCREEN              "Panel "
 #define TR_SOUND_LABEL         "Zvuk"
 #define TR_LENGTH              INDENT"D\202lka"
@@ -406,7 +435,7 @@
 #define TR_HAPTICSTRENGTH      INDENT"S\204la"
 #define TR_CONTRAST            "Kontrast LCD"
 #define TR_ALARMS_LABEL        "Alarmy"
-#define TR_BATTERY_RANGE       TR("Rozsah bat.", "Ukazetel baterie")
+#define TR_BATTERY_RANGE       TR("Ukazatel bat.", "Ukazetel baterie")
 #define TR_BATTERYWARNING      INDENT"Vybit\200 baterie"
 #define TR_INACTIVITYALARM     INDENT"Ne\201innost"
 #define TR_MEMORYWARNING       INDENT"Pln\200 pam\203t'"
@@ -463,13 +492,13 @@
 #define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "Doch\200z\204 EEPROM"
 #define TR_ALERT               "\006(!)POZOR"
-#define TR_PRESSANYKEYTOSKIP   CENTER "Kl\200vesa >>> p\206esko\201it"
-#define TR_THROTTLENOTIDLE     TR(CENTER "P\200ka plynu je pohnut\200", CENTER "P\200ka plynu nen\204 na nule")
-#define TR_ALARMSDISABLED      CENTER "Alarmy jsou zak\200z\200ny"
-#define TR_PRESSANYKEY         CENTER "\006Stiskni kl\200vesu"
-#define TR_BADEEPROMDATA       CENTER "\006Chyba dat EEprom"
-#define TR_EEPROMFORMATTING    CENTER "\004Formatov\200n\204 EEPROM"
-#define TR_EEPROMOVERFLOW      CENTER "P\206etekla EEPROM"
+#define TR_PRESSANYKEYTOSKIP   "Kl\200vesa >>> p\206esko\201it"
+#define TR_THROTTLENOTIDLE     TR("P\200ka plynu je pohnut\200", "P\200ka plynu nen\204 na nule")
+#define TR_ALARMSDISABLED      "Alarmy jsou zak\200z\200ny"
+#define TR_PRESSANYKEY         "\006Stiskni kl\200vesu"
+#define TR_BADEEPROMDATA       "\006Chyba dat EEprom"
+#define TR_EEPROMFORMATTING    "\004Formatov\200n\204 EEPROM"
+#define TR_EEPROMOVERFLOW      "P\206etekla EEPROM"
 #define TR_MENURADIOSETUP      "NASTAVEN\214 R\213DIA"
 #define TR_MENUDATEANDTIME     "DATUM A \201AS"
 #define TR_MENUTRAINER         "TREN\220R"
@@ -484,8 +513,13 @@
 #define TR_MENUFLIGHTPHASES    "LETOV\220 RE\217IMY"
 #define TR_MENUHELISETUP       "HELI"
 
+
+// Alignment
+
+
 #define TR_MENUDREXPO          "DR/EXPO"
 #define TR_MENULIMITS          "LIMITY"
+
 
 #define TR_MENUCURVES          "K\215IVKY"
 #define TR_MENUCURVE           "\002k"
@@ -496,12 +530,12 @@
 #define TR_MENUTEMPLATES       "\207ABLONY"
 #define TR_MENUSTAT            "STATISTIKA"
 #define TR_MENUDEBUG           "DIAG"
-#define TR_RXNUM               "RxNum"
+#define TR_RXNUM               "P\206ij\204ma\201"
 #define TR_SYNCMENU            "Sync [MENU]"
 #define TR_LIMIT               INDENT"Limit"
 #define TR_MINRSSI             "Min Rssi"
-#define TR_LATITUDE            "Latitude"
-#define TR_LONGITUDE           "Longitude"
+#define TR_LATITUDE            "Zem. \207\204\206ka"
+#define TR_LONGITUDE           "Zem. d\202lka"
 #define TR_GPSCOORD            "GPS sou\206adnice"
 #define TR_VARIO               "Vario"
 #define TR_SHUTDOWN            "VYP\214N\213N\204.."
@@ -544,7 +578,7 @@
 #define TR_SDHC_CARD           "SD-HC"
 #define TR_NO_SOUNDS_ON_SD     "\217\200dn\212 zvuk na SD"
 #define TR_NO_MODELS_ON_SD     "\217\200dn\212 model na SD"
-#define TR_NO_BITMAPS_ON_SD    "No Bitmaps on SD"
+#define TR_NO_BITMAPS_ON_SD    "\217\200dn\202 obr\200zky na SD"
 #define TR_PLAY_FILE           "P\206ehr\200t"
 #define TR_DELETE_FILE         "Odstranit"
 #define TR_COPY_FILE           "Kop\204rovat"
@@ -563,8 +597,10 @@
 #define TR_SD_SPEED            "Rychlost:"
 #define TR_SD_SECTORS          "Sektor\211 :"
 #define TR_SD_SIZE             "Velikost:"
-#define TR_TYPE          TR_SD_TYPE
+#define TR_TYPE                TR_SD_TYPE
 #define TR_GLOBAL_VARS         "Glob\200ln\204 prom\203nn\202"
+#define TR_GLOBAL_VAR          "Global Variable"
+#define TR_MENUGLOBALVARS      "GLOB\200LN\204 PROM\203NN\202"
 #define TR_OWN                 " \043 "
 #define TR_DATE                "Datum"
 #define TR_ROTARY_ENCODER      "R.Encs"
@@ -574,3 +610,84 @@
 #define TR_FAILSAFE            "M\205d Failsafe"
 #define TR_FAILSAFESET         "NASTAVEN\214 FAILSAFE"
 #define TR_COUNTRYCODE         "K\205d regionu"
+#define TR_VOICELANG           "Jazyk hlasu"
+#define TR_UNITSSYSTEM         "Jednotky"
+#define TR_EDIT                "Upravit"
+#define TR_INSERT_BEFORE       "Vlo\217it p\206ed"
+#define TR_INSERT_AFTER        "Vlo\217it za"
+#define TR_COPY                "Kop\204rovat"
+#define TR_MOVE                "P\206esunout"
+#define TR_DELETE              "Odstranit"
+#define TR_RESET_FLIGHT        "Vynulovat let"
+#define TR_RESET_TIMER1        "Vynulovat Timer1"
+#define TR_RESET_TIMER2        "Vynulovat Timer2"
+#define TR_RESET_TELEMETRY     "Vynulovat telemetrii"
+#define TR_STATISTICS          "Statistika"
+#define TR_ABOUT_US            "O n\200s"
+#define TR_AND_SWITCH          "AND Sp\204na201"
+#define TR_CF                  "FN"
+#define TR_SPEAKER             INDENT"Repro"
+#define TR_BUZZER              INDENT"P\204p\200k"
+#define TR_BYTES               "[B]"
+#define TR_MODULE_BIND         "[Bind]"
+#define TR_MODULE_RANGE        "[Range]"
+#define TR_RESET               "[Reset]"
+#define TR_SET                 "[Volby]"
+#define TR_TRAINER             "Tren\202r"
+#define TR_ANTENNAPROBLEM      CENTER "Probl\202m s TX ant\202nou!"
+#define TR_MODELIDUSED         TR("ID ji\217 pou\217ito","ID modelu je ji\2017 pou\2017ito")
+#define TR_MODULE              INDENT "Module"
+#define TR_CHANNELRANGE        INDENT "Rozsah kan\200l\211"
+#define TR_LOWALARM            INDENT "N\204zk\212 Alarm"
+#define TR_CRITICALALARM       INDENT "Kritick\212 Alarm"
+
+// Taranis column headers
+#define TR_PHASES_HEADERS      { " Jm\202no ", " Sp\204na\201 ", " Trimy ", " P\206echod Zap ", " P\206echod Vyp " }
+#define TR_LIMITS_HEADERS      { " Jm\202no ", " Subtrim ", " Min ", " Max ", " Sm\203r ", " St\206ed PPM ", " Symetrick\202 " }
+#define TR_CSW_HEADERS         { " Funckce ", " Hodnota 1 ", " Hodnota 2 ", " AND Sp\204na\201 ", " Trv\200n\204 ", " Zpo\217d\204n\204 " }
+
+//Taranis About screen
+#define TR_ABOUTUS             "opentx"
+
+#define TR_ABOUT_OPENTX_1      "je open source, nekomercni"
+#define TR_ABOUT_OPENTX_2      "a je bez jakekoliv zaruky."
+#define TR_ABOUT_OPENTX_3      "Byl vytvoren ve volnem case."
+#define TR_ABOUT_OPENTX_4      "Podpora pomoci financniho"
+#define TR_ABOUT_OPENTX_5      "daru je vitana!"
+
+#define TR_ABOUT_BERTRAND_1    "Bertrand Songis"
+#define TR_ABOUT_BERTRAND_2    "Hlavni autor OpenTX"
+#define TR_ABOUT_BERTRAND_3    "Spolutvurce Companion9x"
+
+#define TR_ABOUT_MIKE_1        "Mike Blandford"
+#define TR_ABOUT_MIKE_2        "Specialista na kod,"
+#define TR_ABOUT_MIKE_3        " a ovladace hardwaru."
+#define TR_ABOUT_MIKE_4        ""
+       
+#define TR_ABOUT_ROMOLO_1      "Romolo Manfredini"
+#define TR_ABOUT_ROMOLO_2      "Hlavni vyvojar"
+#define TR_ABOUT_ROMOLO_3      "Companion9x"
+
+#define TR_ABOUT_ANDRE_1       "Andre Bernet"
+#define TR_ABOUT_ANDRE_2       "Funkcnost, pouzitelnost,"
+#define TR_ABOUT_ANDRE_3       "ladeni a dokumentace"
+
+#define TR_ABOUT_ROB_1         "Rob Thomson"
+#define TR_ABOUT_ROB_2         "openrcforums webmaster"
+
+#define TR_ABOUT_MARTIN_1      "Martin Hota\206"
+#define TR_ABOUT_MARTIN_2      "Grafika / CZ preklad"
+
+#define TR_ABOUT_HARDWARE_1    "FrSky"
+#define TR_ABOUT_HARDWARE_2    "Vyvoj a vyroba Hardware"
+#define TR_ABOUT_HARDWARE_3    ""
+
+#define TR_ABOUT_PARENTS_1     "Mate\206sk\202 projekty"
+#define TR_ABOUT_PARENTS_2     "ersky9x (Mike Blandford)"
+#define TR_ABOUT_PARENTS_3     "ER9X (Erez Raviv)"
+#define TR_ABOUT_PARENTS_4     "TH9X (Thomas Husterer)"
+
+#define TR_CHR_SHORT  's'
+#define TR_CHR_LONG   'l'
+#define TR_CHR_TOGGLE 't'
+#define TR_CHR_HOUR   'h'

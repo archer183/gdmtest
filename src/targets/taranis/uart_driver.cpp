@@ -60,13 +60,37 @@ void uartInit(uint32_t baudrate)
   USART_InitStructure.USART_StopBits = USART_StopBits_1;
   USART_InitStructure.USART_Parity = USART_Parity_No;
   USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-  USART_InitStructure.USART_Mode = USART_Mode_Tx;
+  USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
   
   USART_Init(UART3, &USART_InitStructure);
   USART_Cmd(UART3, ENABLE);
+
+  USART_ITConfig(UART3, USART_IT_RXNE, DISABLE);
+  USART_ITConfig(UART3, USART_IT_TXE, DISABLE);
+
+  NVIC_EnableIRQ(USART3_IRQn);
 }
 
-void uartPutc(const char c)
+#if defined(DEBUG)
+#include "../../fifo.h"
+Fifo<512> debugTxFifo;
+void debugPutc(const char c)
 {
-  USART_SendData(UART3, c);
+  debugTxFifo.push(c);
+  USART_ITConfig(UART3, USART_IT_TXE, ENABLE);
 }
+
+extern "C" void USART3_IRQHandler(void)
+{
+  if (USART_GetITStatus(UART3, USART_IT_TXE) != RESET) {
+    uint8_t txchar;
+    if (debugTxFifo.pop(txchar)) {
+      /* Write one byte to the transmit data register */
+      USART_SendData(UART3, txchar);
+    }
+    else {
+      USART_ITConfig(UART3, USART_IT_TXE, DISABLE);
+    }
+  }
+}
+#endif

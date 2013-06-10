@@ -168,11 +168,12 @@ enum menuGeneralSetupItems {
 #if defined(SPLASH) && !defined(FSPLASH)
   ITEM_SETUP_DISABLE_SPLASH,
 #endif
-  IF_FRSKY(ITEM_SETUP_TIMEZONE)
-  IF_FRSKY(ITEM_SETUP_GPSFORMAT)
+  IF_GPS(ITEM_SETUP_TIMEZONE)
+  IF_GPS(ITEM_SETUP_GPSFORMAT)
   IF_PXX(ITEM_SETUP_COUNTRYCODE)
   IF_CPUARM(ITEM_SETUP_LANGUAGE)
   IF_CPUARM(ITEM_SETUP_IMPERIAL)
+  IF_FAI_CHOICE(ITEM_SETUP_FAI)
   ITEM_SETUP_RX_CHANNEL_ORD,
   ITEM_SETUP_STICK_MODE_LABELS,
   ITEM_SETUP_STICK_MODE,
@@ -185,13 +186,22 @@ void menuGeneralSetup(uint8_t event)
   struct gtm t;
   gettime(&t);
 
-  if ((m_posVert==ITEM_SETUP_DATE+1 || m_posVert==ITEM_SETUP_TIME+1) && s_editMode>0 && event == EVT_KEY_FIRST(KEY_ENTER)) {
+  if ((m_posVert==ITEM_SETUP_DATE+1 || m_posVert==ITEM_SETUP_TIME+1) &&
+      (s_editMode>0) &&
+      (event==EVT_KEY_FIRST(KEY_ENTER) || event==EVT_KEY_FIRST(KEY_EXIT) || IS_ROTARY_BREAK(event) || IS_ROTARY_LONG(event))) {
     // set the date and time into RTC chip
     rtcSetTime(&t);
   }
 #endif
 
-  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) IF_BATTGRAPH(1) LABEL(SOUND), IF_AUDIO(0) IF_BUZZER(0) 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_PCBSKY9X(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) LABEL(BACKLIGHT), 0, 0, CASE_PWM_BACKLIGHT(0) CASE_PWM_BACKLIGHT(0) 0, IF_SPLASH(0) IF_FRSKY(0) IF_FRSKY(0) IF_PXX(0) IF_CPUARM(0) IF_CPUARM(0) 0, LABEL(TX_MODE), CASE_PCBTARANIS(0) 1/*to force edit mode*/});
+#if defined(FAI_CHOICE)
+  if (s_warning_result) {
+    g_eeGeneral.fai = true;
+    eeDirty(EE_GENERAL);
+  }
+#endif
+
+  MENU(STR_MENURADIOSETUP, menuTabDiag, e_Setup, ITEM_SETUP_MAX+1, {0, IF_RTCLOCK(2) IF_RTCLOCK(2) IF_BATTGRAPH(1) LABEL(SOUND), IF_AUDIO(0) IF_BUZZER(0) 0, IF_AUDIO(0) IF_VOICE(0) IF_HAPTIC(LABEL(HAPTIC)) IF_HAPTIC(0) IF_HAPTIC(0) IF_HAPTIC(0) IF_PCBSKY9X(0) IF_9X(0) LABEL(ALARMS), 0, IF_PCBSKY9X(0) IF_PCBSKY9X(0) 0, 0, 0, IF_ROTARY_ENCODERS(0) LABEL(BACKLIGHT), 0, 0, CASE_PWM_BACKLIGHT(0) CASE_PWM_BACKLIGHT(0) 0, IF_SPLASH(0) IF_GPS(0) IF_GPS(0) IF_PXX(0) IF_CPUARM(0) IF_CPUARM(0) IF_FAI_CHOICE(0) 0, LABEL(TX_MODE), CASE_PCBTARANIS(0) 1/*to force edit mode*/});
 
   uint8_t sub = m_posVert - 1;
 
@@ -221,8 +231,8 @@ void menuGeneralSetup(uint8_t event)
             {
               int16_t year = 1900 + t.tm_year;
               int8_t dlim = (((((year%4==0) && (year%100!=0)) || (year%400==0)) && (t.tm_mon==1)) ? 1 : 0);
-              int8_t dmon[] = {31,28,31,30,31,30,31,31,30,31,30,31}; // TODO in flash
-              dlim += dmon[t.tm_mon];
+              static const pm_uint8_t dmon[] PROGMEM = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+              dlim += pgm_read_byte(&dmon[t.tm_mon]);
               lcd_outdezNAtt(RADIO_SETUP_DATE_COLUMN+6*FW-2, y, t.tm_mday, rowattr|LEADING0, 2);
               if (rowattr && (s_editMode>0 || p1valdiff)) t.tm_mday = checkIncDec(event, t.tm_mday, 1, dlim, 0);
               break;
@@ -482,12 +492,12 @@ void menuGeneralSetup(uint8_t event)
       case ITEM_SETUP_DISABLE_SPLASH:
       {
         uint8_t b = 1-g_eeGeneral.splashMode;
-        g_eeGeneral.splashMode = 1 - onoffMenuItem( b, RADIO_SETUP_2ND_COLUMN, y, STR_SPLASHSCREEN, attr, event ) ;
+        g_eeGeneral.splashMode = 1 - onoffMenuItem(b, RADIO_SETUP_2ND_COLUMN, y, STR_SPLASHSCREEN, attr, event);
         break;
       }
 #endif
 
-#if defined(FRSKY)
+#if defined(FRSKY) && defined(FRSKY_HUB) && defined(GPS)
       case ITEM_SETUP_TIMEZONE:
         lcd_putsLeft(y, STR_TIMEZONE);
         lcd_outdezAtt(RADIO_SETUP_2ND_COLUMN, y, g_eeGeneral.timezone, attr|LEFT);
@@ -507,7 +517,7 @@ void menuGeneralSetup(uint8_t event)
 
 #if defined(CPUARM)
       case ITEM_SETUP_LANGUAGE:
-        lcd_putsLeft(y, PSTR("Voice Language"));
+        lcd_putsLeft(y, STR_VOICELANG);
         lcd_putsAtt(RADIO_SETUP_2ND_COLUMN, y, currentLanguagePack->name, attr);
         if (attr) {
           currentLanguagePackIdx = checkIncDec(event, currentLanguagePackIdx, 0, DIM(languagePacks)-2, EE_GENERAL);
@@ -520,6 +530,18 @@ void menuGeneralSetup(uint8_t event)
 
       case ITEM_SETUP_IMPERIAL:
         g_eeGeneral.imperial = selectMenuItem(RADIO_SETUP_2ND_COLUMN, y, STR_UNITSSYSTEM, STR_VUNITSSYSTEM, g_eeGeneral.imperial, 0, 1, attr, event);
+        break;
+#endif
+
+#if defined(FAI_CHOICE)
+      case ITEM_SETUP_FAI:
+        onoffMenuItem(g_eeGeneral.fai, RADIO_SETUP_2ND_COLUMN, y, PSTR("FAI Mode"), attr, event);
+        if (checkIncDec_Ret) {
+          if (g_eeGeneral.fai)
+            POPUP_WARNING(PSTR("FAI\001mode blocked!"));
+          else
+            POPUP_CONFIRMATION(PSTR("FAI mode?"));
+        }
         break;
 #endif
 
@@ -549,9 +571,7 @@ void menuGeneralSetup(uint8_t event)
           clearKeyEvents();
         }
 #if defined(ROTARY_ENCODER_NAVIGATION)
-        if (m_posHorz > 0) {
-          REPEAT_LAST_CURSOR_MOVE();
-        }
+        MOVE_CURSOR_FROM_HERE();
 #endif
         break;
     }
@@ -958,6 +978,8 @@ void menuGeneralDiagAna(uint8_t event)
 
   SIMPLE_MENU(STR_MENUANA, menuTabDiag, e_Ana, ANAS_ITEMS_COUNT);
 
+  STICK_SCROLL_DISABLE();
+
   for (uint8_t i=0; i<NUM_STICKS+NUM_POTS; i++) {
     uint8_t y = 1+FH+(i/2)*FH;
     uint8_t x = i&1 ? 64+5 : 0;
@@ -1132,6 +1154,7 @@ void menuCommonCalib(uint8_t event)
 
     case 2:
       // MOVE STICKS/POTS
+      STICK_SCROLL_DISABLE();
       lcd_putsAtt(0*FW, 2*FH, STR_MOVESTICKSPOTS, s_noScroll ? INVERS : 0);
       lcd_putsLeft(3*FH, STR_MENUWHENDONE);
 
@@ -1148,7 +1171,7 @@ void menuCommonCalib(uint8_t event)
 
     case 3:
       g_eeGeneral.chkSum = evalChkSum();
-      STORE_GENERALVARS;
+      eeDirty(EE_GENERAL);
       reusableBuffer.calib.state = 4;
       break;
 

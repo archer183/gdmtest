@@ -41,7 +41,6 @@
 #if !defined(SIMU)
 
 Fifo<512> debugRxFifo;
-Fifo<512> debugTxFifo;
 
 // Outputs a string to the UART
 void debugPuts(const char *format, ...)
@@ -55,7 +54,7 @@ void debugPuts(const char *format, ...)
 
   const char *t = tmp;
   while (*t) {
-    debugTxFifo.push(*t++);
+    debugPutc(*t++);
   }
 }
 
@@ -78,15 +77,10 @@ uint32_t Mem_address ;
 uint32_t Next_mem_address ;
 uint32_t Memaddmode ;
 
-void txmit( uint8_t chr )
-{
-  debugTxFifo.push( chr) ;	
-}
-
 void crlf()
 {
-	txmit( 13 ) ;
-	txmit( 10 ) ;
+  debugPutc( 13 ) ;
+  debugPutc( 10 ) ;
 }
 
 // Send a single 4 bit value to the RS232 port as a hex digit
@@ -98,7 +92,7 @@ void hex_digit_send( unsigned char c )
 		c += 7 ;
 	}
 	c += '0' ;
-	txmit( c ) ;
+	debugPutc( c ) ;
 }
 
 // Send the 8 bit value to the RS232 port as 2 hex digits
@@ -135,7 +129,7 @@ static void dispw_256( register uint32_t address, register uint32_t lines )
 		p8hex( address ) ;
 		for ( j = 0 ; j < 4 ; j += 1 )
 		{
-			txmit(' ') ;
+			debugPutc(' ') ;
 			p8hex( *( (uint32_t *)address ) ) ;
 			address += 4 ;
 		}
@@ -146,85 +140,78 @@ static void dispw_256( register uint32_t address, register uint32_t lines )
 void debugTask(void* pdata)
 {
   uint8_t rxchar ;
-	crlf() ;
-	dispw_256( (uint32_t)USART3, 4 ) ;
+
+  TRACE("DEBUG Task started");
+
+  crlf() ;
+  dispw_256( (uint32_t)USART3, 4 ) ;
 
   for (;;) {
-		
 		
     while ( (USART3->SR & USART_SR_RXNE) == 0 )
       CoTickDelay(5); // 10ms
 		
-		rxchar = USART3->DR ;
+    rxchar = USART3->DR;
 
-		if ( Memaddmode )
-		{
-			if ( ( rxchar >= 'a' ) && ( rxchar <= 'f' ) )
-			{
-				rxchar -= 0x20 ;		// toupper!				
-			}
-			if ( ( ( rxchar >= '0' ) && ( rxchar <= '9' ) ) || ( ( rxchar >= 'A' ) && ( rxchar <= 'F' ) ) )
-			{
-				txmit( rxchar ) ;
-				rxchar -= '0' ;
-				if ( rxchar > 9 )
-				{
-					rxchar -= 7 ;				
-				}
-				Mem_address <<= 4 ;
-				Mem_address |= rxchar ;			
-			}
-			else if ( rxchar == 13 )
-			{
-				crlf() ;
-				if ( Mem_address == 0 )
-				{
-					Mem_address = Next_mem_address ;
-				}
-				dispw_256( Mem_address, 4 ) ;
-				Next_mem_address = Mem_address + 64 ;
-				Memaddmode = 0 ;				
-			}
-			else if ( rxchar == 8 )
-			{
-				txmit( rxchar ) ;
-				txmit( rxchar ) ;
-				txmit( rxchar ) ;
-				Mem_address >>= 4 ;			
-			}
-			else if ( rxchar == 27 )
-			{
-				crlf() ;
-				Memaddmode = 0 ;				
-			}		
+    if ( Memaddmode )
+    {
+      if ( ( rxchar >= 'a' ) && ( rxchar <= 'f' ) )
+      {
+        rxchar -= 0x20;		// toupper!
+      }
+      if ( ( ( rxchar >= '0' ) && ( rxchar <= '9' ) ) || ( ( rxchar >= 'A' ) && ( rxchar <= 'F' ) ) )
+      {
+        debugPutc( rxchar );
+        rxchar -= '0';
+        if ( rxchar > 9 )
+        {
+          rxchar -= 7;
+        }
+        Mem_address <<= 4;
+        Mem_address |= rxchar;
+      }
+      else if ( rxchar == 13 )
+      {
+        crlf();
+        if ( Mem_address == 0 )
+        {
+          Mem_address = Next_mem_address;
+        }
+        dispw_256( Mem_address, 4 );
+        Next_mem_address = Mem_address + 64;
+        Memaddmode = 0;
+      }
+      else if ( rxchar == 8 )
+      {
+        debugPutc( rxchar );
+        debugPutc( rxchar );
+        debugPutc( rxchar );
+        Mem_address >>= 4;
+      }
+      else if ( rxchar == 27 )
+      {
+        crlf();
+        Memaddmode = 0;
+      }
 
-		}
+    }
 
-		if ( rxchar == '?' )
-		{
-			Memaddmode = 1 ;
-			Mem_address = 0 ;
-			txmit( '>' ) ;
-		}
+    if ( rxchar == '?' )
+    {
+      Memaddmode = 1;
+      Mem_address = 0;
+      debugPutc( '>' );
+    }
 
-		if ( rxchar == 'm' )
-		{
-			crlf() ;
-			p8hex( (uint32_t) &g_model.moduleData[0] ) ;
-			txmit( ' ' ) ;
-			p8hex( (uint32_t) &g_model.moduleData[1] ) ;
-			crlf() ;
-		}
+    if ( rxchar == 'm' )
+    {
+      crlf();
+      p8hex( (uint32_t) &g_model.moduleData[0] );
+      debugPutc( ' ' );
+      p8hex( (uint32_t) &g_model.moduleData[1] );
+      crlf();
+    }
 
   }
 }
-
-void debugTx(void)
-{
-  uint8_t txchar;
-
-  if (debugTxFifo.pop(txchar))
-    debugPutc(txchar);
-}
-
 #endif

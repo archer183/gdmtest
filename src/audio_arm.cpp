@@ -56,8 +56,10 @@ uint16_t Sine_values[] =
 const char * audioFilenames[] = {
   "inactiv",
   "lowbatt",
+#if defined(PCBSKY9X)
   "highmah",
   "hightemp",
+#endif
   "thralert",
   "swalert",
   "eebad",
@@ -77,12 +79,19 @@ const char * audioFilenames[] = {
   "mixwarn1",
   "mixwarn2",
   "mixwarn3",
-  "timerlt3",
   "timer10",
   "timer20",
-  "timer30"
+  "timer30",
+#if defined(PCBTARANIS)
+  "a1_org",
+  "a1_red",
+  "a2_org",
+  "a2_red",
+  "rssi_org",
+  "rssi_red",
+  "swr_red",
+#endif
 };
-
 
 uint32_t sdAvailableSystemAudioFiles = 0;
 uint8_t sdAvailablePhaseAudioFiles[MAX_PHASES] = { 0 };
@@ -101,7 +110,7 @@ void refreshSystemAudioFiles()
   strncpy(filename+SOUNDS_PATH_LNG_OFS, currentLanguagePack->id, 2);
 
   assert(sizeof(audioFilenames)==AU_FRSKY_FIRST*sizeof(char *));
-  assert(sizeof(sdAvailableSystemAudioFiles)*8 > AU_FRSKY_FIRST);
+  assert(sizeof(sdAvailableSystemAudioFiles)*8 >= AU_FRSKY_FIRST);
 
   uint32_t availableAudioFiles = 0;
 
@@ -740,6 +749,7 @@ void audioEvent(uint8_t e, uint8_t f)
             audioQueue.play(160, 40, 6, 2, -1);
           }
           break;
+#if defined(PCBSKY9X)
         case AU_TX_MAH_HIGH:
           if (!audioQueue.busy()) {
             // TODO Rob something better here?
@@ -754,7 +764,7 @@ void audioEvent(uint8_t e, uint8_t f)
             audioQueue.play(160, 40, 6, 2, -1);
           }
           break;
-        // error
+#endif
 #if defined(VOICE)
         case AU_THROTTLE_ALERT:
         case AU_SWITCH_ALERT:
@@ -814,22 +824,43 @@ void audioEvent(uint8_t e, uint8_t f)
         case AU_MIX_WARNING_3:
           audioQueue.play(BEEP_DEFAULT_FREQ+112, 12, 8, PLAY_REPEAT(2));
           break;
-        // time 30 seconds left
-        case AU_TIMER_30:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, PLAY_REPEAT(2)|PLAY_NOW);
+        // time <= 10 seconds left
+        case AU_TIMER_LT10:
+          audioQueue.play(BEEP_DEFAULT_FREQ+10, 30, 6, PLAY_NOW);
           break;
         // time 20 seconds left
         case AU_TIMER_20:
           audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, PLAY_REPEAT(1)|PLAY_NOW);
           break;
-        // time 10 seconds left
-        case AU_TIMER_10:
-          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, PLAY_NOW);
+        // time 30 seconds left
+        case AU_TIMER_30:
+          audioQueue.play(BEEP_DEFAULT_FREQ, 30, 6, PLAY_REPEAT(2)|PLAY_NOW);
           break;
-        // time <3 seconds left
-        case AU_TIMER_LT3:
-          audioQueue.play(BEEP_DEFAULT_FREQ+10, 30, 6, PLAY_NOW);
+#if defined(PCBTARANIS)
+        case AU_A1_ORANGE:
+          audioQueue.play(BEEP_DEFAULT_FREQ+40, 50, 6, PLAY_NOW);
           break;
+        case AU_A1_RED:
+          audioQueue.play(BEEP_DEFAULT_FREQ+40, 50, 6, PLAY_REPEAT(1)|PLAY_NOW);
+          break;
+        case AU_A2_ORANGE:
+          audioQueue.play(BEEP_DEFAULT_FREQ+100, 50, 6, PLAY_NOW);
+          break;
+        case AU_A2_RED:
+          audioQueue.play(BEEP_DEFAULT_FREQ+100, 50, 6, PLAY_REPEAT(1)|PLAY_NOW);
+          break;
+        case AU_RSSI_ORANGE:
+          audioQueue.play(BEEP_DEFAULT_FREQ+120, 200, 6, PLAY_NOW);
+          break;
+        case AU_RSSI_RED:
+          audioQueue.play(BEEP_DEFAULT_FREQ+120, 200, 6, PLAY_REPEAT(1)|PLAY_NOW);
+          break;
+        case AU_SWR_RED:
+          // siren
+          audioQueue.play(20, 40, 10, 2, 1);
+          audioQueue.pause(200);
+          break;
+#endif
         case AU_FRSKY_BEEP1:
           audioQueue.play(BEEP_DEFAULT_FREQ, 15, 2);
           audioQueue.pause(200);

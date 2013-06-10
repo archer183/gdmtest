@@ -136,7 +136,7 @@
 #define TR_VMIXTRIMS           "AV ""P\203\0""Rod""Hjd""Gas""Ske"
 
 #define LEN_VCSWFUNC           "\005"
-#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x"
+#define TR_VCSWFUNC            "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x""TIM\0"
 
 #define LEN_VFSWFUNC           "\012"
 
@@ -225,9 +225,18 @@
 #define TR_FUNCSOUNDS          "Pip1  ""Pip2  ""Pip3  ""Varn1 ""Varn2 ""F\200r   ""Ring  ""SciFi ""Robot ""F\200gel ""Tada  ""Syrsa ""Siren ""Alarm ""Ratata""Tick  "
 
 #define LEN_VTELEMCHNS         "\004"
-#define TR_VTELEMCHNS          "---\0""Batt""Tmr1""Tmr2""Tx\0 ""Rx\0 ""A1\0 ""A2\0 ""H\202jd""Varv""Tank""T1\0 ""T2\0 ""Fart""Avst""GHjd""Batt""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VFrt""A1-\0""A2-\0""Hjd-""Hjd+""Rpm+""T1+\0""T2+\0""Frt+""Avs+""Cur+""Acc\0""Tid\0"
+#if defined(PCBTARANIS)
+  #define TR_RSSI_0            "SWR\0"
+  #define TR_RSSI_1            "RSSI"
+#else
+  #define TR_RSSI_0            "Tx\0 "
+  #define TR_RSSI_1            "Rx\0 "
+#endif
+#define TR_VTELEMCHNS          "---\0""Batt""Tmr1""Tmr2" TR_RSSI_0 TR_RSSI_1 "A1\0 ""A2\0 ""H\202jd""Varv""Tank""T1\0 ""T2\0 ""Fart""Avst""GHjd""Batt""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VFrt""A1-\0""A2-\0""Hjd-""Hjd+""Rpm+""T1+\0""T2+\0""Frt+""Avs+""Cur+""Pwr+""Acc\0""Tid\0"
 
 #if defined(CPUARM)
+  #define LEN_VUNITSSYSTEM     TR("\006", "\010")
+  #define TR_VUNITSSYSTEM      TR("Metri.""Imper.", "Metriskt""Imperial")
   #define LEN_VTELEMUNIT_NORM  "\003"
   #define TR_VTELEMUNIT_NORM   "v\0 ""A\0 ""m/s""-\0 ""kmh""m\0 ""@\0 ""%\0 ""mA\0""mAh""W\0 "
   #define LEN_VTELEMUNIT_IMP   "\003"
@@ -332,6 +341,12 @@
 #define LEN_VTMRMODES          "\003"
 #define TR_VTMRMODES           "AV ""ABS""GAs""GA%""GAt"
 
+#define LEN_VTRAINERMODES      "\006"
+#define TR_VTRAINERMODES       "Master""Slav\0."
+
+#define LEN_VFAILSAFE          "\011"
+#define TR_VFAILSAFE           "H\200ll\0    ""Special\0 ""Pulsfritt"
+
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
 #define LEN_INDENT             1
@@ -346,7 +361,7 @@
 #define TR_POPUPS              TR_ENTER"\010[EXIT]"
 #define OFS_EXIT               sizeof(TR_ENTER)
 
-#define TR_MENUWHENDONE        CENTER"\006"TR_ENTER" Avslutar "
+#define TR_MENUWHENDONE        CENTER "\006" TR_ENTER " Avslutar "
 #define TR_FREE                "kvar"
 #define TR_DELETEMODEL         "Radera Modell"
 #define TR_COPYINGMODEL        "Kopierar Modell "
@@ -361,7 +376,7 @@
 #define TR_TIMER               TR("Timer","Timer ")
 #define TR_ELIMITS             TR("Gr\201nser++","Ut\202kade Gr\201nser")
 #define TR_ETRIMS              TR("Trimmar++","Ut\202kade Trimmar")
-#define TR_TRIMINC             TR("Trim\202kn.","Trim\202kning")
+#define TR_TRIMINC             TR("Trimning","Trim\202kning")
 #define TR_TTRACE              "F\202lj Gas"
 #define TR_TTRIM               TR("G-K\201lla","Gas-k\201lla")
 #define TR_BEEPCTR             TR("Cent.pip", "Centerpip")
@@ -373,7 +388,7 @@
 #define TR_FADEIN              "Tona In"
 #define TR_FADEOUT             "Tona Ut"
 #define TR_DEFAULT             "Standard"
-#define TR_CHECKTRIMS          CENTER"\006Kolla\012Trimmar"
+#define TR_CHECKTRIMS          CENTER "\006Kolla\012Trimmar"
 #define OFS_CHECKTRIMS         CENTER_OFS+(9*FW)
 #define TR_SWASHTYPE           "Swashtyp"
 #define TR_COLLECTIVE          "Kollektiv"
@@ -426,8 +441,8 @@
 #define TR_MEMORYWARNING       INDENT"Lite Minne"
 #define TR_ALARMWARNING        INDENT"Ljud AV"
 #define TR_RENAVIG             "RotEnc Navig"
-#define TR_THROTTLEREVERSE     "Reverserad Gas"
-#define TR_MINUTEBEEP          INDENT"Varje Minut"
+#define TR_THROTTLEREVERSE     "Revers.Gas"
+#define TR_MINUTEBEEP          INDENT"Minutpip"
 #define TR_BEEPCOUNTDOWN       INDENT"R\201kna Ned"
 #define TR_PERSISTENT          TR("J\201mt p\200 ",INDENT"Alltid P\200")
 #define TR_BACKLIGHT_LABEL     "Belysning"
@@ -435,7 +450,7 @@
 #define TR_BLONBRIGHTNESS      INDENT"P\200 Ljusstyrka"
 #define TR_BLOFFBRIGHTNESS     INDENT"AV Ljusstyrka"
 #define TR_SPLASHSCREEN        "Bild vid start"
-#define TR_THROTTLEWARNING     TR("Gasvarn.","Gasvarning")
+#define TR_THROTTLEWARNING     "Gasvarning"
 #define TR_SWITCHWARNING       TR("Bryt.varn.","Brytarvarning")
 #define TR_TIMEZONE            TR("Tidszon","GPS Tidszon")
 #define TR_RXCHANNELORD        "Kanalordning RX"
@@ -445,14 +460,14 @@
 #define TR_CAL                 "Kalib."
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-#define TR_MENUTOSTART         CENTER"\006"TR_ENTER" Startar "
-#define TR_SETMIDPOINT         CENTER"\010Centrera Allt"
-#define TR_MOVESTICKSPOTS      CENTER"\004R\202r Rattar/Spakar"
+#define TR_MENUTOSTART         CENTER "\006" TR_ENTER " Startar "
+#define TR_SETMIDPOINT         CENTER "\010Centrera Allt"
+#define TR_MOVESTICKSPOTS      CENTER "\004R\202r Rattar/Spakar"
 #define TR_RXBATT              "Rx Batt:"
 #define TR_TXnRX               "Tx:\0Rx:"
 #define OFS_RX                 4
 #define TR_ACCEL               "Acc:"
-#define TR_NODATA              CENTER"NO DATA"
+#define TR_NODATA              CENTER "NO DATA"
 #define TR_TM1TM2              "TM1\032TM2"
 #define TR_THRTHP              "THR\032TH%"
 #define TR_TOT                 "TOT"
@@ -469,7 +484,7 @@
 
 #define TR_T10MSUS             "T10ms\016us"
 #define TR_FREESTACKMINB       "Free Stack\010b"
-#define TR_MENUTORESET         CENTER TR_ENTER" Nollar"
+#define TR_MENUTORESET         CENTER TR_ENTER " Nollar"
 #define TR_PPM                 "PPM"
 #define TR_CH                  "KN"
 #define TR_MODEL               "Modell"
@@ -477,13 +492,13 @@
 #define TR_MIX                 "MIX"
 #define TR_EEPROMLOWMEM        "EEPROM low mem"
 #define TR_ALERT               "\016OBS"
-#define TR_PRESSANYKEYTOSKIP   CENTER"Tryck ned en knapp"
-#define TR_THROTTLENOTIDLE     CENTER"Gasen ej avst\201ngd!"
-#define TR_ALARMSDISABLED      CENTER"Alarmen Avst\201ngda!"
-#define TR_PRESSANYKEY         TR("Tryck ned en knapp",CENTER"Tryck ned en knapp")
-#define TR_BADEEPROMDATA       CENTER"EEprom Datafel "
-#define TR_EEPROMFORMATTING    CENTER"Formaterar EEprom"
-#define TR_EEPROMOVERFLOW      CENTER"Fel i EEprom"
+#define TR_PRESSANYKEYTOSKIP   "Tryck ned en knapp"
+#define TR_THROTTLENOTIDLE     "Gasen ej avst\201ngd!"
+#define TR_ALARMSDISABLED      "Alarmen Avst\201ngda!"
+#define TR_PRESSANYKEY         TR("Tryck ned en knapp", "Tryck ned en knapp")
+#define TR_BADEEPROMDATA       "EEprom Datafel "
+#define TR_EEPROMFORMATTING    "Formaterar EEprom"
+#define TR_EEPROMOVERFLOW      "Fel i EEprom"
 #define TR_MENURADIOSETUP      "Inst\201llningar"
 #define TR_MENUDATEANDTIME     "Dag och Tid"
 #define TR_MENUTRAINER         "Trainer (PPM in)"
@@ -582,8 +597,10 @@
 #define TR_SD_SPEED            "Hastighet:"
 #define TR_SD_SECTORS          "Sektorer:"
 #define TR_SD_SIZE             "Strl:"
-#define TR_TYPE          "Typ "
+#define TR_TYPE                "Typ "
 #define TR_GLOBAL_VARS         "Globala Variabler"
+#define TR_GLOBAL_VAR          "Global Variabel"
+#define TR_MENUGLOBALVARS      "GLOBALA VARIABLER"
 #define TR_OWN                 "Egen"
 #define TR_DATE                "Datum"
 #define TR_ROTARY_ENCODER      "R.Enks"
@@ -593,3 +610,84 @@
 #define TR_FAILSAFE            "Failsafe-l\201ge"
 #define TR_FAILSAFESET         "FailsafeInst\201llning"
 #define TR_COUNTRYCODE         "Landskod"
+#define TR_VOICELANG           "R\202st-spr\200k"
+#define TR_UNITSSYSTEM         "Enheter"
+#define TR_EDIT                "Redigera"
+#define TR_INSERT_BEFORE       "Addera F\202re"
+#define TR_INSERT_AFTER        "Addera Efter"
+#define TR_COPY                "Kopiera"
+#define TR_MOVE                "Flytta"
+#define TR_DELETE              "Radera"
+#define TR_RESET_FLIGHT        "Reset Flygning"
+#define TR_RESET_TIMER1        "Reset Timer1"
+#define TR_RESET_TIMER2        "Reset Timer2"
+#define TR_RESET_TELEMETRY     "Reset Telemetri"
+#define TR_STATISTICS          "Statistik"
+#define TR_ABOUT_US            "Om Oss"
+#define TR_AND_SWITCH          "AND Brytare"
+#define TR_CF                  "CF"
+#define TR_SPEAKER             INDENT"H\202gtalare"
+#define TR_BUZZER              INDENT"Summer"
+#define TR_BYTES               "bytes"
+#define TR_MODULE_BIND         "[Bind]"
+#define TR_MODULE_RANGE        "[R\201ckvidd]"
+#define TR_RESET               "[Reset]"
+#define TR_SET                 "[Spara]"
+#define TR_TRAINER             "Trainer"
+#define TR_ANTENNAPROBLEM      CENTER "Fel p\200 TX-antennen"
+#define TR_MODELIDUSED         TR("ID finns redan","ModellID anv\201nds redan")
+#define TR_MODULE              INDENT "Modul"
+#define TR_CHANNELRANGE        INDENT "Kanalomr\200de"
+#define TR_LOWALARM            INDENT "L\200g-alarm"
+#define TR_CRITICALALARM       INDENT "Kritiskt alarm"
+
+// Taranis column headers
+#define TR_PHASES_HEADERS      { " Namn ", " Brytare ", " Trimmar ", " Tona Upp ", " Tona Ned " }
+#define TR_LIMITS_HEADERS      { " Namn ", " Offset ", " Min ", " Max ", " Riktning ", " PPM-centrum ", " Symmetriskt " }
+#define TR_CSW_HEADERS         { " Funktion ", " V1 ", " V2 ", " AND Brytare ", " Tidsl\201ngd ", " F\202rdr\202j " }
+
+//Taranis About screen
+#define TR_ABOUTUS             "Om Oss"
+
+#define TR_ABOUT_OPENTX_1      "OpenTX \201r icke-kommersiell,"
+#define TR_ABOUT_OPENTX_2      "\202ppen programvara utan"
+#define TR_ABOUT_OPENTX_3      "garantier som uvecklas helt"
+#define TR_ABOUT_OPENTX_4      "ideellt. St\202d i form av"
+#define TR_ABOUT_OPENTX_5      "donationer v\201lkomnas!"
+
+#define TR_ABOUT_BERTRAND_1    "Bertrand Songis"
+#define TR_ABOUT_BERTRAND_2    "Chefsutvecklare av OpenTX"
+#define TR_ABOUT_BERTRAND_3    "Hj\201lputvecklare av Companion9x"
+
+#define TR_ABOUT_MIKE_1        "Mike Blandford"
+#define TR_ABOUT_MIKE_2        "Kod och drivrutins-guru"
+#define TR_ABOUT_MIKE_3        "Stor inspirationsk\201lla"
+#define TR_ABOUT_MIKE_4        ""
+       
+#define TR_ABOUT_ROMOLO_1      "Romolo Manfredini"
+#define TR_ABOUT_ROMOLO_2      "Chefsutvecklare av Companion9x"
+#define TR_ABOUT_ROMOLO_3      ""
+
+#define TR_ABOUT_ANDRE_1       "Andre Bernet"
+#define TR_ABOUT_ANDRE_2       "Funktionalitet, Anv\201ndbarhet,"
+#define TR_ABOUT_ANDRE_3       "Fels\202kning, Dokumentation"
+
+#define TR_ABOUT_ROB_1         "Rob Thomson"
+#define TR_ABOUT_ROB_2         "Webmaster f\202r openRCforums"
+
+#define TR_ABOUT_MARTIN_1      "Martin Hotar"
+#define TR_ABOUT_MARTIN_2      "Grafikdesigner"
+
+#define TR_ABOUT_HARDWARE_1    "FrSky"
+#define TR_ABOUT_HARDWARE_2    "H\200rdvarudesign/produktion"
+
+#define TR_ABOUT_PARENTS_1     "Ursprungsprojekt"
+#define TR_ABOUT_PARENTS_2     "ersky9x (Mike Blandford)"
+#define TR_ABOUT_PARENTS_3     "ER9X (Erez Raviv)"
+#define TR_ABOUT_PARENTS_4     "TH9X (Thomas Husterer)"
+#define TR_ABOUT_HARDWARE_3    ""
+
+#define TR_CHR_SHORT  's'
+#define TR_CHR_LONG   'l'
+#define TR_CHR_TOGGLE 't'
+#define TR_CHR_HOUR   'h'

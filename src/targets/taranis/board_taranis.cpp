@@ -39,11 +39,8 @@ extern "C" {
 #include "STM32_USB-Host-Device_Lib_V2.1.0/Libraries/STM32_USB_OTG_Driver/inc/usb_dcd_int.h"
 }
 
-// TODO needed?
-uint8_t temperature = 0;          // Raw temp reading
-uint8_t maxTemperature = 0 ;       // Raw temp reading
 volatile uint32_t Tenms ; // TODO to remove everywhere / use a #define
-uint8_t usb_connected = 0;
+UsbState usbState = USB_DISCONNECTED;
 
 #define PIN_MODE_MASK           0x0003
 #define PIN_INPUT               0x0000
@@ -109,23 +106,7 @@ void configure_pins( uint32_t pins, uint16_t config )
 
 uint8_t usbPlugged(void)
 {
-  return usb_connected;	
-}
-
-#if defined(DEBUG)
-void debugPutc(const char c)
-{
-	uartPutc(c);
-}
-#endif
-
-uint8_t getTemperature()
-{
-  return temperature + g_eeGeneral.temperatureCalib;
-}
-
-void start_ppm_capture()
-{
+  return usbState == USB_CONNECTED;
 }
 
 #if !defined(SIMU)
@@ -144,12 +125,12 @@ void usbInit()
 }
 #endif
 
-void watchdogInit()
+void watchdogInit(unsigned int duration)
 {
   IWDG->KR = 0x5555 ;      // Unlock registers
   IWDG->PR = 3 ;           // Divide by 32 => 1kHz clock
   IWDG->KR = 0x5555 ;      // Unlock registers
-  IWDG->RLR = 1500 ;       // 1.5 seconds nominal
+  IWDG->RLR = duration ;       // 1.5 seconds nominal
   IWDG->KR = 0xAAAA ;      // reload
   IWDG->KR = 0xCCCC ;      // start
 }
@@ -187,10 +168,6 @@ void interrupt5ms()
     pre_scale = 0 ;
     per10ms();
   }
-
-#if defined(DEBUG)
-  debugTx();
-#endif 
 }
 
 extern "C" void TIM8_TRG_COM_TIM14_IRQHandler()
@@ -210,7 +187,6 @@ void boardInit()
 #if defined(DEBUG)
   uartInit(DEBUG_UART_BAUDRATE);
 #endif
-  init_trainer_capture();  
   init5msTimer();
   __enable_irq();
   eepromInit();

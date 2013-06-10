@@ -36,13 +36,11 @@
 
 #include "../opentx.h"
 
+#define PPM_STREAM_INIT  { 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 9000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }
 #if defined(PCBTARANIS)
-// TODO internal module doesn't send PPM
-uint16_t ppmStream[NUM_MODULES+1][20]  = { { 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 9000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-                                           { 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 9000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-                                           { 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 9000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
+  uint16_t ppmStream[NUM_MODULES+1][20]  = { PPM_STREAM_INIT, PPM_STREAM_INIT, PPM_STREAM_INIT };
 #else
-uint16_t ppmStream[NUM_MODULES][20]  = { MODULES_INIT({ 2000, 2200, 2400, 2600, 2800, 3000, 3200, 3400, 9000, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }) };
+  uint16_t ppmStream[NUM_MODULES][20]  = { MODULES_INIT(PPM_STREAM_INIT) };
 #endif
 
 void setupPulsesPPM(unsigned int port)                   // Don't enable interrupts through here
@@ -82,10 +80,18 @@ void setupPulsesPPM(unsigned int port)                   // Don't enable interru
   if (port == TRAINER_MODULE) {
     TIM3->CCR2 = rest - 1000 ;             // Update time
     TIM3->CCR4 = (g_model.moduleData[port].ppmDelay*50+300)*2;
+    if(!g_model.moduleData[TRAINER_MODULE].ppmPulsePol)
+      TIM3->CCER |= TIM_CCER_CC4P;
+    else
+      TIM3->CCER &= ~TIM_CCER_CC4P;
   }
   else if (port == EXTERNAL_MODULE) {
     TIM8->CCR2 = rest - 1000;             // Update time
     TIM8->CCR1 = (g_model.moduleData[port].ppmDelay*50+300)*2;
+    if(!g_model.moduleData[EXTERNAL_MODULE].ppmPulsePol)
+      TIM8->CCER |= TIM_CCER_CC1NP;
+    else
+      TIM8->CCER &= ~TIM_CCER_CC1NP;
   }
   else {
     TIM1->CCR2 = rest - 1000;             // Update time

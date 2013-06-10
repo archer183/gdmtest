@@ -149,14 +149,29 @@ extern const pm_char STR_OPEN9X[];
   #define OFS_VLCD             (OFS_DATETIME)
 #endif
 #if defined(CPUARM)
-  #define OFS_COUNTRYCODES     (OFS_VLCD + sizeof(TR_VLCD))
+  #define OFS_VUNITSSYSTEM     (OFS_VLCD + sizeof(TR_VLCD))
 #else
-  #define OFS_COUNTRYCODES     (OFS_VLCD)
+  #define OFS_VUNITSSYSTEM     (OFS_VLCD)
+#endif
+#if defined(CPUARM)
+  #define OFS_COUNTRYCODES     (OFS_VUNITSSYSTEM + sizeof(TR_VUNITSSYSTEM))
+#else
+  #define OFS_COUNTRYCODES     (OFS_VUNITSSYSTEM)
 #endif
 #if defined(PXX)
-  #define OFS_SPARE            (OFS_COUNTRYCODES + sizeof(TR_COUNTRYCODES))
+  #define OFS_VFAILSAFE        (OFS_COUNTRYCODES + sizeof(TR_COUNTRYCODES))
 #else
-  #define OFS_SPARE            (OFS_COUNTRYCODES)
+  #define OFS_VFAILSAFE        (OFS_COUNTRYCODES)
+#endif
+#if defined(PXX)
+  #define OFS_VTRAINERMODES    (OFS_VFAILSAFE + sizeof(TR_VFAILSAFE))
+#else
+  #define OFS_VTRAINERMODES    (OFS_VFAILSAFE)
+#endif
+#if defined(PCBTARANIS)
+  #define OFS_SPARE            (OFS_VTRAINERMODES + sizeof(TR_VTRAINERMODES))
+#else
+  #define OFS_SPARE            (OFS_VTRAINERMODES)
 #endif
 
 #define STR_OFFON              (STR_OPEN9X + OFS_OFFON)
@@ -228,10 +243,16 @@ extern const pm_char STR_OPEN9X[];
 
 #if defined(CPUARM)
   #define STR_VLCD             (STR_OPEN9X + OFS_VLCD)
+  #define STR_VUNITSSYSTEM     (STR_OPEN9X + OFS_VUNITSSYSTEM)
 #endif
 
 #if defined(PXX)
   #define STR_COUNTRYCODES     (STR_OPEN9X + OFS_COUNTRYCODES)
+  #define STR_VFAILSAFE        (STR_OPEN9X + OFS_VFAILSAFE)
+#endif
+
+#if defined(PCBTARANIS)
+  #define STR_VTRAINERMODES    (STR_OPEN9X + OFS_VTRAINERMODES)
 #endif
 
 // The 0-terminated-strings
@@ -430,7 +451,6 @@ extern const pm_char STR_INTERNALRF[];
 extern const pm_char STR_EXTERNALRF[];
 extern const pm_char STR_FAILSAFE[];
 extern const pm_char STR_FAILSAFESET[];
-extern const pm_char STR_VFAILSAFE[]; // TODO non-zero terminated
 extern const pm_char STR_COUNTRYCODE[];
 #endif
 
@@ -459,7 +479,8 @@ extern const pm_char STR_CURRENT[];
   extern const pm_char STR_CURRENT_CALIB[];
   #define LEN_CALIB_FIELDS (PSIZE(TR_BATT_CALIB) > PSIZE(TR_CURRENT_CALIB) ? PSIZE(TR_BATT_CALIB) : PSIZE(TR_CURRENT_CALIB))
   extern const pm_char STR_UNITSSYSTEM[];
-  extern const pm_char STR_VUNITSSYSTEM[];
+  extern const pm_char STR_VOICELANG[];
+  extern const pm_char STR_MODELIDUSED[];
 #else
   #define LEN_CALIB_FIELDS PSIZE(TR_BATT_CALIB)
 #endif
@@ -481,6 +502,7 @@ extern const pm_char STR_CURRENT[];
   extern const pm_char STR_RESET_TIMER2[];
   extern const pm_char STR_RESET_TELEMETRY[];
   extern const pm_char STR_STATISTICS[];
+  extern const pm_char STR_ABOUT_US[];
 #endif
 
 extern const pm_char STR_RESET[];
@@ -556,6 +578,7 @@ extern const pm_char STR_SD_SECTORS[];
 extern const pm_char STR_SD_SIZE[];
 extern const pm_char STR_TYPE[];
 extern const pm_char STR_GLOBAL_VARS[];
+extern const pm_char STR_GLOBAL_VAR[];
 extern const pm_char STR_OWN[];
 extern const pm_char STR_ROTARY_ENCODER[];
 extern const pm_char STR_DATE[];
@@ -609,12 +632,57 @@ extern const pm_char STR_CHANNELS_MONITOR[];
   extern const pm_char STR_MODULE_RANGE[];
   extern const pm_char STR_SET[];
   extern const pm_char STR_TRAINER[];
+  extern const pm_char STR_ANTENNAPROBLEM[];
+  extern const pm_char STR_MODULE[];
+  extern const pm_char STR_CHANNELRANGE[];
+  extern const pm_char STR_LOWALARM[];
+  extern const pm_char STR_CRITICALALARM[];
 #endif
 
-// TODO move to translations files
-#define CHR_SHORT  's'
-#define CHR_LONG   'l'
-#define CHR_TOGGLE 't'
-#define CHR_HOUR   'h'
+#if !defined(CPUM64)
+  extern const pm_char STR_ABOUTUS[];
+  extern const pm_char STR_ABOUT_OPENTX_1[];
+  extern const pm_char STR_ABOUT_OPENTX_2[];
+  extern const pm_char STR_ABOUT_OPENTX_3[];
+  extern const pm_char STR_ABOUT_OPENTX_4[];
+  extern const pm_char STR_ABOUT_OPENTX_5[];
+  
+  extern const pm_char STR_ABOUT_BERTRAND_1[];
+  extern const pm_char STR_ABOUT_BERTRAND_2[];
+  extern const pm_char STR_ABOUT_BERTRAND_3[];
+  
+  extern const pm_char STR_ABOUT_MIKE_1[];
+  extern const pm_char STR_ABOUT_MIKE_2[];
+  extern const pm_char STR_ABOUT_MIKE_3[];
+  extern const pm_char STR_ABOUT_MIKE_4[];
+  
+  extern const pm_char STR_ABOUT_ROMOLO_1[];
+  extern const pm_char STR_ABOUT_ROMOLO_2[];
+  extern const pm_char STR_ABOUT_ROMOLO_3[];
+  
+  extern const pm_char STR_ABOUT_ANDRE_1[];
+  extern const pm_char STR_ABOUT_ANDRE_2[];
+  extern const pm_char STR_ABOUT_ANDRE_3[];
+  
+  extern const pm_char STR_ABOUT_ROB_1[];
+  extern const pm_char STR_ABOUT_ROB_2[];
+  
+  extern const pm_char STR_ABOUT_MARTIN_1[];
+  extern const pm_char STR_ABOUT_MARTIN_2[];
+  
+  extern const pm_char STR_ABOUT_HARDWARE_1[];
+  extern const pm_char STR_ABOUT_HARDWARE_2[];
+  extern const pm_char STR_ABOUT_HARDWARE_3[];
+  
+  extern const pm_char STR_ABOUT_PARENTS_1[];
+  extern const pm_char STR_ABOUT_PARENTS_2[];
+  extern const pm_char STR_ABOUT_PARENTS_3[];
+  extern const pm_char STR_ABOUT_PARENTS_4[];
+#endif
+
+#define CHR_SHORT  TR_CHR_SHORT
+#define CHR_LONG   TR_CHR_LONG
+#define CHR_TOGGLE TR_CHR_TOGGLE
+#define CHR_HOUR   TR_CHR_HOUR
 
 #endif

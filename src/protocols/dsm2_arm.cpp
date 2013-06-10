@@ -88,7 +88,6 @@ void setupPulsesDsm2(uint8_t chns)
 {
   static uint8_t dsmDat[2+6*2]={0xFF,0x00,  0x00,0xAA,  0x05,0xFF,  0x09,0xFF,  0x0D,0xFF,  0x13,0x54,  0x14,0xAA};
   uint8_t counter ;
-  //    CSwData &cs = g_model.customSw[NUM_CSW-1];
 
   Serial_byte = 0 ;
   Serial_bit_count = 0 ;
@@ -113,7 +112,7 @@ void setupPulsesDsm2(uint8_t chns)
   }
   if ((dsmDat[0] & BIND_BIT) && (!switchState(SW_TRN))) dsmDat[0] &= ~BIND_BIT; // clear bind bit if trainer not pulled
 
-  // TODO find a way to do that, FUNC SWITCH: if ((!(dsmDat[0] & BIND_BIT)) && getSwitch(MAX_DRSWITCH-1, 0, 0)) dsmDat[0] |= RANGECHECK_BIT;   // range check function
+  // TODO find a way to do that, FUNC SWITCH: if ((!(dsmDat[0] & BIND_BIT)) && getSwitch(MAX_DRSWITCH-1)) dsmDat[0] |= RANGECHECK_BIT;   // range check function
   // else dsmDat[0] &= ~RANGECHECK_BIT;
   dsmDat[1]=g_eeGeneral.currModel+1;  //DSM2 Header second byte for model match
   for(uint8_t i=0; i<chns; i++)

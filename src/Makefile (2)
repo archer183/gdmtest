@@ -26,7 +26,7 @@ DATA_DIR = /tmp
 BACKUP_FLASH = YES
 
 # Backup the old EEPROM (YES, NO)
-BACKUP_EEPROM = NO
+BACKUP_EEPROM = YES
 
 # Restore EEPROM to 9x (YES, NO) (will set BACKUP_EEPROM to YES).
 RESTORE_EEPROM = NO
@@ -69,7 +69,7 @@ HELI = NO
 
 # Enable templates menu
 # Values = YES, NO
-TEMPLATES = NO
+TEMPLATES = YES
 
 # Enable navigation with Pots / Rotary encoders
 # Values = NO
@@ -122,7 +122,7 @@ PWM_BACKLIGHT = NO
 
 # SPLASH on START
 # Values = YES, NO, FIXED
-SPLASH = NO
+SPLASH = YES
 
 # GRAPHICS (sliders / checkboxes / bold / batt graph)
 GRAPHICS = YES
@@ -131,7 +131,7 @@ BATTGRAPH = NO
 
 # PPM center adjustable
 # Values = YES, NO
-PPM_CENTER_ADJUSTABLE = YES
+PPM_CENTER_ADJUSTABLE = NO
 
 # PPM symetrical limits
 # Values = YES, NO
@@ -1023,37 +1023,37 @@ stamp_header:
 	@echo "//Automatically generated file (Makefile) - do not edit" > stamp-opentx.h
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" >> stamp-opentx.h
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx.h
-	@echo "#define SVN_STR  \"Combat9x$(SVNREV)\"" >> stamp-opentx.h
+	@echo "#define SVN_STR  \"opentx-r$(SVNREV)\"" >> stamp-opentx.h
 	@cat stamp-opentx.h
 
 stock-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-stock.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-stock.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-opentx-stock.txt
+	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-stock.txt
 	@cat stamp-opentx-stock.txt
 
 stock128-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-stock128.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-stock128.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-opentx-stock128.txt
+	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-stock128.txt
 	@cat stamp-opentx-stock128.txt
 
 stock2561-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-stock2561.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-stock2561.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-opentx-stock2561.txt
+	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-stock2561.txt
 	@cat stamp-opentx-stock2561.txt
 	
 v4-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-v4.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-v4.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-opentx-v4.txt
+	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-v4.txt
 	@cat stamp-opentx-v4.txt
 
 arm-stamp:
 	@echo "#define DATE_STR \"`date +%Y-%m-%d`\"" > stamp-opentx-arm.txt
 	@echo "#define TIME_STR \"`date +%H:%M:%S`\"" >> stamp-opentx-arm.txt
-	@echo "#define SVN_VERS \"Combat9x$(SVNREV)\"" >> stamp-opentx-arm.txt
+	@echo "#define SVN_VERS \"opentx-r$(SVNREV)\"" >> stamp-opentx-arm.txt
 	@cat stamp-opentx-arm.txt
 
 bitmaps/font.lbm: bitmaps/font.xbm bitmaps/font_extra.xbm bitmaps/font_tiny.xbm bitmaps/font_small.xbm bitmaps/font_midsize.xbm bitmaps/font_dblsize.xbm bitmaps/font_dblsize_extra.xbm bitmaps/font_small_extra.xbm translations/font_se.xbm translations/font_de.xbm translations/font_it.xbm translations/font_cz.xbm translations/font_fr.xbm translations/font_es.xbm translations/font_dblsize_se.xbm translations/font_dblsize_de.xbm translations/font_dblsize_it.xbm translations/font_dblsize_fr.xbm translations/font_dblsize_es.xbm

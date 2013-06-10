@@ -41,10 +41,14 @@
 
 #if defined(PCBTARANIS)
   #define blkid_t    uint16_t
-  #if defined(REV4a)
-    #define EESIZE   (64*1024)
+  #if !defined(EESIZE)
+    #if defined(REV4a)
+      #define EESIZE    (64*1024)
+    #else
+      #define EESIZE    (32*1024)
+    #endif
   #else
-    #define EESIZE   (32*1024)
+    #define EESIZE_SIMU (64*1024)
   #endif
   #define EEFS_VERS  5
   #define MAXFILES   62
@@ -148,14 +152,9 @@ class EFile
 #define ERR_FULL 1
 extern uint8_t  s_write_err;    // error reasons
 
-#if defined(CPUARM)
-#define ENABLE_SYNC_WRITE(val)
-#define IS_SYNC_WRITE_ENABLE() true
-#else
 extern uint8_t  s_sync_write;
 #define ENABLE_SYNC_WRITE(val) s_sync_write = val;
 #define IS_SYNC_WRITE_ENABLE() s_sync_write
-#endif
 
 ///deliver current errno, this is reset in open
 inline uint8_t write_errno() { return s_write_err; }
@@ -201,10 +200,8 @@ public:
   void nextRlcWriteStep();
   void writeRlc(uint8_t i_fileId, uint8_t typ, uint8_t *buf, uint16_t i_len, uint8_t sync_write);
 
-#if !defined(CPUARM)
   // flush the current write operation if any
   void flush();
-#endif
 
   // read from opened file and decode rlc-coded data
   uint16_t readRlc(uint8_t *buf, uint16_t i_len);
@@ -216,11 +213,7 @@ public:
 
 extern RlcFile theFile;  //used for any file operation
 
-#if defined(CPUARM)
-#define eeFlush()
-#else
 inline void eeFlush() { theFile.flush(); }
-#endif
 
 #if defined (EEPROM_PROGRESS_BAR)
 #define DISPLAY_PROGRESS_BAR(x) theFile.DisplayProgressBar(x)

@@ -154,12 +154,8 @@ typedef int16_t gvar_t;
   #define MAX_GVARS 0
   #define MODEL_GVARS_DATA
   #define PHASE_GVARS_DATA
-#elif defined(GVARS)
-#if defined(TRIG)
-#define MAX_GVARS 10
 #else
-  #define MAX_GVARS 5
-#endif
+  #define MAX_GVARS 10
   #define MODEL_GVARS_DATA gvar_name_t gvarsNames[MAX_GVARS];
   #define PHASE_GVARS_DATA gvar_t gvars[MAX_GVARS]
   #define GVAR_VALUE(x, p) g_model.phaseData[p].gvars[x]

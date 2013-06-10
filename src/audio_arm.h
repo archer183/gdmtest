@@ -174,13 +174,14 @@ void audioStart();
 #define AUDIO_WARNING1()         AUDIO_BUZZER(audioEvent(AU_WARNING1), beep(3))
 #define AUDIO_WARNING2()         AUDIO_BUZZER(audioEvent(AU_WARNING2), beep(2))
 #define AUDIO_TX_BATTERY_LOW()   AUDIO_BUZZER(audioEvent(AU_TX_BATTERY_LOW), beep(4))
-#define AUDIO_TX_MAH_HIGH()      audioEvent(AU_TX_MAH_HIGH)
-#define AUDIO_TX_TEMP_HIGH()     audioEvent(AU_TX_TEMP_HIGH)
+#if defined(PCBSKY9X)
+  #define AUDIO_TX_MAH_HIGH()    audioEvent(AU_TX_MAH_HIGH)
+  #define AUDIO_TX_TEMP_HIGH()   audioEvent(AU_TX_TEMP_HIGH)
+#endif
 #define AUDIO_ERROR()            AUDIO_BUZZER(audioEvent(AU_ERROR), beep(4))
 #define AUDIO_TIMER_30()         AUDIO_BUZZER(audioEvent(AU_TIMER_30), { beepAgain=2; beep(2); })
 #define AUDIO_TIMER_20()         AUDIO_BUZZER(audioEvent(AU_TIMER_20), { beepAgain=1; beep(2); })
-#define AUDIO_TIMER_10()         AUDIO_BUZZER(audioEvent(AU_TIMER_10), beep(2))
-#define AUDIO_TIMER_LT3(x)       AUDIO_BUZZER(audioEvent(AU_TIMER_LT3), beep(2))
+#define AUDIO_TIMER_LT10(x)      AUDIO_BUZZER(audioEvent(AU_TIMER_LT10), beep(2))
 #define AUDIO_INACTIVITY()       AUDIO_BUZZER(audioEvent(AU_INACTIVITY), beep(3))
 #define AUDIO_MIX_WARNING(x)     AUDIO_BUZZER(audioEvent(AU_MIX_WARNING_1+x-1), beep(1))
 #define AUDIO_POT_STICK_MIDDLE() AUDIO_BUZZER(audioEvent(AU_POT_STICK_MIDDLE), beep(2))
@@ -191,6 +192,16 @@ void audioStart();
 #define AUDIO_TRIM(event, f)     AUDIO_BUZZER(audioEvent(AU_TRIM_MOVE, f), { if (!IS_KEY_FIRST(event)) warble = true; beep(1); })
 #define AUDIO_PLAY(p)            audioEvent(p)
 #define AUDIO_VARIO(f, t)        audioQueue.play(f, t, 0, PLAY_BACKGROUND)
+
+#if defined(PCBTARANIS)
+#define AUDIO_A1_ORANGE()        audioEvent(AU_A1_ORANGE)
+#define AUDIO_A1_RED()           audioEvent(AU_A1_RED)
+#define AUDIO_A2_ORANGE()        audioEvent(AU_A2_ORANGE)
+#define AUDIO_A2_RED()           audioEvent(AU_A2_RED)
+#define AUDIO_RSSI_ORANGE()      audioEvent(AU_RSSI_ORANGE)
+#define AUDIO_RSSI_RED()         audioEvent(AU_RSSI_RED)
+#define AUDIO_SWR_RED()          audioEvent(AU_SWR_RED)
+#endif
 
 #define AUDIO_HEARTBEAT()
 

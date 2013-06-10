@@ -52,24 +52,29 @@ void setupPulsesDsm2(uint8_t chns);
 void setupPulsesPXX(unsigned int port);
 void setupPulsesPPM(unsigned int port);
 
+#if defined(HUBSAN)
+void Hubsan_Init();
+#endif
+
 inline void startPulses()
 {
+  s_pulses_paused = false;
+
 #if defined(PCBTARANIS)
   setupPulses(INTERNAL_MODULE);
   setupPulses(EXTERNAL_MODULE);
 #else
   setupPulses(0);
 #endif
+
+#if defined(HUBSAN)
+  Hubsan_Init();
+#endif
 }
 
 inline bool pulsesStarted() { return s_current_protocol[0] != 255; }
 inline void pausePulses() { s_pulses_paused = true; }
-inline void resumePulses() { 
-  s_pulses_paused = false;
-#if defined(PCBTARANIS)
-  startPulses(); //TODO delete
-#endif
-  }
+inline void resumePulses() { s_pulses_paused = false; }
 
 #define SEND_FAILSAFE_NOW(idx) failsafeCounter[idx] = 1
 

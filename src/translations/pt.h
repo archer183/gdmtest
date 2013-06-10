@@ -1,3 +1,39 @@
+/*
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Padding for row alignment
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+*/
+
+
+
+
 // NON ZERO TERMINATED STRINGS
 #define LEN_OFFON        "\003"
 #define TR_OFFON         "OFF""ON\0"
@@ -100,7 +136,7 @@
 #define TR_VMIXTRIMS     "OFF""ON\0""Lem""Pfd""Mot""Ail"
 
 #define LEN_VCSWFUNC     "\005"
-#define TR_VCSWFUNC      "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x"
+#define TR_VCSWFUNC      "---\0 ""a{x\0 ""a>x\0 ""a<x\0 ""|a|>x""|a|<x""AND\0 ""OR\0  ""XOR\0 ""a=b\0 ""a>b\0 ""a<b\0 ""d}x\0 ""|d|}x""TIM\0"
 
 #define LEN_VFSWFUNC     "\015"
 
@@ -189,9 +225,18 @@
 #define TR_FUNCSOUNDS    "Beep1 ""Beep2 ""Beep3 ""Avis1 ""Avis2 ""Pio  ""Ring  ""SciFi ""Robot ""Gorjeo""Tada  ""Crickt""Sirene""Alarme""Ratata""Tictac"
 
 #define LEN_VTELEMCHNS   "\004"
-#define TR_VTELEMCHNS    "---\0""Batt""Tmr1""Tmr2""Tx\0 ""Rx\0 ""A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VVel""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Vel+""Dst+""Cur+""Acc\0""Hora"
+#if defined(PCBTARANIS)
+  #define TR_RSSI_0            "SWR\0"
+  #define TR_RSSI_1            "RSSI"
+#else
+  #define TR_RSSI_0            "Tx\0 "
+  #define TR_RSSI_1            "Rx\0 "
+#endif
+#define TR_VTELEMCHNS    "---\0""Batt""Tmr1""Tmr2" TR_RSSI_0 TR_RSSI_1 "A1\0 ""A2\0 ""Alt\0""Rpm\0""Fuel""T1\0 ""T2\0 ""Spd\0""Dist""GAlt""Cell""Cels""Vfas""Curr""Cnsp""Powr""AccX""AccY""AccZ""Hdg\0""VVel""A1-\0""A2-\0""Alt-""Alt+""Rpm+""T1+\0""T2+\0""Vel+""Dst+""Cur+""Pwr+""Acc\0""Hora"
 
 #if defined(CPUARM)
+  #define LEN_VUNITSSYSTEM     TR("\006", "\010")
+  #define TR_VUNITSSYSTEM      TR("Metric""Imper.", "Metric\0 ""Imperial")
   #define LEN_VTELEMUNIT_NORM  "\003"
   #define TR_VTELEMUNIT_NORM   "v\0 ""A\0 ""m/s""-\0 ""kmh""m\0 ""@\0 ""%\0 ""mA\0""mAh""W\0 "
   #define LEN_VTELEMUNIT_IMP   "\003"
@@ -295,6 +340,12 @@
 
 #define LEN_VTMRMODES    "\003"
 #define TR_VTMRMODES     "OFF""ABS""MTs""MT%""MTt"
+
+#define LEN_VTRAINERMODES      "\006"
+#define TR_VTRAINERMODES       "Master""Slave\0"
+
+#define LEN_VFAILSAFE          "\011"
+#define TR_VFAILSAFE           "Hold\0    ""Custom\0  ""No pulses"
 
 // ZERO TERMINATED STRINGS
 #define INDENT                 "\001"
@@ -409,13 +460,7 @@
 #define TR_CAL                 "Cal"
 #define TR_VTRIM               "Trim- +"
 #define TR_BG                  "BG:"
-
-#if defined(PCBTARANIS)
-  #define TR_MENUTOSTART       CENTER"\006[ENTER] INICIAR"
-#else
-  #define TR_MENUTOSTART       CENTER"\006[MENU] INICIAR"
-#endif
-
+#define TR_MENUTOSTART         CENTER"\006" TR_ENTER " INICIAR"
 #define TR_SETMIDPOINT         CENTER"\005CENTRAR STICK/POT"
 #define TR_MOVESTICKSPOTS      CENTER"\005MOVER STICKS/POTs"
 #define TR_RXBATT              "Rx Batt:"
@@ -552,8 +597,10 @@
 #define TR_SD_SPEED            "Velocidade"
 #define TR_SD_SECTORS          "Sectores"
 #define TR_SD_SIZE             "Tamanho"
-#define TR_TYPE          "Type"
+#define TR_TYPE                "Tipe"
 #define TR_GLOBAL_VARS         "Variaveis"
+#define TR_GLOBAL_VAR          "Global Variable"
+#define TR_MENUGLOBALVARS      "VARIAVEIS"
 #define TR_OWN                 "Propr."
 #define TR_DATE                "Data"
 #define TR_ROTARY_ENCODER      "R.Encs"
@@ -563,3 +610,84 @@
 #define TR_FAILSAFE            "Failsafe mode"
 #define TR_FAILSAFESET         "FAILSAFE SETTINGS"
 #define TR_COUNTRYCODE         "Country Code"
+#define TR_VOICELANG           "Voice Language"
+#define TR_UNITSSYSTEM         "Units"
+#define TR_EDIT                "Edit"
+#define TR_INSERT_BEFORE       "Insert Before"
+#define TR_INSERT_AFTER        "Insert After"
+#define TR_COPY                "Copy"
+#define TR_MOVE                "Move"
+#define TR_DELETE              "Delete"
+#define TR_RESET_FLIGHT        "Reset Flight"
+#define TR_RESET_TIMER1        "Reset Timer1"
+#define TR_RESET_TIMER2        "Reset Timer2"
+#define TR_RESET_TELEMETRY     "Reset Telemetry"
+#define TR_STATISTICS          "Statistics"
+#define TR_ABOUT_US            "About Us"
+#define TR_AND_SWITCH          "AND Switch"
+#define TR_CF                  "CF"
+#define TR_SPEAKER             INDENT"Speaker"
+#define TR_BUZZER              INDENT"Buzzer"
+#define TR_BYTES               "bytes"
+#define TR_MODULE_BIND         "[Bind]"
+#define TR_MODULE_RANGE        "[Range]"
+#define TR_RESET               "[Reset]"
+#define TR_SET                 "[Set]"
+#define TR_TRAINER             "Trainer"
+#define TR_ANTENNAPROBLEM      CENTER "TX Antenna problem!"
+#define TR_MODELIDUSED         TR("ID already used","Model ID already used")
+#define TR_MODULE              INDENT "Module"
+#define TR_CHANNELRANGE        INDENT "Channel Range"
+#define TR_LOWALARM            INDENT "Low Alarm"
+#define TR_CRITICALALARM       INDENT "Critical Alarm"
+
+// Taranis column headers
+#define TR_PHASES_HEADERS      { " Name ", " Switch ", " Trims ", " Fade In ", " Fade Out " }
+#define TR_LIMITS_HEADERS      { " Name ", " Offset ", " Min ", " Max ", " Direction ", " PPM Center ", " Symmetrical " }
+#define TR_CSW_HEADERS         { " Function ", " V1 ", " V2 ", " AND Switch ", " Duration ", " Delay " }
+
+//Taranis About screen
+#define TR_ABOUTUS             "ABOUT US"
+
+#define TR_ABOUT_OPENTX_1      "OpenTX is open source, non-"
+#define TR_ABOUT_OPENTX_2      "commercial and comes with no"
+#define TR_ABOUT_OPENTX_3      "warranties. It was developed"
+#define TR_ABOUT_OPENTX_4      "for free. Support through"
+#define TR_ABOUT_OPENTX_5      "donations is welcome!"
+
+#define TR_ABOUT_BERTRAND_1    "Bertrand Songis"
+#define TR_ABOUT_BERTRAND_2    "OpenTX main author"
+#define TR_ABOUT_BERTRAND_3    "Companion9x co-developer"
+
+#define TR_ABOUT_MIKE_1        "Mike Blandford"
+#define TR_ABOUT_MIKE_2        "Code and drivers guru"
+#define TR_ABOUT_MIKE_3        "Arguably, one of the best"
+#define TR_ABOUT_MIKE_4        "Inspirational"
+       
+#define TR_ABOUT_ROMOLO_1      "Romolo Manfredini"
+#define TR_ABOUT_ROMOLO_2      "Companion9x main developer"
+#define TR_ABOUT_ROMOLO_3      ""
+
+#define TR_ABOUT_ANDRE_1       "Andre Bernet"
+#define TR_ABOUT_ANDRE_2       "Functionality, usability,"
+#define TR_ABOUT_ANDRE_3       "debugging, documentation"
+
+#define TR_ABOUT_ROB_1         "Rob Thomson"
+#define TR_ABOUT_ROB_2         "openrcforums webmaster"
+
+#define TR_ABOUT_MARTIN_1      "Martin Hotar"
+#define TR_ABOUT_MARTIN_2      "Graphics designer"
+
+#define TR_ABOUT_HARDWARE_1    "FrSky"
+#define TR_ABOUT_HARDWARE_2    "Hardware designer/producer"
+#define TR_ABOUT_HARDWARE_3    ""
+
+#define TR_ABOUT_PARENTS_1     "Parent projects"
+#define TR_ABOUT_PARENTS_2     "ersky9x (Mike Blandford)"
+#define TR_ABOUT_PARENTS_3     "ER9X (Erez Raviv)"
+#define TR_ABOUT_PARENTS_4     "TH9X (Thomas Husterer)"
+
+#define TR_CHR_SHORT  's'
+#define TR_CHR_LONG   'l'
+#define TR_CHR_TOGGLE 't'
+#define TR_CHR_HOUR   'h'

@@ -298,9 +298,14 @@ bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
 
 #ifdef NAVIGATION_POT1
   // check pot 1 - if changed -> scroll values
+  static int16_t p1val;
   static int16_t p1valprev;
-  p1valdiff = (p1valprev-calibratedStick[6]) / SCROLL_POT1_TH;
-  if (p1valdiff) p1valprev = calibratedStick[6];
+  p1valdiff = (p1val-calibratedStick[6]) / SCROLL_POT1_TH;
+  if (p1valdiff) {
+    p1valdiff = (p1valprev-calibratedStick[6]) / 2;
+    p1val = calibratedStick[6];
+  }
+  p1valprev = calibratedStick[6];
 #endif
 
 #ifdef NAVIGATION_POT2
@@ -327,6 +332,14 @@ bool check(check_event_t event, uint8_t curr, const MenuFuncP *menuTab, uint8_t 
 #if defined(PCBTARANIS)
     int8_t cc = curr;
     switch(event) {
+      case EVT_KEY_LONG(KEY_MENU):
+        if (menuTab == menuTabModel) {
+          pushMenu(menuChannelsView);
+          killEvents(event);
+          return false;
+        }
+        break;
+
       case EVT_KEY_LONG(KEY_PAGE):
         if (curr > 0)
           cc = curr - 1;
@@ -876,25 +889,19 @@ int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int16_t min, int16_t m
   bool invers = (attr & INVERS);
   if (invers && event == EVT_KEY_LONG(KEY_ENTER)) {
     s_editMode = !s_editMode;
-    value = (GV_IS_GV_VALUE(value,min,max) ? GET_GVAR(value, min, max, s_perout_flight_phase) : delta);
+    value = (GV_IS_GV_VALUE(value, min, max) ? GET_GVAR(value, min, max, s_perout_flight_phase) : delta);
     eeDirty(EE_MODEL);
   }
-  if (GV_IS_GV_VALUE(value,min,max) ) {
+  if (GV_IS_GV_VALUE(value, min, max)) {
     if (attr & LEFT)
       attr -= LEFT; /* because of ZCHAR */
     else
       x -= 2*FW+FWNUM;
     
-    int8_t idx = (int16_t) GV_INDEX_CALC_DELTA(value,delta);
+    int8_t idx = (int16_t) GV_INDEX_CALC_DELTA(value, delta);
     if (invers) {
       CHECK_INCDEC_MODELVAR(event, idx, -MAX_GVARS, MAX_GVARS-1);
     }
-
-/*  sometimes this implementation was smaller, but sometimes not....
-    value=delta+(int16_t) idx;
-    if (idx < 0) {idx = -1-idx; lcd_putcAtt(x-6, y, '-', attr); } 
-    else value|=~(delta-1);
-    idx++; */
 
     if (idx < 0) { 
       value = (int16_t) GV_CALC_VALUE_IDX_NEG(idx,delta);
@@ -905,7 +912,6 @@ int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int16_t min, int16_t m
       value = (int16_t) GV_CALC_VALUE_IDX_POS(idx,delta);
       idx++;
     }
-    
     putsStrIdx(x, y, STR_GV, idx, attr);
   }
   else {
@@ -914,7 +920,6 @@ int16_t gvarMenuItem(uint8_t x, uint8_t y, int16_t value, int16_t min, int16_t m
   }
   return value;
 }
-
 #else
 int8_t gvarMenuItem(uint8_t x, uint8_t y, int8_t value, int16_t min, int16_t max, LcdFlags attr, uint8_t event)
 {
@@ -950,7 +955,7 @@ const char * displayMenu(uint8_t event)
   const char * result = NULL;
 
   uint8_t display_count = min(s_menu_count, (uint16_t)MENU_MAX_LINES);
-  uint8_t y = (display_count >= 5 ? MENU_Y - FH : MENU_Y);
+  uint8_t y = (display_count >= 5 ? MENU_Y - FH - 1 : MENU_Y);
   lcd_filled_rect(MENU_X, y, MENU_W, display_count * (FH+1) + 2, SOLID, ERASE);
   lcd_rect(MENU_X, y, MENU_W, display_count * (FH+1) + 2);
 
